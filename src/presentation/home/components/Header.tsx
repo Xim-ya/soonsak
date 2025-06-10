@@ -1,22 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
-import { View, Text, FlatList, Image, Dimensions } from "react-native";
+import { View, Text, Dimensions } from "react-native";
 import TopContentModel from "../types/TopContentModel";
 import { ContentType } from "@/shared/types/content/contentType.enum";
 import colors from "@/shared/styles/colors";
 import { useSharedValue } from "react-native-reanimated";
-
 import styled from "@emotion/native";
 import { formatter } from "@/shared/utils/formatter";
-import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
+import Carousel, { ICarouselInstance, Pagination } from "react-native-reanimated-carousel";
 import React from "react";
+import { DotStyle } from "react-native-reanimated-carousel/lib/typescript/components/Pagination/Basic/PaginationItem";
+import { EmptyView } from "@/shared/components/view/EmptyView";
 
 
-const width = Dimensions.get("window").width;
+const { width, height } = Dimensions.get("window");
+const backdropRatio = 375 / 500;
 
-/** 최신/대표 콘텐츠 들이 스와이프 형태로 노출 되는 뷰*/
+/** 
+ * 최신/대표 콘텐츠 들이 스와이프 형태로 노출 되는 뷰
+ * */
 export function Header() {
     const ref = React.useRef<ICarouselInstance>(null);
     const progress = useSharedValue<number>(0);
+
 
     const onPressPagination = (index: number) => {
         ref.current?.scrollTo({
@@ -60,18 +65,22 @@ export function Header() {
         return <Text style={{ color: colors.white }}>Need to show Loading View</Text>
     }
 
+    if ((data ?? []).isEmpty()) {
+        return <EmptyView />
+    }
+
     return (
         <HeaderContainer>
             <Carousel
                 ref={ref}
                 width={width}
-                height={250}
+                height={height * backdropRatio}
                 data={data ?? []}
                 onProgressChange={(offsetProgress, absoluteProgress) => {
                     progress.value = absoluteProgress;
                 }}
-                renderItem={({ item, index }) => (
-                    <View key={item.id} style={{ flex: 1 }}>
+                renderItem={({ item }) => (
+                    <View key={item.id}>
                         <BackdropImage
                             source={{
                                 uri: formatter.prefixTmdbImgUrl(item.backdropImgUrl),
@@ -81,14 +90,29 @@ export function Header() {
                     </View>
                 )}
             />
+            <Pagination.Basic
+                progress={progress}
+                data={data ?? []}
+                dotStyle={dotStyle(colors.gray03)}
+                activeDotStyle={dotStyle(colors.gray02)}
+                containerStyle={{ gap: 4 }}
+                onPress={onPressPagination}
+            />
         </HeaderContainer>
     );
 }
 
+const dotStyle: (backgroundColor: string) => DotStyle = (backgroundColor) => ({
+    backgroundColor,
+    borderRadius: 4,
+    height: 4,
+    width: 4,
+});
+
 const HeaderContainer = styled.View({
-    // aspectRatio: 375 / 500,
-    // width: '100%'
-    flex: 1,
+    aspectRatio: backdropRatio,
+    width: '100%'
+
 });
 
 const BackdropImage = styled.Image({
@@ -98,7 +122,3 @@ const BackdropImage = styled.Image({
 })
 
 
-const PageView = styled(Carousel)({
-    flex: 1,
-    backgroundColor: "red",
-});

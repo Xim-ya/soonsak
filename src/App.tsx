@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import StackNavigator from './shared/navigation/StackNavigator';
 import TabNavigator from './shared/navigation/TabNavigator';
+import '@/shared/exntensions/arrayExtension';
 
 // React Query Client 생성
 const queryClient = new QueryClient({
