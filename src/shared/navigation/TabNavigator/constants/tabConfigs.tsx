@@ -1,8 +1,8 @@
 import { SvgProps } from "react-native-svg"
-import HomeIcon from "../../../../assets/icons/home_tab.svg";
-import ExploreIcon from "../../../../assets/icons/explore_tab.svg";
+import HomeIcon from "@assets/icons/home_tab.svg";
+import ExploreIcon from "@assets/icons/explore_tab.svg";
 
-export enum TabRoutes {
+enum TabRoutes {
     Home = "Home",
     Explore = "Explore",
 }
@@ -12,7 +12,7 @@ type BottomTabItem = {
     icon: React.FC<SvgProps>,
 }
 
-export const TabConfig: Record<TabRoutes, BottomTabItem> = {
+const TabConfig: Record<TabRoutes, BottomTabItem> = {
     [TabRoutes.Home]: {
         label: "홈",
         icon: HomeIcon,
@@ -21,4 +21,6 @@ export const TabConfig: Record<TabRoutes, BottomTabItem> = {
         label: "탐색",
         icon: ExploreIcon,
     }
-}   
+}
+
+export { TabRoutes, TabConfig } 

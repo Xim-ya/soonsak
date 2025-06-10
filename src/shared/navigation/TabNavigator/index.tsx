@@ -1,8 +1,8 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import HomeScreen from "../../../features/home/screen/HomeScreen";
+import HomeScreen from "../../../presentation/home/screen/HomeScreen";
 import { Text } from "react-native";
 import { TabConfig, TabRoutes } from "./constants/tabConfigs";
-import ExploreScreen from "../../../features/explore/screen/ExploreScreen";
+import ExploreScreen from "../../../presentation/explore/screen/ExploreScreen";
 
 
 const Tab = createBottomTabNavigator();
