@@ -8,9 +8,32 @@ const pretendard = {
     medium: 'Pretendard-Medium',
     regular: 'Pretendard-Regular',
     staatliches: 'staatliches_regular',
-};
+} as const;
 
-const appTextStyle: { [key: string]: TextStyle } = {
+
+interface AppTextStyles {
+    extraFont: TextStyle;
+    web1: TextStyle;
+    web2: TextStyle;
+    web3: TextStyle;
+    highlight: TextStyle;
+    headline3: TextStyle;
+    headline2: TextStyle;
+    headline1: TextStyle;
+    title3: TextStyle;
+    title3Bold: TextStyle;
+    title2: TextStyle;
+    title1: TextStyle;
+    body3: TextStyle;
+    body2: TextStyle;
+    body1: TextStyle;
+    alert1: TextStyle;
+    alert2: TextStyle;
+    desc: TextStyle;
+    nav: TextStyle;
+}
+
+const textStyle: AppTextStyles = {
     extraFont: {
         fontFamily: pretendard.staatliches,
         fontSize: 24,
@@ -31,6 +54,12 @@ const appTextStyle: { [key: string]: TextStyle } = {
         fontFamily: pretendard.bold,
         fontSize: 32,
         lineHeight: 48,
+        letterSpacing: -0.2,
+    },
+    highlight: {
+        fontFamily: pretendard.bold,
+        fontSize: 32,
+        lineHeight: 36,
         letterSpacing: -0.2,
     },
     headline3: {
@@ -117,4 +146,5 @@ const appTextStyle: { [key: string]: TextStyle } = {
     },
 };
 
-export default appTextStyle;
+export default textStyle;
+export type { AppTextStyles };
