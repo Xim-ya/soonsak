@@ -33,7 +33,7 @@ interface AppTextStyles {
     nav: TextStyle;
 }
 
-const textStyle: AppTextStyles = {
+const appTextStyle: AppTextStyles = {
     extraFont: {
         fontFamily: pretendard.staatliches,
         fontSize: 24,
@@ -146,5 +146,5 @@ const textStyle: AppTextStyles = {
     },
 };
 
-export default textStyle;
+export default appTextStyle;
 export type { AppTextStyles };
