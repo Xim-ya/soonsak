@@ -1,7 +1,7 @@
 import { ContentType } from "./contentType.enum";
 
 export interface BaseContentModel {
-    id: string,
-    title: string;
-    type: ContentType
+    readonly id: string,
+    readonly title: string;
+    readonly type: ContentType
 }
