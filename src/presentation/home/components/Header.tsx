@@ -1,107 +1,111 @@
-import { useQuery } from "@tanstack/react-query";
 import { View, Text, Dimensions } from "react-native";
-import TopContentModel from "../types/TopContentModel";
-import { ContentType } from "@/shared/types/content/contentType.enum";
-import colors from "@/shared/styles/colors";
-import { useSharedValue } from "react-native-reanimated";
 import styled from "@emotion/native";
 import { formatter } from "@/shared/utils/formatter";
-import Carousel, { ICarouselInstance, Pagination } from "react-native-reanimated-carousel";
+import Carousel, { Pagination } from "react-native-reanimated-carousel";
 import React from "react";
 import { DotStyle } from "react-native-reanimated-carousel/lib/typescript/components/Pagination/Basic/PaginationItem";
 import { EmptyView } from "@/shared/components/view/EmptyView";
+import textStyle from "@/shared/styles/textStyles";
+import Gap from "@/shared/components/view/Gap";
+import { DarkedLinearShadow, LinearAlign } from "@/shared/components/shadow/DarkedLinearShadow";
+import colors from "@/shared/styles/colors";
+import Animated from "react-native-reanimated";
+import { useHeader } from "../hooks/useHeader";
+import { style } from "@vanilla-extract/css";
+import { SafeAreaFrameContext, SafeAreaView } from "react-native-safe-area-context";
 
 
-const { width, height } = Dimensions.get("window");
-const backdropRatio = 375 / 500;
-
-/** 
+/**     
  * 최신/대표 콘텐츠 들이 스와이프 형태로 노출 되는 뷰
  * */
 export function Header() {
-    const ref = React.useRef<ICarouselInstance>(null);
-    const progress = useSharedValue<number>(0);
+    const {
+        headerInfo,
+        currentItem,
+        isError,
+        isLoading,
+        ref,
+        progress,
+        infoOpacity,
+        onPressPagination,
+        onProgressChange,
+        onSnapToItem,
+    } = useHeader();
 
 
-    const onPressPagination = (index: number) => {
-        ref.current?.scrollTo({
-            count: index - progress.value,
-            animated: true,
-        });
-    };
-
-
-    const { data, isError, isLoading } = useQuery({
-        queryKey: ['topContent'],
-        queryFn: async () => {
-            await new Promise(resolve => setTimeout(resolve, 200)); // 200ms 딜레이
-            const mockData: TopContentModel[] = [
-                {
-                    pointDescription: "미친듯한 미장센의 향연",
-                    keywords: ['코미디', '드라마', '스릴러'],
-                    backdropImgUrl: "8eihUxjQsJ7WvGySkVMC0EwbPAD.jpg",
-                    id: "496243",
-                    title: "기생충",
-                    type: ContentType.movie
-                },
-                {
-                    pointDescription: "질문을 던지는 드라마",
-                    keywords: ["드라마", "미스터리", "판타지"],
-                    backdropImgUrl: "dsMQSCOC9ReOUx0w6E1GMBMeLKS.jpg",
-                    id: "95396",
-                    title: "세브란스 단절",
-                    type: ContentType.series
-                }
-            ];
-            return mockData;
-        }
-    });
-
+    // TODO: 예외처리뷰 추가 필요
     if (isError) {
-        return <Text style={{ color: colors.white }}>Error!</Text>
+        return <Text style={{ color: colors.white }}>Error!</Text>;
     }
 
-    if (isLoading) {
-        return <Text style={{ color: colors.white }}>Need to show Loading View</Text>
+    if (headerInfo.isEmpty()) {
+        return <SafeAreaView><EmptyView /></SafeAreaView>;
     }
 
-    if ((data ?? []).isEmpty()) {
-        return <EmptyView />
-    }
-
-    return (
-        <HeaderContainer>
+    return <HeaderBox>
+        {isLoading && <Text style={{ color: colors.white }}>Need to show Loading View</Text>}
+        {<>
             <Carousel
                 ref={ref}
                 width={width}
-                height={height * backdropRatio}
-                data={data ?? []}
-                onProgressChange={(offsetProgress, absoluteProgress) => {
-                    progress.value = absoluteProgress;
-                }}
+                height={calculatedHeight}
+                data={headerInfo}
+                onProgressChange={onProgressChange}
+                onSnapToItem={onSnapToItem}
+                autoPlay={true}
+                autoPlayInterval={1300}
                 renderItem={({ item }) => (
-                    <View key={item.id}>
-                        <BackdropImage
-                            source={{
-                                uri: formatter.prefixTmdbImgUrl(item.backdropImgUrl),
-                            }}
-                        />
-                        <Text style={{ color: colors.white, position: 'absolute', bottom: 20, left: 20 }}>{item.title}</Text>
-                    </View>
+
+                    <BackdropImage
+                        key={item.id}
+                        style={{ height: calculatedHeight }}
+                        source={{
+                            uri: formatter.prefixTmdbImgUrl(item.backdropImgUrl),
+                        }}
+                    />
+
                 )}
             />
-            <Pagination.Basic
-                progress={progress}
-                data={data ?? []}
-                dotStyle={dotStyle(colors.gray03)}
-                activeDotStyle={dotStyle(colors.gray02)}
-                containerStyle={{ gap: 4 }}
-                onPress={onPressPagination}
-            />
-        </HeaderContainer>
-    );
+
+            {/* 하단 그라데이션 */}
+            <DarkedLinearShadow align={LinearAlign.bottomTop} height={178} />
+
+            {/* 콘텐츠 정보 */}
+            <FixedInfoView>
+                <AnimatedInfoContainer style={{ opacity: infoOpacity }}>
+                    <PointDescription>{currentItem?.pointDescription}</PointDescription>
+                    <Title>{currentItem?.title}</Title>
+                    <CategoryListView>
+                        {currentItem?.keywords.map((keyword, index) => (
+                            <CategoryItem key={keyword}>
+                                {keyword}{index + 1 !== currentItem.keywords.length && ' · '}
+                            </CategoryItem>
+                        ))}
+                    </CategoryListView>
+                    <Gap size={28} />
+                </AnimatedInfoContainer>
+            </FixedInfoView>
+
+            <Indicator>
+                <Pagination.Basic
+                    progress={progress}
+                    data={headerInfo}
+                    dotStyle={dotStyle(colors.gray05)}
+                    activeDotStyle={dotStyle(colors.gray02)}
+                    containerStyle={{ gap: 4 }}
+                    onPress={onPressPagination}
+                />
+            </Indicator>
+
+            {/* 상단 그라데이션 */}
+            <DarkedLinearShadow align={LinearAlign.topBottom} height={178} />
+        </>}
+    </HeaderBox>
+
+
 }
 
+/* Styles */
 const dotStyle: (backgroundColor: string) => DotStyle = (backgroundColor) => ({
     backgroundColor,
     borderRadius: 4,
@@ -109,16 +113,69 @@ const dotStyle: (backgroundColor: string) => DotStyle = (backgroundColor) => ({
     width: 4,
 });
 
-const HeaderContainer = styled.View({
-    aspectRatio: backdropRatio,
-    width: '100%'
 
-});
+/* Variables */
+const width = Dimensions.get("window").width;
+const backdropRatio = 375 / 500;
+const calculatedHeight = width / backdropRatio; // HeaderBox와 동일한 높이 계산
+
+
+/* Styles */
+const HeaderBox = styled.View({
+    aspectRatio: backdropRatio,
+    alignSelf: 'stretch',
+    width: '100%',
+})
 
 const BackdropImage = styled.Image({
     width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    resizeMode: 'cover', // 이미지 비율 유지하면서 컨테이너에 맞춤
+});
+
+const FixedInfoView = styled.View({
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    pointerEvents: "none",
+});
+
+
+const AnimatedInfoContainer = Animated.createAnimatedComponent(styled.View({
+    alignItems: "center",
+}));
+
+const PointDescription = styled.Text({
+    color: colors.green,
+    ...textStyle.body1,
+    marginBottom: 1,
+});
+
+const Title = styled.Text({
+    color: colors.white,
+    ...textStyle.highlight,
+    marginBottom: 8,
+});
+
+const CategoryListView = styled.View({
+    display: 'flex',
+    flexDirection: 'row'
+});
+
+const CategoryItem = styled.Text({
+    color: colors.gray03,
+    ...textStyle.desc,
+});
+
+const Indicator = styled.View({
+    marginTop: 16,
+    marginBottom: 8,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
 })
 
 

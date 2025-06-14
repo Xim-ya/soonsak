@@ -9,6 +9,11 @@ export default function HomeScreen() {
         <Container>
             {/* Header */}
             <Header />
+
+            <Text style={{ color: colors.white }}>
+                home screen
+            </Text>
+
             {/* <SafeAreaView>
                 <Text>
                     home screen
@@ -22,5 +27,4 @@ export default function HomeScreen() {
 const Container = styled.View({
     backgroundColor: colors.black,
     flex: 1,
-
 });
