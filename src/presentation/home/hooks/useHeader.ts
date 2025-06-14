@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Dimensions } from "react-native";
-import TopContentModel from "../types/TopContentModel";
+
 import { ContentType } from "@/shared/types/content/contentType.enum";
 import { useSharedValue, withTiming } from "react-native-reanimated";
 import { ICarouselInstance } from "react-native-reanimated-carousel";
 import React from "react";
+import TopContentModel from "../types/TopContentModel";
+
+
 
 
 /**
