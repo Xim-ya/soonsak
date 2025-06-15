@@ -2,23 +2,30 @@ import { View, Text, SafeAreaView } from "react-native";
 import styled from "@emotion/native";
 import colors from "../../../shared/styles/colors";
 import { Header } from "../components/Header";
+import RecentContentView from "../components/RecentContentView";
+import { ScrollView } from "react-native-gesture-handler";
 
 
 export default function HomeScreen() {
     return (
         <Container>
+            {/* <ScrollView> */}
             {/* Header */}
-            <Header />
+            <ScrollView>
+                <Header />
 
-            <Text style={{ color: colors.white }}>
-                home screen
-            </Text>
+                <RecentContentView />
 
-            {/* <SafeAreaView>
+
+
+
+                {/* <SafeAreaView>
                 <Text>
                     home screen
                 </Text>
             </SafeAreaView> */}
+                {/* </ScrollView> */}
+            </ScrollView>
         </Container >
     );
 }

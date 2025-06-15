@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import StackNavigator from './shared/navigation/StackNavigator';
 import TabNavigator from './shared/navigation/TabNavigator';
 import '@/shared/exntensions/arrayExtension';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // React Query Client 생성 (컴포넌트 밖에서 생성)
 const queryClient = new QueryClient({
@@ -33,12 +34,14 @@ export default function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <StatusBar style="light" />
-      <NavigationContainer>
-        <TabNavigator />
-      </NavigationContainer>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <StatusBar style="light" />
+        <NavigationContainer>
+          <TabNavigator />
+        </NavigationContainer>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
