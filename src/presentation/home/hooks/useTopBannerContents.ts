@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSharedValue, withTiming } from "react-native-reanimated";
 import { ICarouselInstance } from "react-native-reanimated-carousel";
 import React from "react";
-import { TopContentModel, topContentMock } from "../types/topContentModel";
+import { TopContentModel, topContentMock } from "../types/TopContentModel";
 
 
 
@@ -11,7 +11,7 @@ import { TopContentModel, topContentMock } from "../types/topContentModel";
  * - 콘텐츠 캐러셀 인터렉션
  * - 헤다 상단 콘텐츠 호출
  */
-export function useHeader() {
+export function useTopBannerConetns() {
     const ref = React.useRef<ICarouselInstance>(null);
     const progress = useSharedValue<number>(0);
     const infoOpacity = useSharedValue<number>(1);
