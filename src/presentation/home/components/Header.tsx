@@ -10,7 +10,7 @@ import Gap from "@/shared/components/view/Gap";
 import { DarkedLinearShadow, LinearAlign } from "@/shared/components/shadow/DarkedLinearShadow";
 import colors from "@/shared/styles/colors";
 import Animated from "react-native-reanimated";
-import { useTopBannerConetns } from "../hooks/useTopBannerContents";
+import { useTopBannerConetns } from "../_hooks/useTopBannerContents";
 import { style } from "@vanilla-extract/css";
 import { SafeAreaFrameContext, SafeAreaView } from "react-native-safe-area-context";
 

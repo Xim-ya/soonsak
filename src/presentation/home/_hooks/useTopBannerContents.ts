@@ -3,6 +3,7 @@ import { useSharedValue, withTiming } from "react-native-reanimated";
 import { ICarouselInstance } from "react-native-reanimated-carousel";
 import React from "react";
 import { TopContentModel, topContentMock } from "../types/TopContentModel";
+import { contentApi } from "@/features/content/api/contentApi";
 
 
 

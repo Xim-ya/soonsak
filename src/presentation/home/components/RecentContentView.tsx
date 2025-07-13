@@ -1,23 +1,33 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Image, View, Text, TouchableHighlight } from "react-native";
-import PosterContentModel from "../types/posterContentModel";
 import { ContentSectionListModel, recentContentSectionMokcs } from "../types/contentSectionListModel";
 import styled from "@emotion/native";
 import appTextStyle from "@/shared/styles/textStyles";
 import colors from "@/shared/styles/colors";
-
 import { FlatList } from "react-native-gesture-handler";
 import Gap from "@/shared/components/view/Gap";
 import { formatter, TmdbImageSize } from "@/shared/utils/formatter";
-import { style } from "@vanilla-extract/css";
+import { contentApi } from "@/features/content/api/contentApi";
+import { BaseContentModel } from "@/shared/types/content/baseContentModel";
 
 
 export function RecentContentView() {
     const { data, isLoading, isError } = useQuery({
         queryKey: ["recentContent"],
         queryFn: async (): Promise<ContentSectionListModel> => {
-            new Promise(resovle => setTimeout(resovle, 220));
-            return recentContentSectionMokcs;
+
+            const items = await contentApi.getRecentUploadedContents();
+
+            const mappedSection: ContentSectionListModel = {
+                id: "recent",
+                sectionTitle: "최신 콘텐츠",
+                contents: items.map((e) => BaseContentModel.fromContentDto(e)),
+            };
+
+            return mappedSection;
+
+
+
         }
     });
     if (isError) {
@@ -43,7 +53,7 @@ export function RecentContentView() {
                 ({ item }) => {
                     return <TouchableHighlight>
                         <PosterItem>
-                            <PosterImg source={{ uri: formatter.prefixTmdbImgUrl(item.posterImg, { size: TmdbImageSize.w500 }) }} />
+                            <PosterImg source={{ uri: formatter.prefixTmdbImgUrl(item.posterPath, { size: TmdbImageSize.w500 }) }} />
 
                             <Text style={{ color: colors.white }}>{item.title}</Text>
                         </PosterItem>
