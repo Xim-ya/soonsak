@@ -18,10 +18,8 @@ export const contentApi = {
       throw new Error(`Failed to fetch contents: ${error.message}`);
     }
 
-    console.log('정보', data);
+    const contents: ContentDto[] = mapWithField<ContentDto[]>(data ?? []);
 
-    const mappedData: ContentDto[] = mapWithField<ContentDto[]>(data ?? []);
-
-    return mappedData ?? [];
+    return contents ?? [];
   },
 };
