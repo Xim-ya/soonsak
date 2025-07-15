@@ -1,37 +1,32 @@
-import { View, Text, SafeAreaView } from "react-native";
-import styled from "@emotion/native";
-import colors from "../../../shared/styles/colors";
-import { Header } from "../components/Header";
-import RecentContentView from "../components/RecentContentView";
-import { ScrollView } from "react-native-gesture-handler";
-
+import { View, Text, SafeAreaView } from 'react-native';
+import styled from '@emotion/native';
+import colors from '../../../shared/styles/colors';
+import { Header } from '../components/Header';
+import RecentContentView from '../components/RecentContentView';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export default function HomeScreen() {
-    return (
-        <Container>
-            {/* <ScrollView> */}
-            {/* Header */}
-            <ScrollView>
-                <Header />
+  return (
+    <Container>
+      {/* <ScrollView> */}
+      {/* Header */}
+      <ScrollView>
+        <Header />
 
-                <RecentContentView />
+        <RecentContentView />
 
-
-
-
-                {/* <SafeAreaView>
+        {/* <SafeAreaView>
                 <Text>
                     home screen
                 </Text>
             </SafeAreaView> */}
-                {/* </ScrollView> */}
-            </ScrollView>
-        </Container >
-    );
+        {/* </ScrollView> */}
+      </ScrollView>
+    </Container>
+  );
 }
 
-
 const Container = styled.View({
-    backgroundColor: colors.black,
-    flex: 1,
+  backgroundColor: colors.black,
+  flex: 1,
 });

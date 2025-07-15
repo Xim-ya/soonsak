@@ -12,12 +12,8 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "@assets/*": [
-        "assets/*"
-      ],
-      "@/*": [
-        "src/*"
-      ]
+      "@assets/*": ["assets/*"],
+      "@/*": ["src/*"]
     }
   }
 }

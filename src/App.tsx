@@ -26,7 +26,7 @@ export default function App() {
     'Pretendard-SemiBold': require('../assets/fonts/Pretendard-SemiBold.otf'),
     'Pretendard-Medium': require('../assets/fonts/Pretendard-Medium.otf'),
     'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.otf'),
-    'staatliches_regular': require('../assets/fonts/Staatliches-Regular.ttf'),
+    staatliches_regular: require('../assets/fonts/Staatliches-Regular.ttf'),
   });
 
   if (!fontsLoaded) {
@@ -44,5 +44,3 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
-
-

@@ -1,9 +1,9 @@
-import { View, Text } from "react-native";
+import { View, Text } from 'react-native';
 
 export default function PlayerScreen() {
-    return <View>
-        <Text>
-            Player Screen
-        </Text>
+  return (
+    <View>
+      <Text>Player Screen</Text>
     </View>
+  );
 }
