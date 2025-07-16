@@ -4,10 +4,13 @@ import { formatter } from '@/shared/utils/formatter';
 import Carousel, { Pagination } from 'react-native-reanimated-carousel';
 import React from 'react';
 import { DotStyle } from 'react-native-reanimated-carousel/lib/typescript/components/Pagination/Basic/PaginationItem';
-import { EmptyView } from '@/shared/components/view/EmptyView';
+import { EmptyView } from '@/presentation/components/view/EmptyView';
 import textStyle from '@/shared/styles/textStyles';
-import Gap from '@/shared/components/view/Gap';
-import { DarkedLinearShadow, LinearAlign } from '@/shared/components/shadow/DarkedLinearShadow';
+import Gap from '@/presentation/components/view/Gap';
+import {
+  DarkedLinearShadow,
+  LinearAlign,
+} from '@/presentation/components/shadow/DarkedLinearShadow';
 import colors from '@/shared/styles/colors';
 import Animated from 'react-native-reanimated';
 import { useTopBannerConetns } from '../_hooks/useTopBannerContents';

@@ -39,6 +39,7 @@ yarn-error.*
 # Personal/Local development configurations
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 *~

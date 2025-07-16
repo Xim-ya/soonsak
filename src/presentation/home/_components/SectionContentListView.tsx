@@ -1,10 +1,10 @@
-import Gap from "@/shared/components/view/Gap";
-import colors from "@/shared/styles/colors";
-import appTextStyle from "@/shared/styles/textStyles";
-import { BaseContentModel } from "@/shared/types/content/baseContentModel";
-import { formatter, TmdbImageSize } from "@/shared/utils/formatter";
-import styled from "@emotion/native";
-import { FlatList, TouchableHighlight } from "react-native";
+import Gap from '@/presentation/components/view/Gap';
+import colors from '@/shared/styles/colors';
+import appTextStyle from '@/shared/styles/textStyles';
+import { BaseContentModel } from '@/shared/types/content/baseContentModel';
+import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
+import styled from '@emotion/native';
+import { FlatList, TouchableHighlight } from 'react-native';
 
 interface SectionContentListViewProps {
   title: string | null;
@@ -17,10 +17,7 @@ interface SectionContentListViewProps {
  * @param contents 콘텐츠 리스트
  */
 
-function SectionContentListView({
-  title,
-  contents,
-}: SectionContentListViewProps) {
+function SectionContentListView({ title, contents }: SectionContentListViewProps) {
   return (
     <Container>
       {title != null && <SeectionTitle>{title}</SeectionTitle>}
@@ -76,7 +73,7 @@ const ContentTitle = styled.Text({
 
 const PosterImg = styled.Image({
   aspectRatio: posterRatio,
-  alignSelf: "stretch",
+  alignSelf: 'stretch',
 });
 
 const PosterItem = styled.View({
