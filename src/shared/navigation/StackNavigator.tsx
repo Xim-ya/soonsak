@@ -6,7 +6,7 @@ const Stack = createNativeStackNavigator();
 export default function StackNavgiator() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Home" component={HomeScreen}></Stack.Screen>
+      <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
   );
 }

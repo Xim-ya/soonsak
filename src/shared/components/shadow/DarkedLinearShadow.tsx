@@ -55,24 +55,18 @@ export function DarkedLinearShadow({
   ] as const;
 
   const topBottomLocations = [
-    0, 0.0086, 0.0355, 0.0817, 0.1474, 0.2318, 0.3319, 0.4427, 0.5573, 0.6681,
-    0.7682, 0.8526, 0.9183, 0.9645, 0.9914, 1,
+    0, 0.0086, 0.0355, 0.0817, 0.1474, 0.2318, 0.3319, 0.4427, 0.5573, 0.6681, 0.7682, 0.8526,
+    0.9183, 0.9645, 0.9914, 1,
   ] as const;
   const bottomTopLocations = [
-    0, 0.0086, 0.0355, 0.0817, 0.1474, 0.2318, 0.3319, 0.4427, 0.5573, 0.6681,
-    0.7682, 0.8526, 0.9183, 0.9645, 0.9914, 1,
+    0, 0.0086, 0.0355, 0.0817, 0.1474, 0.2318, 0.3319, 0.4427, 0.5573, 0.6681, 0.7682, 0.8526,
+    0.9183, 0.9645, 0.9914, 1,
   ] as const;
 
   return (
     <LinearGradient
-      colors={
-        align === LinearAlign.bottomTop ? bottomTopColors : topBottomColors
-      }
-      locations={
-        align === LinearAlign.bottomTop
-          ? bottomTopLocations
-          : topBottomLocations
-      }
+      colors={align === LinearAlign.bottomTop ? bottomTopColors : topBottomColors}
+      locations={align === LinearAlign.bottomTop ? bottomTopLocations : topBottomLocations}
       style={{
         position: setPositionLayout ? 'absolute' : 'relative',
         top: align === LinearAlign.topBottom ? 0 : null,
@@ -80,7 +74,7 @@ export function DarkedLinearShadow({
         pointerEvents: 'none',
         left: 0,
         right: 0,
-        height: height,
+        height,
         alignItems: 'center',
       }}
       start={{ x: 0.5, y: 0 }}

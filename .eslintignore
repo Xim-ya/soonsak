@@ -1,0 +1,8 @@
+node_modules/
+.expo/
+dist/
+build/
+*.d.ts
+metro.config.cjs
+.prettierrc.cjs
+declarations.d.ts 

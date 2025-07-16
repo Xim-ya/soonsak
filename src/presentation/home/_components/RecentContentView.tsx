@@ -10,7 +10,7 @@ export function RecentContentView() {
     queryFn: async (): Promise<BaseContentModel[]> => {
       const items = await contentApi.getRecentUploadedContents();
 
-      return items.map(e => BaseContentModel.fromContentDto(e));
+      return items.map((e) => BaseContentModel.fromContentDto(e));
     },
   });
 
@@ -18,12 +18,7 @@ export function RecentContentView() {
     return <Text>Unexcpected Error Occured</Text>;
   }
 
-  return (
-    <SectionContentListView
-      title={'최신 콘텐츠'}
-      contents={isLoading ? [] : (data ?? null)}
-    />
-  );
+  return <SectionContentListView title="최신 콘텐츠" contents={isLoading ? [] : (data ?? null)} />;
 }
 
 export default RecentContentView;

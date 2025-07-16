@@ -7,10 +7,10 @@ enum TabRoutes {
   Explore = 'Explore',
 }
 
-type BottomTabItem = {
+interface BottomTabItem {
   label: string;
   icon: React.FC<SvgProps>;
-};
+}
 
 const TabConfig: Record<TabRoutes, BottomTabItem> = {
   [TabRoutes.Home]: {

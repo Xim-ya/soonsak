@@ -13,14 +13,12 @@ export function useTopBannerConetns() {
   const ref = React.useRef<ICarouselInstance>(null);
   const progress = useSharedValue<number>(0);
   const infoOpacity = useSharedValue<number>(1);
-  const [currentItem, setCurrentItem] = React.useState<TopContentModel | null>(
-    null
-  );
+  const [currentItem, setCurrentItem] = React.useState<TopContentModel | null>(null);
 
   const { data, isError, isLoading } = useQuery({
     queryKey: ['topContent'],
     queryFn: async (): Promise<TopContentModel[]> => {
-      await new Promise(resolve => setTimeout(resolve, 200)); // 200ms 딜레이
+      await new Promise((resolve) => setTimeout(resolve, 200)); // 200ms 딜레이
       return topContentMock;
     },
   });
@@ -35,10 +33,7 @@ export function useTopBannerConetns() {
   };
 
   // 페이지 변경 시 opacity 애니메이션 처리
-  const onProgressChange = (
-    offsetProgress: number,
-    absoluteProgress: number
-  ) => {
+  const onProgressChange = (offsetProgress: number, absoluteProgress: number) => {
     progress.value = absoluteProgress;
 
     // 중간 지점에서 아이템 변경 (Flutter와 동일한 로직)
@@ -47,9 +42,7 @@ export function useTopBannerConetns() {
 
       // 0.5 이상일 때 다음 아이템으로 변경
       const targetIndex =
-        remainder >= 0.5
-          ? Math.ceil(absoluteProgress)
-          : Math.floor(absoluteProgress);
+        remainder >= 0.5 ? Math.ceil(absoluteProgress) : Math.floor(absoluteProgress);
       const safeIndex = targetIndex % headerInfo.length;
       const item = headerInfo[safeIndex];
 
@@ -73,12 +66,7 @@ export function useTopBannerConetns() {
 
   // 스냅 완료 시 호출되는 함수
   const onSnapToItem = (index: number) => {
-    if (
-      headerInfo &&
-      headerInfo.length > 0 &&
-      index >= 0 &&
-      index < headerInfo.length
-    ) {
+    if (headerInfo && headerInfo.length > 0 && index >= 0 && index < headerInfo.length) {
       const item = headerInfo[index];
       if (item) {
         setCurrentItem(item);

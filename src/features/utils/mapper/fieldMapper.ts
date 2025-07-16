@@ -1,10 +1,7 @@
 /**
  * 사용자 정의 필드 매핑과 함께 변환
  */
-export function mapWithField<T = any>(
-  obj: any,
-  customMapping: Record<string, string> = {}
-): T {
+export function mapWithField<T = any>(obj: any, customMapping: Record<string, string> = {}): T {
   function toCamelCase(str: string): string {
     return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
   }
@@ -16,7 +13,7 @@ export function mapWithField<T = any>(
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => mapWithField(item, customMapping)) as T;
+    return obj.map((item) => mapWithField(item, customMapping)) as T;
   }
 
   if (typeof obj === 'object' && obj.constructor === Object) {

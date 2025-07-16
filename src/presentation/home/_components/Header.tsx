@@ -7,18 +7,12 @@ import { DotStyle } from 'react-native-reanimated-carousel/lib/typescript/compon
 import { EmptyView } from '@/shared/components/view/EmptyView';
 import textStyle from '@/shared/styles/textStyles';
 import Gap from '@/shared/components/view/Gap';
-import {
-  DarkedLinearShadow,
-  LinearAlign,
-} from '@/shared/components/shadow/DarkedLinearShadow';
+import { DarkedLinearShadow, LinearAlign } from '@/shared/components/shadow/DarkedLinearShadow';
 import colors from '@/shared/styles/colors';
 import Animated from 'react-native-reanimated';
 import { useTopBannerConetns } from '../_hooks/useTopBannerContents';
 import { style } from '@vanilla-extract/css';
-import {
-  SafeAreaFrameContext,
-  SafeAreaView,
-} from 'react-native-safe-area-context';
+import { SafeAreaFrameContext, SafeAreaView } from 'react-native-safe-area-context';
 
 /**
  * 최신/대표 콘텐츠 들이 스와이프 형태로 노출 되는 뷰
@@ -52,9 +46,7 @@ export function Header() {
 
   return (
     <HeaderBox>
-      {isLoading && (
-        <Text style={{ color: colors.white }}>Need to show Loading View</Text>
-      )}
+      {isLoading && <Text style={{ color: colors.white }}>Need to show Loading View</Text>}
       {
         <>
           <Carousel
@@ -83,9 +75,7 @@ export function Header() {
           {/* 콘텐츠 정보 */}
           <FixedInfoView>
             <AnimatedInfoContainer style={{ opacity: infoOpacity }}>
-              <PointDescription>
-                {currentItem?.pointDescription}
-              </PointDescription>
+              <PointDescription>{currentItem?.pointDescription}</PointDescription>
               <Title>{currentItem?.title}</Title>
               <CategoryListView>
                 {currentItem?.keywords.map((keyword, index) => (
@@ -119,7 +109,7 @@ export function Header() {
 }
 
 /* Styles */
-const dotStyle: (backgroundColor: string) => DotStyle = backgroundColor => ({
+const dotStyle: (backgroundColor: string) => DotStyle = (backgroundColor) => ({
   backgroundColor,
   borderRadius: 4,
   height: 4,
@@ -127,7 +117,7 @@ const dotStyle: (backgroundColor: string) => DotStyle = backgroundColor => ({
 });
 
 /* Variables */
-const width = Dimensions.get('window').width;
+const { width } = Dimensions.get('window');
 const backdropRatio = 375 / 500;
 const calculatedHeight = width / backdropRatio; // HeaderBox와 동일한 높이 계산
 
@@ -155,7 +145,7 @@ const FixedInfoView = styled.View({
 const AnimatedInfoContainer = Animated.createAnimatedComponent(
   styled.View({
     alignItems: 'center',
-  })
+  }),
 );
 
 const PointDescription = styled.Text({

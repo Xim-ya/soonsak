@@ -8,7 +8,7 @@ const formatter = {
    * */
   prefixTmdbImgUrl(
     imgId: string,
-    { size = TmdbImageSize.original }: { size?: TmdbImageSize } = {}
+    { size = TmdbImageSize.original }: { size?: TmdbImageSize } = {},
   ): string {
     if (!imgId) return '';
     return `${this.TMDB_IMAGE_BASE_URL}${size}/${imgId}`;

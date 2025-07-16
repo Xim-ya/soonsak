@@ -12,11 +12,7 @@ export default function TabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarLabel: ({ color }) => {
-          return (
-            <Text style={{ color }}>
-              {TabConfig[route.name as TabRoutes].label}
-            </Text>
-          );
+          return <Text style={{ color }}>{TabConfig[route.name as TabRoutes].label}</Text>;
         },
         tabBarIcon: ({ color, size }) => {
           const Icon = TabConfig[route.name as TabRoutes].icon;

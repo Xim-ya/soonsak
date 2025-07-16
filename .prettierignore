@@ -1,34 +1,46 @@
 # Dependencies
 node_modules/
-package-lock.json
-yarn.lock
-
-# Build outputs
+.expo/
 dist/
 build/
-.expo/
-web-build/
 
-# Generated files
-*.d.ts
-!src/**/*.d.ts
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Binary files
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-*.ico
-*.pdf
+# System files
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Cache
-.cache/
-.parcel-cache/
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# OS generated files
-.DS_Store
-Thumbs.db 
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Prettier ignore
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.webp
+*.json
+*.md
+*.lock 
