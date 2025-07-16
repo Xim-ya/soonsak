@@ -1,6 +1,6 @@
-import { ContentType } from '@/shared/types/content/contentType.enum';
+import { ContentType } from '@/presentation/types/content/contentType.enum';
 import PosterContentModel from './posterContentModel';
-import { BaseContentModel } from '@/shared/types/content/baseContentModel';
+import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
 
 /**
  * 홈스크린 > 콘텐츠 섹션 리스트

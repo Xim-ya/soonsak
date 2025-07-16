@@ -1,5 +1,5 @@
-import { BaseContentModel } from '@/shared/types/content/baseContentModel';
-import { ContentType } from '@/shared/types/content/contentType.enum';
+import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
+import { ContentType } from '@/presentation/types/content/contentType.enum';
 import { Timestamp } from 'react-native-reanimated/lib/typescript/commonTypes';
 
 /**

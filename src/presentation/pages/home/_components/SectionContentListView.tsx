@@ -1,7 +1,7 @@
 import Gap from '@/presentation/components/view/Gap';
 import colors from '@/shared/styles/colors';
 import appTextStyle from '@/shared/styles/textStyles';
-import { BaseContentModel } from '@/shared/types/content/baseContentModel';
+import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import styled from '@emotion/native';
 import { FlatList, TouchableHighlight } from 'react-native';

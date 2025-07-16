@@ -2,8 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import { ICarouselInstance } from 'react-native-reanimated-carousel';
 import React from 'react';
-import { TopContentModel, topContentMock } from '../types/TopContentModel';
-import { contentApi } from '@/features/content/api/contentApi';
+import { TopContentModel, topContentMock } from '../_types/TopContentModel';
 
 /**
  * - 콘텐츠 캐러셀 인터렉션

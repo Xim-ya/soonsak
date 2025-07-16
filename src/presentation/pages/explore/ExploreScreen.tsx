@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native';
 
-export default function PlayerScreen() {
+export default function Explorepage() {
   return (
     <View>
-      <Text>Player Screen</Text>
+      <Text>Explore Scren</Text>
     </View>
   );
 }

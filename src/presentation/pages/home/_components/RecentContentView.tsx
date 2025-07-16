@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Text } from 'react-native';
 import { contentApi } from '@/features/content/api/contentApi';
-import { BaseContentModel } from '@/shared/types/content/baseContentModel';
+import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
 import { SectionContentListView } from './SectionContentListView';
 
 export function RecentContentView() {
