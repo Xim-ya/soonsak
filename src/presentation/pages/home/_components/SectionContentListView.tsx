@@ -5,6 +5,9 @@ import { BaseContentModel } from '@/presentation/types/content/baseContentModel'
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import styled from '@emotion/native';
 import { FlatList, TouchableHighlight } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/shared/navigation/types';
 
 interface SectionContentListViewProps {
   title: string | null;
@@ -18,6 +21,13 @@ interface SectionContentListViewProps {
  */
 
 function SectionContentListView({ title, contents }: SectionContentListViewProps) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handleContentPress = (content: BaseContentModel) => {
+    // 콘텐츠를 클릭했을 때 Player 화면으로 이동
+    navigation.navigate('Player', { id: content.id.toString() });
+  };
+
   return (
     <Container>
       {title != null && <SeectionTitle>{title}</SeectionTitle>}
@@ -30,7 +40,7 @@ function SectionContentListView({ title, contents }: SectionContentListViewProps
           data={contents}
           renderItem={({ item }) => {
             return (
-              <TouchableHighlight>
+              <TouchableHighlight onPress={() => handleContentPress(item)}>
                 <PosterItem>
                   <PosterImg
                     source={{

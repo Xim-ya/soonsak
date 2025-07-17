@@ -1,10 +1,11 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from '../../../presentation/pages/home/HomeScreen';
+import HomeScreen from '../../../presentation/pages/home/HomePage';
 import { Text } from 'react-native';
-import { TabConfig, TabRoutes } from './constants/tabConfigs';
+import { TabConfig, TabRoutes } from '../constant/tabConfigs';
 import Explorepage from '../../../presentation/pages/explore/ExploreScreen';
+import { TabParamList } from '../types';
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 export default function TabNavigator() {
   return (
