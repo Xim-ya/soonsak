@@ -1,18 +1,15 @@
 import { View, Text, Button, StyleSheet } from 'react-native';
-import { RouteProp, useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../shared/navigation/types';
+import { useNavigation } from '@react-navigation/native';
+import { ScreenRouteProp } from '../../../shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
 
-type PlayerScreenRouteProp = RouteProp<RootStackParamList, 'Player'>;
-type PlayerScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Player'>;
-
-interface PlayerScreenProps {
-  route: PlayerScreenRouteProp;
+interface ContentDetailProps {
+  route: ScreenRouteProp<typeof routePages.contentDetail>;
 }
 
-export default function PlayerPage({ route }: PlayerScreenProps) {
+export default function ContentDetailPage({ route }: ContentDetailProps) {
   const { id } = route.params;
-  const navigation = useNavigation<PlayerScreenNavigationProp>();
+  const navigation = useNavigation(); // 타입 지정 제거
 
   const goBack = () => {
     navigation.goBack();

@@ -8,6 +8,7 @@ import { FlatList, TouchableHighlight } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
 
 interface SectionContentListViewProps {
   title: string | null;
@@ -25,7 +26,7 @@ function SectionContentListView({ title, contents }: SectionContentListViewProps
 
   const handleContentPress = (content: BaseContentModel) => {
     // 콘텐츠를 클릭했을 때 Player 화면으로 이동
-    navigation.navigate('Player', { id: content.id.toString() });
+    navigation.navigate(routePages.contentDetail, { id: content.id.toString() });
   };
 
   return (

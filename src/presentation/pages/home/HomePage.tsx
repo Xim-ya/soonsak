@@ -7,6 +7,7 @@ import { Header } from './_components/Header';
 import RecentContentView from './_components/RecentContentView';
 import { ScrollView } from 'react-native-gesture-handler';
 import { RootStackParamList } from '../../../shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -15,7 +16,7 @@ export default function HomeScreen() {
 
   // 예시: Player 화면으로 이동하는 함수
   const navigateToPlayer = (contentId: string) => {
-    navigation.navigate('Player', { id: contentId });
+    navigation.navigate(routePages.contentDetail, { id: contentId });
   };
 
   return (
