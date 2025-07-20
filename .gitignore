@@ -100,3 +100,7 @@ jspm_packages/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Claude Code configuration files
+.mcp.json
+CLAUDE.md
