@@ -1,7 +1,8 @@
-import { View, Text, Button, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { Text, StyleSheet, View } from 'react-native';
 import { ScreenRouteProp } from '../../../shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
+import { BasePage } from '../../components/page';
+import { BackButtonAppBar } from '../../components/app-bar';
 
 interface ContentDetailProps {
   route: ScreenRouteProp<typeof routePages.contentDetail>;
@@ -9,26 +10,23 @@ interface ContentDetailProps {
 
 export default function ContentDetailPage({ route }: ContentDetailProps) {
   const { id } = route.params;
-  const navigation = useNavigation(); // 타입 지정 제거
-
-  const goBack = () => {
-    navigation.goBack();
-  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Player Screen</Text>
-      <Text style={styles.contentId}>Content ID: {id}</Text>
+    <BasePage>
+      <BackButtonAppBar title="콘텐츠 상세" />
+      
+      <View style={styles.content}>
+        <Text style={styles.title}>Player Screen</Text>
+        <Text style={styles.contentId}>Content ID: {id}</Text>
 
-      <Button title="뒤로 가기" onPress={goBack} />
-
-      {/* 여기에 실제 플레이어 컴포넌트가 들어갈 예정 */}
-    </View>
+        {/* 여기에 실제 플레이어 컴포넌트가 들어갈 예정 */}
+      </View>
+    </BasePage>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -38,9 +36,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
   },
   contentId: {
     fontSize: 16,
     marginBottom: 40,
+    textAlign: 'center',
   },
 });
