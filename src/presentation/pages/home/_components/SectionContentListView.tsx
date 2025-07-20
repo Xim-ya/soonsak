@@ -13,6 +13,7 @@ import { routePages } from '@/shared/navigation/constant/routePages';
 interface SectionContentListViewProps {
   title: string | null;
   contents: BaseContentModel[] | null;
+  onContentTapped: (content: BaseContentModel) => void;
 }
 
 /**
@@ -21,12 +22,20 @@ interface SectionContentListViewProps {
  * @param contents 콘텐츠 리스트
  */
 
-function SectionContentListView({ title, contents }: SectionContentListViewProps) {
+function SectionContentListView({
+  title,
+  contents,
+  onContentTapped: onItemPress,
+}: SectionContentListViewProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleContentPress = (content: BaseContentModel) => {
-    // 콘텐츠를 클릭했을 때 Player 화면으로 이동
-    navigation.navigate(routePages.contentDetail, { id: content.id.toString() });
+    if (onItemPress) {
+      onItemPress(content);
+    } else {
+      // 콘텐츠를 클릭했을 때 Player 화면으로 이동
+      navigation.navigate(routePages.contentDetail, { id: content.id.toString() });
+    }
   };
 
   return (
