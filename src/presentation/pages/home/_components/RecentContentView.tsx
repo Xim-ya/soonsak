@@ -10,7 +10,7 @@ import { routePages } from '@/shared/navigation/constant/routePages';
 
 export function RecentContentView() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['recentContent'],
     queryFn: async (): Promise<BaseContentModel[]> => {

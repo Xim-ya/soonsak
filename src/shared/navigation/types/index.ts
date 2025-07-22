@@ -29,7 +29,7 @@ export type RouteNames = (typeof routePages)[keyof typeof routePages];
  */
 export type RootStackParamList = {
   [routePages.mainTabs]: undefined; // 탭 네비게이터 - 파라미터 없음
-  [routePages.contentDetail]: { id: string }; // 콘텐츠 상세 - id 파라미터 필수
+  [routePages.contentDetail]: { id: number }; // 콘텐츠 상세 - id 파라미터 필수
 };
 
 /**

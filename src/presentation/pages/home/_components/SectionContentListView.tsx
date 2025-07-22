@@ -34,7 +34,7 @@ function SectionContentListView({
       onItemPress(content);
     } else {
       // 콘텐츠를 클릭했을 때 Player 화면으로 이동
-      navigation.navigate(routePages.contentDetail, { id: content.id.toString() });
+      navigation.navigate(routePages.contentDetail, { id: content.id });
     }
   };
 
