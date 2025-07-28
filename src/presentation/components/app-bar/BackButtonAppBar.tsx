@@ -36,6 +36,16 @@ interface BackButtonAppBarProps {
   backIconColor?: string;
   /** 제목 중앙 정렬 여부 */
   centerAligned?: boolean;
+  /** 앱바 포지션 타입 (absolute를 위한 스택 포지션 지원) */
+  position?: 'relative' | 'absolute';
+  /** absolute 포지션일 때의 top 값 */
+  top?: number;
+  /** absolute 포지션일 때의 left 값 */
+  left?: number;
+  /** absolute 포지션일 때의 right 값 */
+  right?: number;
+  /** absolute 포지션일 때의 z-index 값 */
+  zIndex?: number;
 }
 
 /**
@@ -51,6 +61,11 @@ export const BackButtonAppBar = React.memo<BackButtonAppBarProps>(
     titleColor = colors.white,
     backIconColor = colors.white,
     centerAligned = false,
+    position = 'relative',
+    top,
+    left,
+    right,
+    zIndex,
   }) => {
     const navigation = useNavigation();
 
@@ -66,14 +81,21 @@ export const BackButtonAppBar = React.memo<BackButtonAppBarProps>(
     // SVG 색상 동적 변경 (메모이제이션)
     const svgWithColor = useMemo(
       () => backArrowSvg.replace('ICON_COLOR', backIconColor),
-      [backIconColor]
+      [backIconColor],
     );
 
     // 액션 버튼 존재 여부 확인
     const hasActions = actions && actions.length > 0;
 
     return (
-      <Container backgroundColor={backgroundColor}>
+      <Container
+        backgroundColor={backgroundColor}
+        position={position as 'relative' | 'absolute'}
+        top={top}
+        left={left}
+        right={right}
+        zIndex={zIndex}
+      >
         {/* 뒤로가기 버튼 */}
         {showBackButton && (
           <BackButton
@@ -109,12 +131,25 @@ export const BackButtonAppBar = React.memo<BackButtonAppBarProps>(
 );
 
 /* Styled Components */
-const Container = styled.View<{ backgroundColor: string }>(({ backgroundColor }) => ({
+const Container = styled.View<{
+  backgroundColor: string;
+  position: 'relative' | 'absolute';
+  top?: number | undefined;
+  left?: number | undefined;
+  right?: number | undefined;
+  zIndex?: number | undefined;
+}>(({ backgroundColor, position, top, left, right, zIndex }) => ({
   height: APPBAR_HEIGHT,
   flexDirection: 'row',
   alignItems: 'center',
   backgroundColor,
-  position: 'relative',
+  position,
+  ...(position === 'absolute' && {
+    top,
+    left,
+    right,
+    zIndex: zIndex || 999,
+  }),
 }));
 
 const BackButton = styled(TouchableOpacity)({
