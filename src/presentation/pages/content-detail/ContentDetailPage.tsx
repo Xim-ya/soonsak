@@ -1,8 +1,11 @@
 import { Text, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenRouteProp } from '../../../shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { BasePage } from '../../components/page';
 import { BackButtonAppBar } from '../../components/app-bar';
+import { Header } from './_components';
+import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 
 interface ContentDetailProps {
   route: ScreenRouteProp<typeof routePages.contentDetail>;
@@ -10,11 +13,20 @@ interface ContentDetailProps {
 
 export default function ContentDetailPage({ route }: ContentDetailProps) {
   const { id } = route.params;
+  const insets = useSafeAreaInsets();
 
   return (
-    <BasePage>
-      <BackButtonAppBar title="콘텐츠 상세" />
-      
+    <BasePage useSafeArea={false}>
+      <BackButtonAppBar
+        title="콘텐츠 상세"
+        position="absolute"
+        top={insets.top}
+        left={0}
+        right={0}
+        zIndex={999}
+      />
+      <Header />
+
       <View style={styles.content}>
         <Text style={styles.title}>Player Screen</Text>
         <Text style={styles.contentId}>Content ID: {id}</Text>
