@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { View } from 'react-native';
 
 /**
  * 컴포넌트 간 간격을 주기 위한 View (== Flutter Gap Widget)

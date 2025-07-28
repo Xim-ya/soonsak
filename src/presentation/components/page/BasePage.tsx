@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import colors from '@/shared/styles/colors';
 
 interface BasePageProps {
   children: React.ReactNode;
@@ -57,10 +58,10 @@ export const BasePage = React.memo<BasePageProps>(
     safeAreaLeft = true,
     safeAreaRight = true,
     // 배경색 기본값
-    backgroundColor = '#FFFFFF',
+    backgroundColor = colors.black,
     unsafeAreaColor,
     // 상태바 기본값
-    statusBarStyle = 'dark-content',
+    statusBarStyle = 'light-content',
     statusBarBackgroundColor,
     statusBarHidden = false,
     // 키보드 기본값
