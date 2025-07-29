@@ -1,9 +1,13 @@
 /* 영화, 시리즈 (드라마) 유형 enum */
 
-enum ContentType {
-  movie,
-  series,
-  unknown,
+export type ContentType = 'movie' | 'series' | 'unknown';
+
+interface ContentTypeConfig {
+  label: string;
 }
 
-export { ContentType };
+export const contentTypeConfigs: Record<ContentType, ContentTypeConfig> = {
+  movie: { label: '영화' },
+  series: { label: '시리즈' },
+  unknown: { label: '콘텐츠' },
+};

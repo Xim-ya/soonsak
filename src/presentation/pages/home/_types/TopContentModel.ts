@@ -15,7 +15,7 @@ const topContentMock: TopContentModel[] = [
     posterPath: '',
     id: 496243,
     title: '기생충',
-    type: ContentType.movie,
+    type: 'movie',
   },
   {
     pointDescription: '질문을 던지는 드라마',
@@ -24,7 +24,7 @@ const topContentMock: TopContentModel[] = [
     posterPath: '',
     id: 95396,
     title: '세브란스 단절',
-    type: ContentType.series,
+    type: 'movie',
   },
 ];
 

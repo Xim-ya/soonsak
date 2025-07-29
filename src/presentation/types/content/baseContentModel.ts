@@ -13,7 +13,7 @@ export namespace BaseContentModel {
     return {
       id: dto.id,
       title: dto.title ?? '제목 없음',
-      type: dto.contentType ?? ContentType.unknown,
+      type: dto.contentType ?? 'unknown',
       posterPath: dto.posterPath ?? '없데',
     };
   }
