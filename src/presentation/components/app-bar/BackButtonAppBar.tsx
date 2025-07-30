@@ -51,7 +51,7 @@ interface BackButtonAppBarProps {
 /**
  * 뒤로가기 버튼이 있는 공통 앱바 컴포넌트
  */
-export const BackButtonAppBar = React.memo<BackButtonAppBarProps>(
+const BackButtonAppBar = React.memo<BackButtonAppBarProps>(
   ({
     title,
     showBackButton = true,
@@ -203,3 +203,5 @@ const ActionItem = styled.View({
 });
 
 BackButtonAppBar.displayName = 'BackButtonAppBar';
+
+export { BackButtonAppBar, APPBAR_HEIGHT };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableHighlight } from 'react-native';
+import { TouchableHighlight, Image } from 'react-native';
 import styled from '@emotion/native';
 import { DarkedLinearShadow, LinearAlign } from '../../../components/shadow/DarkedLinearShadow';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
@@ -15,29 +15,46 @@ export const Header = React.memo(() => {
   };
 
   return (
-    <HeaderContainer>
-      <BackDropImage
-        source={{
-          uri: formatter.prefixTmdbImgUrl('5C3RriLKkIAQtQMx85JLtu4rVI2.jpg', {
-            size: TmdbImageSize.original,
-          }),
-        }}
-      />
+    <HeaderContainer pointerEvents="box-none">
+      <ImageWrapper pointerEvents="none">
+        <Image
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+          }}
+          source={{
+            uri: formatter.prefixTmdbImgUrl('5C3RriLKkIAQtQMx85JLtu4rVI2.jpg', {
+              size: TmdbImageSize.w780,
+            }),
+          }}
+        />
+      </ImageWrapper>
 
       {/* 상단 그라데이션 그림자 */}
-      <DarkedLinearShadow height={140} align={LinearAlign.topBottom} setPositionLayout={true} />
+      <GradientWrapper pointerEvents="none">
+        <DarkedLinearShadow height={140} align={LinearAlign.topBottom} />
+      </GradientWrapper>
 
       {/* 하단 그라데이션 그림자 */}
-      <DarkedLinearShadow height={88} align={LinearAlign.bottomTop} setPositionLayout={true} />
+      <GradientWrapper pointerEvents="none">
+        <DarkedLinearShadow height={88} align={LinearAlign.bottomTop} />
+      </GradientWrapper>
 
       {/* 재생 버튼 */}
-      <PlayButtonContainer>
+      <PlayButtonContainer pointerEvents="box-none">
         <TouchableHighlight
           onPress={handlePlayPress}
           underlayColor="rgba(255, 255, 255, 0.02)"
           style={{
             borderRadius: 60,
           }}
+          delayPressIn={100}
         >
           <PlayButtonSvg width={120} height={120} />
         </TouchableHighlight>
@@ -54,21 +71,29 @@ const HeaderContainer = styled.View({
   overflow: 'hidden',
 });
 
-const BackDropImage = styled.Image({
+const ImageWrapper = styled.View({
   position: 'absolute',
   top: 0,
   left: 0,
   right: 0,
   bottom: 0,
-  width: '100%',
-  height: '100%',
+});
+
+const GradientWrapper = styled.View({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
 });
 
 const PlayButtonContainer = styled.View({
   position: 'absolute',
   top: '50%',
   left: '50%',
-  transform: [{ translateX: -60 }, { translateY: -30 }],
+  width: 120,
+  height: 120,
+  transform: [{ translateX: -60 }, { translateY: -60 }],
   zIndex: 10,
 });
 
