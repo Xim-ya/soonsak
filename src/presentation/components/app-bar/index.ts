@@ -1,1 +1,1 @@
-export { BackButtonAppBar } from './BackButtonAppBar';
+export { BackButtonAppBar, APPBAR_HEIGHT } from './BackButtonAppBar';

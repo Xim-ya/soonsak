@@ -3,7 +3,7 @@ import { Tabs, MaterialTabBar } from 'react-native-collapsible-tab-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from '@emotion/native';
 import { BasePage } from '../../components/page';
-import { BackButtonAppBar } from '../../components/app-bar';
+import { BackButtonAppBar, APPBAR_HEIGHT } from '../../components/app-bar';
 import { Header, ContentTab, OriginalInfoTab } from './_components';
 import ContentInfoView from './_components/ContentInfoView';
 import colors from '@/shared/styles/colors';
@@ -48,11 +48,13 @@ export default function ContentDetailPage() {
       dismissKeyboardOnTap={false}
     >
       <BackButtonAppBar position="absolute" top={insets.top} left={0} right={0} zIndex={999} />
-      <TabsContainer>
+      <TabsContainer paddingTop={insets.top}>
         <Tabs.Container
           renderHeader={HeaderComponent}
           renderTabBar={CustomTabBar}
           allowHeaderOverscroll={true}
+          headerHeight={320 + 160} // Header aspectRatio 높이 + ContentInfoView 예상 높이
+          tabBarHeight={68}
         >
           <Tabs.Tab name="content" label="콘텐츠">
             <Tabs.ScrollView style={{ flex: 1 }}>
@@ -71,10 +73,11 @@ export default function ContentDetailPage() {
 }
 
 /* Styled Components */
-const TabsContainer = styled.View({
+const TabsContainer = styled.View<{ paddingTop: number }>(({ paddingTop }) => ({
   flex: 1,
   backgroundColor: colors.black,
-});
+  paddingTop,
+}));
 
 const HeaderContainer = styled.View({
   backgroundColor: colors.black,

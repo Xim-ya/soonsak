@@ -18,7 +18,6 @@ export const Header = React.memo(() => {
     <HeaderContainer pointerEvents="box-none">
       <ImageWrapper pointerEvents="none">
         <Image
-          pointerEvents="none"
           style={{
             position: 'absolute',
             top: 0,
