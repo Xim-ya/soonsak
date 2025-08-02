@@ -8,6 +8,7 @@ import { Header, ContentTab, OriginalInfoTab } from './_components';
 import ContentInfoView from './_components/ContentInfoView';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
+import { DarkedLinearShadow, LinearAlign } from '../../components/shadow/DarkedLinearShadow';
 import {
   useAnimatedReaction,
   runOnJS,
@@ -152,8 +153,30 @@ const AnimatedBackButtonAppBar = React.memo(
 
 AnimatedBackButtonAppBar.displayName = 'AnimatedBackButtonAppBar';
 
-// 상단 SafeArea 배경 컴포넌트
-const AnimatedSafeAreaBackground = React.memo(
+// 고정된 상단 그라데이션 그림자 컴포넌트
+const FixedTopGradient = React.memo(({ insets }: { insets: any }) => {
+  const containerStyle = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      top: 0, // SafeArea 포함하여 최상단부터 시작
+      left: 0,
+      right: 0,
+      height: insets.top + 140, // SafeArea 높이 + 그라데이션 높이
+      zIndex: 997, // AppBar보다 낮은 z-index
+      pointerEvents: 'none' as const,
+    }),
+    [insets.top],
+  );
+
+  return (
+    <Animated.View style={containerStyle}>
+      <DarkedLinearShadow height={insets.top + 140} align={LinearAlign.topBottom} />
+    </Animated.View>
+  );
+});
+
+// 상단 SafeArea + AppBar 통합 배경 컴포넌트
+const AnimatedTopBackground = React.memo(
   ({ insets, opacity }: { insets: any; opacity: any }) => {
     const animatedStyle = useAnimatedStyle(() => {
       'worklet';
@@ -169,8 +192,8 @@ const AnimatedSafeAreaBackground = React.memo(
         top: 0,
         left: 0,
         right: 0,
-        height: insets.top,
-        zIndex: 998, // AppBar보다 낮은 z-index
+        height: insets.top + 48, // SafeArea 높이 + AppBar 높이
+        zIndex: 998, // 그라데이션보다 높고, BackButtonAppBar보다 낮음
       }),
       [insets.top],
     );
@@ -179,7 +202,8 @@ const AnimatedSafeAreaBackground = React.memo(
   },
 );
 
-AnimatedSafeAreaBackground.displayName = 'AnimatedSafeAreaBackground';
+FixedTopGradient.displayName = 'FixedTopGradient';
+AnimatedTopBackground.displayName = 'AnimatedTopBackground';
 
 export default function ContentDetailPage() {
   const insets = useSafeAreaInsets();
@@ -207,7 +231,8 @@ export default function ContentDetailPage() {
       automaticallyAdjustKeyboardInsets={false}
       dismissKeyboardOnTap={false}
     >
-      <AnimatedSafeAreaBackground insets={insets} opacity={appBarOpacity} />
+      <FixedTopGradient insets={insets} />
+      <AnimatedTopBackground insets={insets} opacity={appBarOpacity} />
       <AnimatedBackButtonAppBar insets={insets} opacity={appBarOpacity} />
       <TabsContainer paddingTop={insets.top}>
         <Tabs.Container

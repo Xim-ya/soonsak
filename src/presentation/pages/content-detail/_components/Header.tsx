@@ -35,9 +35,9 @@ export const Header = React.memo(() => {
         />
       </ImageWrapper>
 
-      {/* 상단 그라데이션 그림자 */}
+      {/* 하단 그라데이션 그림자 */}
       <GradientWrapper pointerEvents="none">
-        <DarkedLinearShadow height={140} align={LinearAlign.topBottom} />
+        <DarkedLinearShadow height={88} align={LinearAlign.topBottom} />
       </GradientWrapper>
 
       {/* 하단 그라데이션 그림자 */}
