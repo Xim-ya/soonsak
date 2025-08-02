@@ -176,31 +176,29 @@ const FixedTopGradient = React.memo(({ insets }: { insets: any }) => {
 });
 
 // 상단 SafeArea + AppBar 통합 배경 컴포넌트
-const AnimatedTopBackground = React.memo(
-  ({ insets, opacity }: { insets: any; opacity: any }) => {
-    const animatedStyle = useAnimatedStyle(() => {
-      'worklet';
-      const opacityValue = opacity.value;
-      return {
-        backgroundColor: `rgba(0,0,0,${opacityValue})`,
-      };
-    }, []);
+const AnimatedTopBackground = React.memo(({ insets, opacity }: { insets: any; opacity: any }) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    const opacityValue = opacity.value;
+    return {
+      backgroundColor: `rgba(0,0,0,${opacityValue})`,
+    };
+  }, []);
 
-    const containerStyle = useMemo(
-      () => ({
-        position: 'absolute' as const,
-        top: 0,
-        left: 0,
-        right: 0,
-        height: insets.top + 48, // SafeArea 높이 + AppBar 높이
-        zIndex: 998, // 그라데이션보다 높고, BackButtonAppBar보다 낮음
-      }),
-      [insets.top],
-    );
+  const containerStyle = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      height: insets.top + 48, // SafeArea 높이 + AppBar 높이
+      zIndex: 998, // 그라데이션보다 높고, BackButtonAppBar보다 낮음
+    }),
+    [insets.top],
+  );
 
-    return <Animated.View style={[containerStyle, animatedStyle]} />;
-  },
-);
+  return <Animated.View style={[containerStyle, animatedStyle]} />;
+});
 
 FixedTopGradient.displayName = 'FixedTopGradient';
 AnimatedTopBackground.displayName = 'AnimatedTopBackground';
@@ -241,6 +239,7 @@ export default function ContentDetailPage() {
           allowHeaderOverscroll={true}
           headerHeight={480} // Header aspectRatio 높이 + ContentInfoView 예상 높이
           tabBarHeight={68}
+          minHeaderHeight={48} // 앱바 높이만큼 최소 헤더 높이 설정
         >
           <Tabs.Tab name="content" label="콘텐츠">
             <ContentTabWithLogging onScrollChange={handleScrollChange} />
