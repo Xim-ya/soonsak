@@ -7,7 +7,14 @@ import { Header, ContentTab, OriginalInfoTab } from './_components';
 import ContentInfoView from './_components/ContentInfoView';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
-import { useAnimatedReaction, runOnJS } from 'react-native-reanimated';
+import {
+  useAnimatedReaction,
+  runOnJS,
+  useSharedValue,
+  withTiming,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useRef } from 'react';
 
 const HeaderComponent = () => (
@@ -39,7 +46,11 @@ const CustomTabBar = (props: any) => (
 );
 
 // 스크롤 로그를 출력하는 탭 컴포넌트
-const ContentTabWithLogging = () => {
+const ContentTabWithLogging = ({
+  onScrollChange,
+}: {
+  onScrollChange: (offset: number) => void;
+}) => {
   const scrollY = useCurrentTabScrollY();
   const lastLoggedOffset = useRef(0);
 
@@ -50,6 +61,7 @@ const ContentTabWithLogging = () => {
       console.log(`[ContentDetailPage] 스크롤 오프셋: ${offset.toFixed(2)}`);
       lastLoggedOffset.current = offset;
     }
+    onScrollChange(offset);
   };
 
   // 스크롤 변화 감지
@@ -57,7 +69,7 @@ const ContentTabWithLogging = () => {
     () => scrollY.value,
     (currentValue) => {
       runOnJS(logScrollOffset)(currentValue);
-    }
+    },
   );
 
   return (
@@ -67,7 +79,11 @@ const ContentTabWithLogging = () => {
   );
 };
 
-const OriginalInfoTabWithLogging = () => {
+const OriginalInfoTabWithLogging = ({
+  onScrollChange,
+}: {
+  onScrollChange: (offset: number) => void;
+}) => {
   const scrollY = useCurrentTabScrollY();
   const lastLoggedOffset = useRef(0);
 
@@ -78,6 +94,7 @@ const OriginalInfoTabWithLogging = () => {
       console.log(`[ContentDetailPage] 스크롤 오프셋: ${offset.toFixed(2)}`);
       lastLoggedOffset.current = offset;
     }
+    onScrollChange(offset);
   };
 
   // 스크롤 변화 감지
@@ -85,7 +102,7 @@ const OriginalInfoTabWithLogging = () => {
     () => scrollY.value,
     (currentValue) => {
       runOnJS(logScrollOffset)(currentValue);
-    }
+    },
   );
 
   return (
@@ -95,17 +112,50 @@ const OriginalInfoTabWithLogging = () => {
   );
 };
 
-export default function ContentDetailPage() {
-  const insets = useSafeAreaInsets();
+const AnimatedBackButtonAppBar = ({ insets, opacity }: { insets: any; opacity: any }) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: `rgba(0, 0, 0, ${opacity.value})`,
+    };
+  });
 
   return (
-    <BasePage 
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          top: insets.top,
+          left: 0,
+          right: 0,
+          zIndex: 999,
+        },
+        animatedStyle,
+      ]}
+    >
+      <BackButtonAppBar position="relative" backgroundColor="transparent" />
+    </Animated.View>
+  );
+};
+
+export default function ContentDetailPage() {
+  const insets = useSafeAreaInsets();
+  const appBarOpacity = useSharedValue(0);
+
+  // 스크롤 오프셋 변화 처리
+  const handleScrollChange = (offset: number) => {
+    // y offset이 80 이상이면 opacity 1.0, 미만이면 0.0
+    const targetOpacity = offset >= 269.0 ? 1.0 : 0.0;
+    appBarOpacity.value = withTiming(targetOpacity, { duration: 400 });
+  };
+
+  return (
+    <BasePage
       useSafeArea={false}
       touchableWithoutFeedback={false}
       automaticallyAdjustKeyboardInsets={false}
       dismissKeyboardOnTap={false}
     >
-      <BackButtonAppBar position="absolute" top={insets.top} left={0} right={0} zIndex={999} />
+      <AnimatedBackButtonAppBar insets={insets} opacity={appBarOpacity} />
       <TabsContainer paddingTop={insets.top}>
         <Tabs.Container
           renderHeader={HeaderComponent}
@@ -115,10 +165,10 @@ export default function ContentDetailPage() {
           tabBarHeight={68}
         >
           <Tabs.Tab name="content" label="콘텐츠">
-            <ContentTabWithLogging />
+            <ContentTabWithLogging onScrollChange={handleScrollChange} />
           </Tabs.Tab>
           <Tabs.Tab name="originalInfo" label="원작 정보">
-            <OriginalInfoTabWithLogging />
+            <OriginalInfoTabWithLogging onScrollChange={handleScrollChange} />
           </Tabs.Tab>
         </Tabs.Container>
       </TabsContainer>
