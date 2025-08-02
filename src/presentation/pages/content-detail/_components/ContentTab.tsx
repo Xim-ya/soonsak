@@ -10,34 +10,35 @@ import textStyles from '@/shared/styles/textStyles';
 export const ContentTab = React.memo(() => {
   return (
     <Container>
-        <SectionTitle>콘텐츠 설명</SectionTitle>
-        <Description>
-          크리스토퍼 놀란 감독의 SF 대작으로, 근미래 지구의 환경 문제로 인해 우주로 떠나는 탐험대의 이야기를 그린 영화입니다. 
-          과학적 고증과 감동적인 스토리가 어우러진 작품으로 많은 관객들에게 사랑받았습니다.
-        </Description>
-        
-        <SectionTitle>주요 캐릭터</SectionTitle>
-        <CharacterItem>
-          <CharacterName>쿠퍼</CharacterName>
-          <CharacterDescription>전직 NASA 조종사이자 농부</CharacterDescription>
-        </CharacterItem>
-        <CharacterItem>
-          <CharacterName>머프</CharacterName>
-          <CharacterDescription>쿠퍼의 딸, 천재적인 물리학자</CharacterDescription>
-        </CharacterItem>
-        <CharacterItem>
-          <CharacterName>브랜드 박사</CharacterName>
-          <CharacterDescription>NASA 과학자</CharacterDescription>
-        </CharacterItem>
-        
-        <SectionTitle>키워드</SectionTitle>
-        <KeywordContainer>
-          <Keyword>시간여행</Keyword>
-          <Keyword>우주탐험</Keyword>
-          <Keyword>가족사랑</Keyword>
-          <Keyword>과학</Keyword>
-        </KeywordContainer>
-      </Container>
+      <SectionTitle>콘텐츠 설명</SectionTitle>
+      <Description>
+        크리스토퍼 놀란 감독의 SF 대작으로, 근미래 지구의 환경 문제로 인해 우주로 떠나는 탐험대의
+        이야기를 그린 영화입니다. 과학적 고증과 감동적인 스토리가 어우러진 작품으로 많은 관객들에게
+        사랑받았습니다.
+      </Description>
+
+      <SectionTitle>주요 캐릭터</SectionTitle>
+      <CharacterItem>
+        <CharacterName>쿠퍼</CharacterName>
+        <CharacterDescription>전직 NASA 조종사이자 농부</CharacterDescription>
+      </CharacterItem>
+      <CharacterItem>
+        <CharacterName>머프</CharacterName>
+        <CharacterDescription>쿠퍼의 딸, 천재적인 물리학자</CharacterDescription>
+      </CharacterItem>
+      <CharacterItem>
+        <CharacterName>브랜드 박사</CharacterName>
+        <CharacterDescription>NASA 과학자</CharacterDescription>
+      </CharacterItem>
+
+      <SectionTitle>키워드</SectionTitle>
+      <KeywordContainer>
+        <Keyword>시간여행</Keyword>
+        <Keyword>우주탐험</Keyword>
+        <Keyword>가족사랑</Keyword>
+        <Keyword>과학</Keyword>
+      </KeywordContainer>
+    </Container>
   );
 });
 
@@ -87,7 +88,7 @@ const KeywordContainer = styled.View({
 });
 
 const Keyword = styled.Text({
-  ...textStyles.caption1,
+  ...textStyles.body3,
   color: colors.main,
   backgroundColor: colors.gray06,
   paddingHorizontal: 12,

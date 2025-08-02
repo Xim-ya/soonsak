@@ -34,7 +34,7 @@ interface BasePageProps {
   dismissKeyboardOnTap?: boolean;
   // 스크롤 관련
   scrollable?: boolean;
-  scrollViewProps?: any;
+  scrollViewProps?: React.ComponentProps<typeof ScrollView>;
   // 터치 관련
   touchableWithoutFeedback?: boolean;
   // 라이프사이클 콜백
