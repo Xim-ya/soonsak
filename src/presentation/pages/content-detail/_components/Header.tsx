@@ -123,6 +123,7 @@ ContentInfo.displayName = 'ContentInfo';
 /* Styled Components */
 const HeaderContainer = styled.View({
   backgroundColor: colors.black,
+  pointerEvents: 'box-none' as const, // 스크롤 제스처 허용 (터치 가능한 요소가 있는 경우)
 });
 
 const HeaderBackgroundContainer = styled.View({
@@ -130,6 +131,7 @@ const HeaderBackgroundContainer = styled.View({
   width: '100%',
   aspectRatio: 375 / 320,
   overflow: 'hidden',
+  pointerEvents: 'box-none' as const, // 재생 버튼 터치는 허용하면서 스크롤도 가능하게
 });
 
 const ImageWrapper = styled.View({
@@ -164,6 +166,7 @@ const ContentInfoContainer = styled.View({
   justifyContent: 'center',
   alignItems: 'center',
   paddingVertical: 20,
+  pointerEvents: 'box-none' as const, // 스크롤 제스처 통과 허용
 });
 
 const ContentTitle = styled.Text({
@@ -196,6 +199,7 @@ const BackgroundImage = styled.Image({
   bottom: 0,
   width: '100%',
   height: '100%',
+  pointerEvents: 'none' as const, // iOS에서 이미지가 터치 대상이 되어 스크롤을 방해하는 것 방지
 });
 
 const PlayButton = styled(TouchableHighlight)({

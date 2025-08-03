@@ -11,7 +11,7 @@ import { DarkedLinearShadow, LinearAlign } from '../../components/shadow/DarkedL
 import { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
 import { useCallback } from 'react';
-import { TabBarStyleContainer } from './_components/TabBar';
+import { TabBar } from './_components/TabBar';
 import { ContentTabView } from './_components/ContentTabView';
 import { OriginalTabView } from './_components/OriginalTabView';
 import { AnimatedAppBAr } from './_components/AnimatedAppBar';
@@ -58,16 +58,16 @@ export default function ContentDetailPage() {
       <TabsContainer paddingTop={insets.top}>
         <Tabs.Container
           renderHeader={() => <Header />}
-          renderTabBar={(props) => <TabBarStyleContainer {...props} />}
+          renderTabBar={(props) => <TabBar {...props} />}
           allowHeaderOverscroll={true}
           headerHeight={480} // Header aspectRatio 높이 + ContentInfoView 예상 높이
-          tabBarHeight={68}
+          tabBarHeight={48}
           minHeaderHeight={48} // 앱바 높이만큼 최소 헤더 높이 설정
         >
-          <Tabs.Tab name="content" label="콘텐츠">
+          <Tabs.Tab name="콘텐츠 정보" label="content">
             <ContentTabView onScrollChange={handleScrollChange} />
           </Tabs.Tab>
-          <Tabs.Tab name="originalInfo" label="원작 정보">
+          <Tabs.Tab name="원작 정보" label="originalInfo ">
             <OriginalTabView onScrollChange={handleScrollChange} />
           </Tabs.Tab>
         </Tabs.Container>
