@@ -64,10 +64,10 @@ export default function ContentDetailPage() {
           tabBarHeight={48}
           minHeaderHeight={48} // 앱바 높이만큼 최소 헤더 높이 설정
         >
-          <Tabs.Tab name="콘텐츠 정보" label="content">
+          <Tabs.Tab name="영상" label="videoInfo">
             <ContentTabView onScrollChange={handleScrollChange} />
           </Tabs.Tab>
-          <Tabs.Tab name="원작 정보" label="originalInfo ">
+          <Tabs.Tab name="원작" label="originalInfo ">
             <OriginalTabView onScrollChange={handleScrollChange} />
           </Tabs.Tab>
         </Tabs.Container>
