@@ -12,7 +12,7 @@ import { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reani
 import Animated from 'react-native-reanimated';
 import { useCallback } from 'react';
 import { TabBar } from './_components/TabBar';
-import { ContentTabView } from './_components/ContentTabView';
+import { ContentTabView } from './_components/VideoTabView';
 import { OriginalTabView } from './_components/OriginalTabView';
 import { AnimatedAppBAr } from './_components/AnimatedAppBar';
 

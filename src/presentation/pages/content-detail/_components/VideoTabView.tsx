@@ -1,21 +1,24 @@
 import { Tabs } from 'react-native-collapsible-tab-view';
-import { ContentTab } from './ContentTab';
+import { ContentTab } from './OriginContentTabView';
 import React from 'react';
 import { useTabScrollListener } from '../_hooks/useTabScrollListener';
+import { VideoMetricsView } from './VideoMetricsView';
+import Gap from '@/presentation/components/view/Gap';
 
 // 메모이제이션된 탭 컴포넌트들
-const ContentTabView = React.memo(
+const VideoTabView = React.memo(
   ({ onScrollChange }: { onScrollChange: (offset: number) => void }) => {
     useTabScrollListener(onScrollChange);
 
     return (
       <Tabs.ScrollView style={{ flex: 1 }}>
-        <ContentTab />
+        {/* 조회수 , 좋아요, 업로드일 */}
+        <VideoMetricsView />
       </Tabs.ScrollView>
     );
   },
 );
 
-ContentTabView.displayName = 'ContentTabWithLogging';
+VideoTabView.displayName = 'ContentTabWithLogging';
 
-export { ContentTabView };
+export { VideoTabView as ContentTabView };

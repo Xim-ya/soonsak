@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableHighlight } from 'react-native';
+import { TouchableHighlight, Image } from 'react-native';
 import styled from '@emotion/native';
 import { DarkedLinearShadow, LinearAlign } from '../../../components/shadow/DarkedLinearShadow';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
@@ -129,7 +129,7 @@ const HeaderContainer = styled.View({
 const HeaderBackgroundContainer = styled.View({
   position: 'relative',
   width: '100%',
-  aspectRatio: 375 / 320,
+  aspectRatio: 375 / 240,
   overflow: 'hidden',
   pointerEvents: 'box-none' as const, // 재생 버튼 터치는 허용하면서 스크롤도 가능하게
 });
@@ -199,7 +199,6 @@ const BackgroundImage = styled.Image({
   bottom: 0,
   width: '100%',
   height: '100%',
-  pointerEvents: 'none' as const, // iOS에서 이미지가 터치 대상이 되어 스크롤을 방해하는 것 방지
 });
 
 const PlayButton = styled(TouchableHighlight)({
