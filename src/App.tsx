@@ -6,6 +6,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import StackNavigator from './shared/navigation/navigator/StackNavigator';
 import '@/shared/exntensions/arrayExtension';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffect } from 'react';
+import { AppSize } from '@/shared/utils/appSize';
 
 // React Query Client 생성 (컴포넌트 밖에서 생성)
 const queryClient = new QueryClient({
@@ -18,6 +21,31 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// AppSize 초기화를 위한 내부 컴포넌트
+function AppContent() {
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    // AppSize 초기화
+    AppSize.init(insets);
+    console.log('AppSize 초기화', AppSize);
+
+    // 앱 종료 시 정리
+    return () => {
+      AppSize.destroy();
+    };
+  }, [insets]);
+
+  return (
+    <>
+      <StatusBar style="light" />
+      <NavigationContainer>
+        <StackNavigator />
+      </NavigationContainer>
+    </>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -33,13 +61,12 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="light" />
-        <NavigationContainer>
-          <StackNavigator />
-        </NavigationContainer>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <QueryClientProvider client={queryClient}>
+          <AppContent />
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
