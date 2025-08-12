@@ -13,13 +13,23 @@ class SizeConfig {
 
   statusBarHeight: number = 0; // Safe Area 상단 Inset
   bottomInset: number = 0; // Safe Area 하단 Inset
-  screenWidth: number = 0; // 디바이스 넓이
-  screenHeight: number = 0; // 디바이스 높이
+  screenWidth: number; // 디바이스 넓이
+  screenHeight: number; // 디바이스 높이
   responsiveBottomInset: number = 0; // 반응형 하단 Safe Area 하단 Inset
   isTablet: boolean = false;
 
   private constructor() {
-    // private 생성자로 외부에서 인스턴스 생성 방지
+    // 생성자에서 즉시 기본값으로 초기화
+    const { width, height } = Dimensions.get('window');
+    this.isTablet = width > 600;
+    this.screenWidth = this.isTablet ? 375 : width;
+    this.screenHeight = this.isTablet ? 812 : height;
+    
+    // Dimensions 변경 감지 리스너 추가
+    this.dimensionsSubscription = Dimensions.addEventListener(
+      'change',
+      this.handleDimensionsChange,
+    );
   }
 
   // 싱글톤 인스턴스 접근
@@ -39,11 +49,8 @@ class SizeConfig {
     return (givenWidth / 375) * this.screenWidth;
   }
 
-  // 초기화 구문 (SafeAreaInsets를 파라미터로 받음)
-  init(safeAreaInsets?: { top: number; bottom: number }): void {
-    const { width, height } = Dimensions.get('window');
-    this.isTablet = width > 600;
-
+  // SafeArea 업데이트 메서드 (SafeAreaInsets를 받아서 업데이트)
+  updateSafeArea(safeAreaInsets?: { top: number; bottom: number }): void {
     // 상태바 높이 설정
     this.statusBarHeight = Platform.select({
       ios: safeAreaInsets?.top || 0,
@@ -54,18 +61,13 @@ class SizeConfig {
     // 하단 인셋 설정
     this.bottomInset = safeAreaInsets?.bottom || 0;
 
-    // 화면 크기 설정 (태블릿의 경우 고정 크기 사용)
-    this.screenWidth = this.isTablet ? 375 : width;
-    this.screenHeight = this.isTablet ? 812 : height;
-
     // 반응형 하단 인셋 설정
     this.responsiveBottomInset = this.bottomInset === 0 ? 16 : this.bottomInset;
-
-    // Dimensions 변경 감지 리스너 추가
-    this.dimensionsSubscription = Dimensions.addEventListener(
-      'change',
-      this.handleDimensionsChange,
-    );
+  }
+  
+  // 기존 init 메서드는 하위 호환성을 위해 유지
+  init(safeAreaInsets?: { top: number; bottom: number }): void {
+    this.updateSafeArea(safeAreaInsets);
   }
 
   // Dimensions 변경 핸들러

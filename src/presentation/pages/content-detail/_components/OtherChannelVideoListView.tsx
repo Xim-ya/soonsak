@@ -51,9 +51,9 @@ function OtherChannelVideoListView() {
       <VideoItemContainer>
         <ThumbnailWrapper>
           <VideoThumbnail source={{ uri: item.thumnailUrl }} />
-          <DarkedLinearShadow height={AppSize.ratioHeight(122)} align={LinearAlign.bottomTop} />
+          <DarkedLinearShadow height={thumbnailHeight} align={LinearAlign.bottomTop} />
           <ChannelInfoWrapper>
-            <ChannelLogo source={{ uri: item.thumnailUrl }} />
+            <ChannelLogo source={{ uri: item.channelLogoImageUrl }} />
             <ChannelName>{item.channelName}</ChannelName>
           </ChannelInfoWrapper>
         </ThumbnailWrapper>
@@ -79,6 +79,10 @@ function OtherChannelVideoListView() {
   );
 }
 
+/* Styled Components */
+const thumbnailWidth = AppSize.ratioWidth(196);
+const thumbnailHeight = thumbnailWidth * (122 / 196);
+
 const Container = styled.View({
   backgroundColor: colors.black,
 });
@@ -88,21 +92,21 @@ const SectionTitle = styled.Text({
   paddingLeft: 16,
 });
 
-const VideoItemContainer = styled.View(() => ({
-  width: AppSize.ratioWidth(196),
-}));
+const VideoItemContainer = styled.View({
+  width: thumbnailWidth,
+});
 
 const VideoListView = styled(FlatList<RelatedOtherChannelVideo>)({
   paddingLeft: 16,
 });
 
-const ThumbnailWrapper = styled.View(() => ({
-  width: AppSize.ratioWidth(196),
-  height: AppSize.ratioWidth(196) * (122 / 196),
+const ThumbnailWrapper = styled.View({
+  width: thumbnailWidth,
+  height: thumbnailHeight,
   borderRadius: 4,
-  overflow: 'hidden', // 라운드 적용은 부모에서만
-  backgroundColor: 'black', // 로딩 중 배경
-}));
+  overflow: 'hidden',
+  backgroundColor: 'black',
+});
 
 // 핵심 변경: 이미지 절대 채움 + borderRadius 제거
 const VideoThumbnail = styled.Image({
