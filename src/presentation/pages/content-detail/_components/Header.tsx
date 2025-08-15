@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { TouchableHighlight, Image, TouchableOpacity, Animated, Easing } from 'react-native';
+import React, { useMemo, useCallback } from 'react';
+import { TouchableHighlight, Image, TouchableOpacity, Animated } from 'react-native';
 import styled from '@emotion/native';
 import { DarkedLinearShadow, LinearAlign } from '../../../components/shadow/DarkedLinearShadow';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
@@ -14,6 +14,7 @@ import { useContentDetail } from '../_hooks/useContentDetail';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { AppSize } from '@/shared/utils/appSize';
+import { useImageTransition } from '../_hooks/useImageTransition';
 
 /**
  * 콘텐츠 상세 페이지의 헤더 컴포넌트
@@ -32,65 +33,47 @@ export const Header = React.memo(() => {
  * 헤더 배경 이미지와 재생 버튼을 포함하는 컴포넌트
  */
 const HeaderBackground = React.memo(() => {
-  const handlePlayPress = () => {
+  const { data } = useContentDetail(23);
+  const { toggleImages, opacityValues } = useImageTransition();
+
+  // 메모이제이션된 값들
+  const thumbnailSize = useMemo(() => {
+    const height = AppSize.ratioHeight(32);
+    const width = height * (16 / 9);
+    return { width, height };
+  }, []);
+  
+  const imageUrls = useMemo(() => ({
+    youtube: "https://i.ytimg.com/vi/U5TPQoEveJY/hq720.jpg",
+    tmdb: data?.backdropPath 
+      ? formatter.prefixTmdbImgUrl(data.backdropPath, { size: TmdbImageSize.w780 })
+      : '',
+  }), [data?.backdropPath]);
+
+  // 이벤트 핸들러들
+  const handlePlayPress = useCallback(() => {
     console.log('재생 버튼 클릭');
-  };
+  }, []);
 
-  const { data, isLoading, error } = useContentDetail(23);
-  const [showYouTubeAsMain, setShowYouTubeAsMain] = useState(false);
-  
-  // 애니메이션 값
-  const fadeAnim = useRef(new Animated.Value(0)).current; // 0: TMDB 보임, 1: YouTube 보임
-
-  // 반응형 썸네일 크기 계산
-  const thumbnailHeight = AppSize.ratioHeight(32);
-  const thumbnailWidth = thumbnailHeight * (16 / 9);
-
-  // 유튜브 썸네일 URL
-  const youtubeThumbUrl = "https://i.ytimg.com/vi/U5TPQoEveJY/hq720.jpg";
-  const tmdbBackdropUrl = data?.backdropPath 
-    ? formatter.prefixTmdbImgUrl(data.backdropPath, { size: TmdbImageSize.w780 })
-    : '';
-
-  // 이미지 교체 핸들러 (애니메이션 포함)
-  const handleThumbnailPress = () => {
-    // 부드러운 크로스페이드 애니메이션
-    Animated.timing(fadeAnim, {
-      toValue: showYouTubeAsMain ? 0 : 1,
-      duration: 350,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-    
-    setShowYouTubeAsMain(!showYouTubeAsMain);
-  };
-
-  // opacity 계산
-  const tmdbOpacity = fadeAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0],
-  });
-  
-  const youtubeOpacity = fadeAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
+  const handleThumbnailPress = useCallback(() => {
+    toggleImages();
+  }, [toggleImages]);
 
   return (
     <HeaderBackgroundContainer>
       <ImageWrapper>
         {/* TMDB 배경 이미지 */}
-        {tmdbBackdropUrl && (
+        {imageUrls.tmdb && (
           <AnimatedBackgroundImage
-            source={{ uri: tmdbBackdropUrl }}
-            style={{ opacity: tmdbOpacity }}
+            source={{ uri: imageUrls.tmdb }}
+            style={{ opacity: opacityValues.primary }}
           />
         )}
         {/* YouTube 배경 이미지 */}
-        {youtubeThumbUrl && (
+        {imageUrls.youtube && (
           <AnimatedBackgroundImage
-            source={{ uri: youtubeThumbUrl }}
-            style={{ opacity: youtubeOpacity }}
+            source={{ uri: imageUrls.youtube }}
+            style={{ opacity: opacityValues.secondary }}
           />
         )}
       </ImageWrapper>
@@ -119,25 +102,25 @@ const HeaderBackground = React.memo(() => {
       {/* 비디오 썸네일 - 우측 하단 (클릭 가능) */}
       <VideoThumbnailContainer>
         <TouchableOpacity onPress={handleThumbnailPress} activeOpacity={1}>
-          <ThumbnailWrapper width={thumbnailWidth} height={thumbnailHeight}>
+          <ThumbnailWrapper width={thumbnailSize.width} height={thumbnailSize.height}>
             {/* TMDB 썸네일 */}
-            {tmdbBackdropUrl && (
-              <Animated.View style={{ position: 'absolute', opacity: youtubeOpacity }}>
+            {imageUrls.tmdb && (
+              <Animated.View style={{ position: 'absolute', opacity: opacityValues.secondary }}>
                 <LoadableImageView
-                  source={tmdbBackdropUrl}
-                  width={thumbnailWidth}
-                  height={thumbnailHeight}
+                  source={imageUrls.tmdb}
+                  width={thumbnailSize.width}
+                  height={thumbnailSize.height}
                   borderRadius={2}
                 />
               </Animated.View>
             )}
             {/* YouTube 썸네일 */}
-            {youtubeThumbUrl && (
-              <Animated.View style={{ position: 'absolute', opacity: tmdbOpacity }}>
+            {imageUrls.youtube && (
+              <Animated.View style={{ position: 'absolute', opacity: opacityValues.primary }}>
                 <LoadableImageView
-                  source={youtubeThumbUrl}
-                  width={thumbnailWidth}
-                  height={thumbnailHeight}
+                  source={imageUrls.youtube}
+                  width={thumbnailSize.width}
+                  height={thumbnailSize.height}
                   borderRadius={2}
                 />
               </Animated.View>
@@ -160,6 +143,9 @@ const ContentInfo = React.memo(() => {
   const { data, isLoading, error } = useContentDetail(23);
 
   const dotText = ' · ';
+
+  // 연도 추출
+  const releaseYear = data?.releaseDate ? formatter.dateToYear(data.releaseDate) : '';
 
   // 로딩 중일 때 스켈레톤 UI 표시
   if (isLoading) {
@@ -203,9 +189,6 @@ const ContentInfo = React.memo(() => {
       </ContentInfoContainer>
     );
   }
-
-  // 날짜에서 연도 추출
-  const releaseYear = data.releaseDate ? new Date(data.releaseDate).getFullYear() : '';
 
   return (
     <ContentInfoContainer>
