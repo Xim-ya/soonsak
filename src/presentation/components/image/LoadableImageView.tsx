@@ -1,3 +1,19 @@
+/**
+ * LoadableImageView - 로딩 상태와 에러 처리가 포함된 이미지 컴포넌트
+ * 
+ * 비디오 썸네일, 포스터 이미지 등 네트워크 이미지를 표시할 때 사용합니다.
+ * 이미지 로딩 중에는 placeholder를 표시하고, 로딩 완료 후 부드러운 애니메이션과 함께 이미지를 노출합니다.
+ * 이미지 로딩 실패 시에는 에러 상태를 명확히 표시합니다.
+ * 
+ * @example
+ * <LoadableImageView 
+ *   source="https://example.com/image.jpg"
+ *   width={196}
+ *   height={110}
+ *   borderRadius={8}
+ * />
+ */
+
 import React, { useState } from 'react';
 import styled from '@emotion/native';
 import { Animated, ViewStyle } from 'react-native';

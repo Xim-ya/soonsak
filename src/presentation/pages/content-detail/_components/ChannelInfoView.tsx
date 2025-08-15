@@ -29,7 +29,7 @@ function ChannelInfoView() {
 
 const Container = styled.View({
   padding: 16,
-  marginBottom: 48,
+  marginBottom: 40,
 });
 
 const SectionTitle = styled.Text({

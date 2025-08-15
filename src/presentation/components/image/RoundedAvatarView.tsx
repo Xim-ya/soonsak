@@ -35,7 +35,7 @@ function RoundedAvatorView({ source, size }: RoundedAvatorViewProps) {
     <Container size={size}>
       {/* 로딩 중일 때 회색 placeholder */}
       {isLoading && <PlaceholderView size={size} />}
-      
+
       {/* 에러 시 에러 아이콘과 텍스트 표시 */}
       {hasError && (
         <ErrorContainer size={size}>

@@ -6,20 +6,19 @@ import { SummaryView } from './SummaryView';
 import Gap from '@/presentation/components/view/Gap';
 import CaseView from './CaseView';
 
-const OriginContentTabView = React.memo(
-  ({ onScrollChange }: { onScrollChange: (offset: number) => void }) => {
-    useTabScrollListener(onScrollChange);
+function OriginContentTabView({ onScrollChange }: { onScrollChange: (offset: number) => void }) {
+  useTabScrollListener(onScrollChange);
 
-    return (
-      <Tabs.ScrollView style={{ flex: 1 }}>
-        <Gap size={40} />
-        <SummaryView />
-        <CaseView />
-      </Tabs.ScrollView>
-    );
-  },
-);
+  return (
+    <Tabs.ScrollView style={{ flex: 1 }}>
+      <Gap size={40} />
+      <SummaryView />
+      <CaseView />
+    </Tabs.ScrollView>
+  );
+}
 
-OriginContentTabView.displayName = 'OriginalTabView';
+const MemoizedOriginContentTabView = React.memo(OriginContentTabView);
+MemoizedOriginContentTabView.displayName = 'OriginalTabView';
 
-export { OriginContentTabView as OriginalTabView };
+export { MemoizedOriginContentTabView as OriginalTabView };
