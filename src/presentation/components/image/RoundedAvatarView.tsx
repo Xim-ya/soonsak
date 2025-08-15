@@ -14,6 +14,9 @@ function RoundedAvatorView({ source, size }: RoundedAvatorViewProps) {
   const [hasError, setHasError] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
+  // source가 유효한 URL인지 확인
+  const hasValidSource = source && source.trim() !== '';
+
   const handleImageLoad = () => {
     setIsLoading(false);
     setHasError(false);
@@ -33,18 +36,18 @@ function RoundedAvatorView({ source, size }: RoundedAvatorViewProps) {
 
   return (
     <Container size={size}>
-      {/* 로딩 중일 때 회색 placeholder */}
-      {isLoading && <PlaceholderView size={size} />}
+      {/* 로딩 중일 때 회색 placeholder (URL이 없거나 로딩 중) */}
+      {(isLoading || !hasValidSource) && <PlaceholderView size={size} />}
 
-      {/* 에러 시 에러 아이콘과 텍스트 표시 */}
-      {hasError && (
+      {/* 에러 시 에러 아이콘과 텍스트 표시 (유효한 URL이 있지만 로딩 실패) */}
+      {hasError && hasValidSource && (
         <ErrorContainer size={size}>
           <ErrorIcon size={size}>?</ErrorIcon>
         </ErrorContainer>
       )}
 
-      {/* 실제 이미지 - 로딩 완료 후 애니메이션과 함께 나타남 */}
-      {!hasError && (
+      {/* 실제 이미지 - 유효한 URL이 있을 때만 렌더링 */}
+      {hasValidSource && !hasError && (
         <AnimatedAvatar
           source={{ uri: source }}
           size={size}
@@ -75,7 +78,7 @@ const PlaceholderView = styled.View<{ size: number }>(({ size }) => ({
   left: 0,
   width: size,
   height: size,
-  backgroundColor: colors.gray04,
+  backgroundColor: colors.gray05,
   borderRadius: size / 2,
 }));
 
