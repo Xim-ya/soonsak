@@ -7,12 +7,11 @@ const AnimatedAppBAr = React.memo(({ insets, opacity }: { insets: any; opacity: 
   // backgroundColor 문자열 생성 최적화
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';
-    const opacityValue = opacity.value;
     // 0일 때는 완전 투명, 1일 때는 완전 불투명
     return {
-      backgroundColor: `rgba(0,0,0,${opacityValue})`,
+      backgroundColor: `rgba(0,0,0,${opacity.value})`,
     };
-  }, []);
+  }, [opacity]);
 
   // 스타일 객체 메모이제이션
   const containerStyle = useMemo(

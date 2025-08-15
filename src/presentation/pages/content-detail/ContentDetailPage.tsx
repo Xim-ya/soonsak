@@ -13,7 +13,7 @@ import Animated from 'react-native-reanimated';
 import { useCallback } from 'react';
 import { TabBar } from './_components/TabBar';
 import { ContentTabView } from './_components/VideoTabView';
-import { OriginalTabView } from './_components/OriginalTabView';
+import { OriginalTabView } from './_components/OriginContentTabView';
 import { AnimatedAppBAr } from './_components/AnimatedAppBar';
 
 export default function ContentDetailPage() {
@@ -51,7 +51,7 @@ export default function ContentDetailPage() {
           return {
             backgroundColor: `rgba(0,0,0,${appBarOpacity.value})`,
           };
-        }, [])}
+        }, [appBarOpacity])}
         safeAreaHeight={insets.top}
       />
       <AnimatedAppBAr insets={insets} opacity={appBarOpacity} />

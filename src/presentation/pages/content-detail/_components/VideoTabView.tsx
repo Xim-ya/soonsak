@@ -1,5 +1,4 @@
 import { Tabs } from 'react-native-collapsible-tab-view';
-import { ContentTab } from './OriginContentTabView';
 import React from 'react';
 import { useTabScrollListener } from '../_hooks/useTabScrollListener';
 import { VideoMetricsView } from './VideoMetricsView';
