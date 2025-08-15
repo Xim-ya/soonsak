@@ -1,5 +1,5 @@
-import React from 'react';
-import { TouchableHighlight, Image } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { TouchableHighlight, Image, TouchableOpacity, Animated, Easing } from 'react-native';
 import styled from '@emotion/native';
 import { DarkedLinearShadow, LinearAlign } from '../../../components/shadow/DarkedLinearShadow';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
@@ -37,21 +37,60 @@ const HeaderBackground = React.memo(() => {
   };
 
   const { data, isLoading, error } = useContentDetail(23);
+  const [showYouTubeAsMain, setShowYouTubeAsMain] = useState(false);
+  
+  // 애니메이션 값
+  const fadeAnim = useRef(new Animated.Value(0)).current; // 0: TMDB 보임, 1: YouTube 보임
 
   // 반응형 썸네일 크기 계산
   const thumbnailHeight = AppSize.ratioHeight(32);
   const thumbnailWidth = thumbnailHeight * (16 / 9);
 
+  // 유튜브 썸네일 URL
+  const youtubeThumbUrl = "https://i.ytimg.com/vi/U5TPQoEveJY/hq720.jpg";
+  const tmdbBackdropUrl = data?.backdropPath 
+    ? formatter.prefixTmdbImgUrl(data.backdropPath, { size: TmdbImageSize.w780 })
+    : '';
+
+  // 이미지 교체 핸들러 (애니메이션 포함)
+  const handleThumbnailPress = () => {
+    // 부드러운 크로스페이드 애니메이션
+    Animated.timing(fadeAnim, {
+      toValue: showYouTubeAsMain ? 0 : 1,
+      duration: 350,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+    
+    setShowYouTubeAsMain(!showYouTubeAsMain);
+  };
+
+  // opacity 계산
+  const tmdbOpacity = fadeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+  
+  const youtubeOpacity = fadeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
   return (
     <HeaderBackgroundContainer>
       <ImageWrapper>
-        {data && data.backdropPath && (
-          <BackgroundImage
-            source={{
-              uri: formatter.prefixTmdbImgUrl(data.backdropPath, {
-                size: TmdbImageSize.w780,
-              }),
-            }}
+        {/* TMDB 배경 이미지 */}
+        {tmdbBackdropUrl && (
+          <AnimatedBackgroundImage
+            source={{ uri: tmdbBackdropUrl }}
+            style={{ opacity: tmdbOpacity }}
+          />
+        )}
+        {/* YouTube 배경 이미지 */}
+        {youtubeThumbUrl && (
+          <AnimatedBackgroundImage
+            source={{ uri: youtubeThumbUrl }}
+            style={{ opacity: youtubeOpacity }}
           />
         )}
       </ImageWrapper>
@@ -77,14 +116,34 @@ const HeaderBackground = React.memo(() => {
         </PlayButton>
       </PlayButtonContainer>
 
-      {/* 유튜브 썸네일 - 우측 하단 */}
+      {/* 비디오 썸네일 - 우측 하단 (클릭 가능) */}
       <VideoThumbnailContainer>
-        <LoadableImageView
-          source="https://i.ytimg.com/vi/U5TPQoEveJY/hq720.jpg"
-          width={thumbnailWidth}
-          height={thumbnailHeight}
-          borderRadius={2}
-        />
+        <TouchableOpacity onPress={handleThumbnailPress} activeOpacity={1}>
+          <ThumbnailWrapper width={thumbnailWidth} height={thumbnailHeight}>
+            {/* TMDB 썸네일 */}
+            {tmdbBackdropUrl && (
+              <Animated.View style={{ position: 'absolute', opacity: youtubeOpacity }}>
+                <LoadableImageView
+                  source={tmdbBackdropUrl}
+                  width={thumbnailWidth}
+                  height={thumbnailHeight}
+                  borderRadius={2}
+                />
+              </Animated.View>
+            )}
+            {/* YouTube 썸네일 */}
+            {youtubeThumbUrl && (
+              <Animated.View style={{ position: 'absolute', opacity: tmdbOpacity }}>
+                <LoadableImageView
+                  source={youtubeThumbUrl}
+                  width={thumbnailWidth}
+                  height={thumbnailHeight}
+                  borderRadius={2}
+                />
+              </Animated.View>
+            )}
+          </ThumbnailWrapper>
+        </TouchableOpacity>
       </VideoThumbnailContainer>
     </HeaderBackgroundContainer>
   );
@@ -273,6 +332,24 @@ const BackgroundImage = styled.Image({
   width: '100%',
   height: '100%',
 });
+
+const AnimatedBackgroundImage = styled(Animated.Image)({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  width: '100%',
+  height: '100%',
+});
+
+const ThumbnailWrapper = styled.View<{ width: number; height: number }>(({ width, height }) => ({
+  width,
+  height,
+  position: 'relative',
+  overflow: 'hidden',
+  borderRadius: 2,
+}));
 
 const PlayButton = styled(TouchableHighlight)({
   borderRadius: 60,
