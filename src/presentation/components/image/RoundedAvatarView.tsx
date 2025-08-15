@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styled from '@emotion/native';
 import { Animated } from 'react-native';
+import colors from '@/shared/styles/colors';
+import textStyles from '@/shared/styles/textStyles';
 
 interface RoundedAvatorViewProps {
   source: string;
@@ -31,8 +33,15 @@ function RoundedAvatorView({ source, size }: RoundedAvatorViewProps) {
 
   return (
     <Container size={size}>
-      {/* 로딩 중이거나 에러 시 회색 placeholder */}
-      {(isLoading || hasError) && <PlaceholderView size={size} />}
+      {/* 로딩 중일 때 회색 placeholder */}
+      {isLoading && <PlaceholderView size={size} />}
+      
+      {/* 에러 시 에러 아이콘과 텍스트 표시 */}
+      {hasError && (
+        <ErrorContainer size={size}>
+          <ErrorIcon size={size}>?</ErrorIcon>
+        </ErrorContainer>
+      )}
 
       {/* 실제 이미지 - 로딩 완료 후 애니메이션과 함께 나타남 */}
       {!hasError && (
@@ -66,8 +75,29 @@ const PlaceholderView = styled.View<{ size: number }>(({ size }) => ({
   left: 0,
   width: size,
   height: size,
-  backgroundColor: '#E5E5E5', // 회색 placeholder
+  backgroundColor: colors.gray04,
   borderRadius: size / 2,
+}));
+
+// 에러 상태 컨테이너
+const ErrorContainer = styled.View<{ size: number }>(({ size }) => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: size,
+  height: size,
+  backgroundColor: colors.gray05,
+  borderRadius: size / 2,
+  justifyContent: 'center',
+  alignItems: 'center',
+}));
+
+// 에러 아이콘 (물음표)
+const ErrorIcon = styled.Text<{ size: number }>(({ size }) => ({
+  ...textStyles.body1,
+  color: colors.gray02,
+  fontSize: size * 0.3, // 아바타 크기의 30%
+  fontWeight: 'bold',
 }));
 
 // 애니메이션이 적용된 이미지

@@ -1,3 +1,5 @@
+import { RoundedAvatorView } from '@/presentation/components/image/RoundedAvatarView';
+import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import {
   DarkedLinearShadow,
   LinearAlign,
@@ -17,7 +19,7 @@ const MOCK_DATA: RelatedOtherChannelVideo[] = [
     thumnailUrl: 'https://i.ytimg.com/vi/R7QjeLrvOJ4/hq720.jpg',
     channelName: '영남',
     channelLogoImageUrl:
-      'https://yt3.ggpht.com/ytc/AIdro_kzHx_o1dOJpR0YRs4UqP0vKfYqF5yYLbZ5k5Ng=s48-c-k-c0x00ffffff-no-rj',
+      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
   },
   {
     id: 'OASDFkasdf124',
@@ -50,10 +52,16 @@ function OtherChannelVideoListView() {
     return (
       <VideoItemContainer>
         <ThumbnailWrapper>
-          <VideoThumbnail source={{ uri: item.thumnailUrl }} />
+          <LoadableImageView 
+            source={item.thumnailUrl}
+            width={thumbnailWidth}
+            height={thumbnailHeight}
+            borderRadius={4}
+          />
           <DarkedLinearShadow height={thumbnailHeight} align={LinearAlign.bottomTop} />
           <ChannelInfoWrapper>
-            <ChannelLogo source={{ uri: item.channelLogoImageUrl }} />
+            <RoundedAvatorView source={item.channelLogoImageUrl} size={28} />
+            <Gap size={8} />
             <ChannelName>{item.channelName}</ChannelName>
           </ChannelInfoWrapper>
         </ThumbnailWrapper>
@@ -108,14 +116,6 @@ const ThumbnailWrapper = styled.View({
   backgroundColor: 'black',
 });
 
-// 핵심 변경: 이미지 절대 채움 + borderRadius 제거
-const VideoThumbnail = styled.Image({
-  position: 'absolute',
-  top: 0,
-  right: 0,
-  bottom: 0,
-  left: 0,
-});
 
 const VideoTitle = styled.Text({
   ...textStyles.body3,
@@ -131,12 +131,6 @@ const ChannelInfoWrapper = styled.View({
   alignItems: 'center',
 });
 
-const ChannelLogo = styled.Image({
-  width: 28,
-  height: 28,
-  borderRadius: 14,
-  marginRight: 6,
-});
 
 const ChannelName = styled.Text({
   ...textStyles.alert1,
