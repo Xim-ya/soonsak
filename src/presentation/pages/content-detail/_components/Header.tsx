@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { TouchableHighlight, Image, TouchableOpacity, Animated } from 'react-native';
 import styled from '@emotion/native';
+import { useNavigation } from '@react-navigation/native';
 import { DarkedLinearShadow, LinearAlign } from '../../../components/shadow/DarkedLinearShadow';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import PlayButtonSvg from '@assets/icons/play_button.svg';
@@ -15,6 +16,7 @@ import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { AppSize } from '@/shared/utils/appSize';
 import { useImageTransition } from '../_hooks/useImageTransition';
+import { routePages } from '@/shared/navigation/constant/routePages';
 
 /**
  * 콘텐츠 상세 페이지의 헤더 컴포넌트
@@ -35,6 +37,7 @@ export const Header = React.memo(() => {
 const HeaderBackground = React.memo(() => {
   const { data } = useContentDetail(23);
   const { toggleImages, opacityValues } = useImageTransition();
+  const navigation = useNavigation();
 
   // 메모이제이션된 값들
   const thumbnailSize = useMemo(() => {
@@ -52,8 +55,12 @@ const HeaderBackground = React.memo(() => {
 
   // 이벤트 핸들러들
   const handlePlayPress = useCallback(() => {
-    console.log('재생 버튼 클릭');
-  }, []);
+    const title = data?.title || '영상 재생';
+    navigation.navigate(routePages.player, { 
+      videoId: 'U5TPQoEveJY',
+      title: title
+    });
+  }, [navigation, data?.title]);
 
   const handleThumbnailPress = useCallback(() => {
     toggleImages();
