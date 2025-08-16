@@ -2,6 +2,8 @@ import React, { useMemo, useCallback } from 'react';
 import { TouchableHighlight, Image, TouchableOpacity, Animated } from 'react-native';
 import styled from '@emotion/native';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/shared/navigation/types';
 import { DarkedLinearShadow, LinearAlign } from '../../../components/shadow/DarkedLinearShadow';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import PlayButtonSvg from '@assets/icons/play_button.svg';
@@ -17,6 +19,8 @@ import { LoadableImageView } from '@/presentation/components/image/LoadableImage
 import { AppSize } from '@/shared/utils/appSize';
 import { useImageTransition } from '../_hooks/useImageTransition';
 import { routePages } from '@/shared/navigation/constant/routePages';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 /**
  * 콘텐츠 상세 페이지의 헤더 컴포넌트
@@ -37,7 +41,7 @@ export const Header = React.memo(() => {
 const HeaderBackground = React.memo(() => {
   const { data } = useContentDetail(23);
   const { toggleImages, opacityValues } = useImageTransition();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
 
   // 메모이제이션된 값들
   const thumbnailSize = useMemo(() => {
@@ -45,20 +49,23 @@ const HeaderBackground = React.memo(() => {
     const width = height * (16 / 9);
     return { width, height };
   }, []);
-  
-  const imageUrls = useMemo(() => ({
-    youtube: "https://i.ytimg.com/vi/U5TPQoEveJY/hq720.jpg",
-    tmdb: data?.backdropPath 
-      ? formatter.prefixTmdbImgUrl(data.backdropPath, { size: TmdbImageSize.w780 })
-      : '',
-  }), [data?.backdropPath]);
+
+  const imageUrls = useMemo(
+    () => ({
+      youtube: 'https://i.ytimg.com/vi/U5TPQoEveJY/hq720.jpg',
+      tmdb: data?.backdropPath
+        ? formatter.prefixTmdbImgUrl(data.backdropPath, { size: TmdbImageSize.w780 })
+        : '',
+    }),
+    [data?.backdropPath],
+  );
 
   // 이벤트 핸들러들
   const handlePlayPress = useCallback(() => {
-    const title = data?.title || '영상 재생';
-    navigation.navigate(routePages.player, { 
+    const title = data?.title || '';
+    navigation.navigate(routePages.player, {
       videoId: 'U5TPQoEveJY',
-      title: title
+      title: title,
     });
   }, [navigation, data?.title]);
 
