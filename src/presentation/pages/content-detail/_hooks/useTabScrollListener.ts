@@ -4,13 +4,13 @@ import { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
 
 /**
  * 탭 스크롤 이벤트를 감지하여 AppBar 투명도 제어를 위한 커스텀 훅
- * 
+ *
  * 주요 기능:
  * - react-native-collapsible-tab-view의 스크롤 Y 값 실시간 감지
  * - 스크롤 오프셋 269px 기준으로 AppBar 투명도 변경 시점 결정
  * - 성능 최적화: 불필요한 콜백 호출 방지 (상태 변경시만 호출)
  * - 디버깅용 로그 출력 (10px 이상 변경시만)
- * 
+ *
  * @param onScrollChange - 스크롤 오프셋이 269px 기준점을 넘나들 때 호출되는 콜백 함수
  */
 const useTabScrollListener = (onScrollChange: (offset: number) => void) => {

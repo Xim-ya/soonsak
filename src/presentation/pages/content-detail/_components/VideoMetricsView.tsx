@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import styled from '@emotion/native';
 import textStyles from '@/shared/styles/textStyles';
 import colors from '@/shared/styles/colors';
@@ -7,11 +6,7 @@ import EyeSvg from '@assets/icons/eye.svg';
 import ThumbSvg from '@assets/icons/thumb.svg';
 import SmallDateSvg from '@assets/icons/small_date.svg';
 import Gap from '@/presentation/components/view/Gap';
-import {
-  getYouTubeVideoMetadata,
-  YouTubeVideoMetadata,
-} from '@/utils/youtube/ytClient';
-import { useQuery } from '@tanstack/react-query';
+import { useYouTubeVideo, YouTubeVideo } from '@/features/youtube';
 
 // Props 타입 정의
 interface VideoMetricsViewProps {
@@ -19,44 +14,34 @@ interface VideoMetricsViewProps {
   videoId?: string;
 }
 
-export const VideoMetricsView = ({
-  youtubeUrl,
-  videoId,
-}: VideoMetricsViewProps = {}) => {
+export const VideoMetricsView = ({ youtubeUrl, videoId }: VideoMetricsViewProps = {}) => {
   // 기본 YouTube URL (사용자가 제공한 URL)
   const defaultYouTubeUrl = 'https://www.youtube.com/watch?v=KfbFaQJK7Sc';
   const targetUrl = youtubeUrl || videoId || defaultYouTubeUrl;
 
-  // 🚀 React Query로 메인 스레드 블락 방지
+  // 새로운 YouTube Hook 사용
   const {
     data: videoInfo,
     isLoading: loading,
     error,
     isError,
-  } = useQuery({
-    queryKey: ['youtubeMetadata', targetUrl],
-    queryFn: async (): Promise<YouTubeVideoMetadata> => {
-      console.log('🎯 oEmbed API로 YouTube 메타데이터 가져오기 시작');
-      return await getYouTubeVideoMetadata(targetUrl);
-    },
-    staleTime: 5 * 60 * 1000, // 5분간 fresh
-    gcTime: 15 * 60 * 1000, // 15분간 캐시 유지
-    retry: 1,
-    // 🚀 에러 시 Mock 데이터 반환
-    retryOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  } = useYouTubeVideo(targetUrl);
 
-  // 🚀 에러 시 Mock 데이터 제공
+  // 에러 시 Mock 데이터 제공
   const displayData = isError
     ? {
-        viewCount: 1234567,
-        likesCount: 89123,
-        uploadDate: '2024-01-15T10:30:00Z',
+        metrics: {
+          viewCount: 1234567,
+          likeCount: 89123,
+          likeText: '8.9만',
+        },
+        metadata: {
+          uploadDate: '2024-01-15T10:30:00Z',
+          duration: '10:30',
+        },
         title: 'Sample Video',
         description: 'Sample Description',
         channelName: 'Sample Channel',
-        duration: '10:30',
       }
     : videoInfo;
 
@@ -99,23 +84,25 @@ export const VideoMetricsView = ({
       {renderColumnItem(
         '조회수',
         'eye',
-        displayData ? formatter.formatNumberWithUnit(displayData.viewCount, true) : null,
+        displayData?.metrics
+          ? formatter.formatNumberWithUnit(displayData.metrics.viewCount, true)
+          : null,
       )}
       {renderColumnItem(
         '좋아요',
         'thumb',
-        displayData
-          ? displayData.likesCount > 0
-            ? formatter.formatNumberWithUnit(displayData.likesCount, false)
-            : displayData.likesText || '비공개'
+        displayData?.metrics
+          ? displayData.metrics.likeCount > 0
+            ? formatter.formatNumberWithUnit(displayData.metrics.likeCount, false)
+            : displayData.metrics.likeText || '비공개'
           : null,
       )}
       {renderColumnItem(
         '업로드일',
         'small_date',
-        displayData
-          ? displayData.uploadDate !== new Date().toISOString().split('T')[0]
-            ? formatter.getDateDifferenceFromNow(displayData.uploadDate)
+        displayData?.metadata
+          ? displayData.metadata.uploadDate !== new Date().toISOString().split('T')[0]
+            ? formatter.getDateDifferenceFromNow(displayData.metadata.uploadDate)
             : '오늘'
           : null,
       )}

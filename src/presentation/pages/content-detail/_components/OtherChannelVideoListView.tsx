@@ -52,7 +52,7 @@ function OtherChannelVideoListView() {
     return (
       <VideoItemContainer>
         <ThumbnailWrapper>
-          <LoadableImageView 
+          <LoadableImageView
             source={item.thumnailUrl}
             width={thumbnailWidth}
             height={thumbnailHeight}
@@ -116,7 +116,6 @@ const ThumbnailWrapper = styled.View({
   backgroundColor: 'black',
 });
 
-
 const VideoTitle = styled.Text({
   ...textStyles.body3,
   color: colors.white,
@@ -130,7 +129,6 @@ const ChannelInfoWrapper = styled.View({
   flexDirection: 'row',
   alignItems: 'center',
 });
-
 
 const ChannelName = styled.Text({
   ...textStyles.alert1,

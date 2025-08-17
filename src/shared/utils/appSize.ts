@@ -24,7 +24,7 @@ class SizeConfig {
     this.isTablet = width > 600;
     this.screenWidth = this.isTablet ? 375 : width;
     this.screenHeight = this.isTablet ? 812 : height;
-    
+
     // Dimensions 변경 감지 리스너 추가
     this.dimensionsSubscription = Dimensions.addEventListener(
       'change',
@@ -64,7 +64,7 @@ class SizeConfig {
     // 반응형 하단 인셋 설정
     this.responsiveBottomInset = this.bottomInset === 0 ? 16 : this.bottomInset;
   }
-  
+
   // 기존 init 메서드는 하위 호환성을 위해 유지
   init(safeAreaInsets?: { top: number; bottom: number }): void {
     this.updateSafeArea(safeAreaInsets);

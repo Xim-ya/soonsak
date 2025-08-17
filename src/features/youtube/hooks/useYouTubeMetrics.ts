@@ -1,0 +1,104 @@
+/**
+ * YouTube 메트릭스 전용 Hook
+ * 조회수, 좋아요 등 수치 데이터만 필요할 때 사용
+ */
+
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { YouTubeVideo, YouTubeApiError } from '../types';
+import { youtubeApi } from '../api';
+
+/**
+ * YouTube 비디오 메트릭스 조회 Hook
+ */
+export const useYouTubeMetrics = (
+  urlOrId?: string,
+  options?: {
+    enabled?: boolean;
+    refetchInterval?: number; // 실시간 업데이트 간격 (ms)
+  },
+) => {
+  return useQuery({
+    queryKey: ['youtube', 'metrics', urlOrId],
+    queryFn: () => youtubeApi.getVideoMetrics(urlOrId!),
+    enabled: !!urlOrId && (options?.enabled ?? true),
+    staleTime: 2 * 60 * 1000, // 2분 fresh (메트릭스는 자주 변경)
+    gcTime: 10 * 60 * 1000, // 10분 캐시
+    ...(options?.refetchInterval && { refetchInterval: options.refetchInterval }), // 실시간 업데이트
+    retry: (failureCount, error) => {
+      if (error instanceof YouTubeApiError) {
+        return error.retry && failureCount < 1;
+      }
+      return false;
+    },
+  });
+};
+
+/**
+ * 실시간 메트릭스 업데이트 Hook
+ * 일정 간격으로 메트릭스를 갱신
+ */
+export const useRealTimeYouTubeMetrics = (
+  urlOrId?: string,
+  updateInterval: number = 60000, // 기본 1분
+) => {
+  const queryClient = useQueryClient();
+
+  // 수동 갱신 함수
+  const refreshMetrics = () => {
+    if (urlOrId) {
+      queryClient.invalidateQueries({ queryKey: ['youtube', 'metrics', urlOrId] });
+    }
+  };
+
+  // 자동 갱신 설정
+  useEffect(() => {
+    if (!urlOrId) return;
+
+    const timer = setInterval(refreshMetrics, updateInterval);
+    return () => clearInterval(timer);
+  }, [urlOrId, updateInterval]);
+
+  const query = useYouTubeMetrics(urlOrId);
+
+  return {
+    ...query,
+    refresh: refreshMetrics,
+    lastUpdated: query.dataUpdatedAt,
+  };
+};
+
+/**
+ * 메트릭스 포맷팅 Hook
+ * 숫자를 한국어/영어 축약 형태로 변환
+ */
+export const useFormattedMetrics = (metrics?: YouTubeVideo['metrics']) => {
+  if (!metrics) return null;
+
+  const formatNumber = (num: number, korean: boolean = true) => {
+    if (num < 1000) return num.toString();
+
+    if (korean) {
+      if (num >= 100000000) return `${(num / 100000000).toFixed(1).replace(/\.0$/, '')}억`;
+      if (num >= 10000) return `${(num / 10000).toFixed(1).replace(/\.0$/, '')}만`;
+      return `${(num / 1000).toFixed(1).replace(/\.0$/, '')}천`;
+    } else {
+      if (num >= 1000000000) return `${(num / 1000000000).toFixed(1).replace(/\.0$/, '')}B`;
+      if (num >= 1000000) return `${(num / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+      return `${(num / 1000).toFixed(1).replace(/\.0$/, '')}K`;
+    }
+  };
+
+  return {
+    viewCount: {
+      raw: metrics.viewCount,
+      formatted: formatNumber(metrics.viewCount),
+      text: metrics.likeText || formatNumber(metrics.viewCount),
+    },
+    likeCount: {
+      raw: metrics.likeCount,
+      formatted: formatNumber(metrics.likeCount),
+      text: metrics.likeText || formatNumber(metrics.likeCount),
+    },
+  };
+};

@@ -25,9 +25,9 @@ const formatter = {
    */
   formatNumberWithUnit(num: number | null | undefined, isViewCount: boolean = false): string {
     if (num == null) return '-';
-    
+
     const strNum = num.toString();
-    
+
     if (num <= 1000) {
       return num.toString();
     } else if (num > 1000 && num < 10000) {
@@ -58,12 +58,12 @@ const formatter = {
    */
   getDateDifferenceFromNow(dateString: string | null | undefined): string {
     if (!dateString) return '-';
-    
+
     try {
       const targetDate = new Date(dateString);
       const now = new Date();
       const diffInSeconds = Math.floor((now.getTime() - targetDate.getTime()) / 1000);
-      
+
       if (diffInSeconds < 60) {
         return `${diffInSeconds}초 전`;
       } else if (diffInSeconds < 3600) {
@@ -153,7 +153,8 @@ const formatter = {
    * @returns 비디오 ID 또는 null
    */
   getVideoIdFromYoutubeUrl(url: string): string | null | undefined {
-    const regex = /.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/i;
+    const regex =
+      /.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/i;
     const match = url.match(regex);
     return match ? match[1] : null;
   },
