@@ -37,7 +37,7 @@ function ChannelInfoView() {
               'https://yt3.googleusercontent.com/CjYn6rDN0JAM8a9PJ1DWr4UiElK48RFVzA3BlmkBnUEGn06Fe2o-5kNQuYKsiZRsLWvf_hxyKtg=s160-c-k-c0x00ffffff-no-rj',
             subscribers: 934000,
           });
-        }, 3200);
+        }, 500); // 0.5초로 단축 (독립적 로딩)
       }),
   });
 

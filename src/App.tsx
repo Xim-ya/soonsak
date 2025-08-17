@@ -10,6 +10,11 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { useEffect } from 'react';
 import { AppSize } from '@/shared/utils/appSize';
 
+// 개발 모드에서 YouTube API 테스트 비활성화 (성능 최적화)
+// if (__DEV__) {
+//   import('@/utils/youtube/testYoutube');
+// }
+
 // React Query Client 생성 (컴포넌트 밖에서 생성)
 const queryClient = new QueryClient({
   defaultOptions: {

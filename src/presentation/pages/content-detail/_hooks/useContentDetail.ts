@@ -22,7 +22,7 @@ export function useContentDetail(contentId: number) {
     queryKey: ['contentDetail', contentId],
     queryFn: async (): Promise<ContentDetailModel> => {
       // Fight Club API 응답 기반 Mock 데이터
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 300)); // 0.3초로 단축
 
       console.log('useContentDetail api 호출', contentId);
       return {

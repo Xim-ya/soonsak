@@ -2,7 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { Dimensions, ActivityIndicator, Platform, Alert } from 'react-native';
-import { YoutubeView, useYouTubePlayer, useYouTubeEvent } from 'react-native-youtube-bridge';
+import {
+  YoutubeView,
+  useYouTubePlayer,
+  useYouTubeEvent,
+  useYoutubeOEmbed,
+} from 'react-native-youtube-bridge';
 import colors from '@/shared/styles/colors';
 import { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
@@ -21,7 +26,7 @@ export const PlayerPage = () => {
   const { videoId, title } = route.params;
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1);
-  
+
   // 초기 화면 크기만 사용 (YouTube 플레이어가 자체적으로 전체화면 처리)
   const screenWidth = Dimensions.get('window').width;
 
@@ -145,7 +150,9 @@ export const PlayerPage = () => {
         {/* 디버그 정보 표시 (개발 중에만 사용) */}
         {__DEV__ && (
           <DebugInfo>
-            <DebugText>플레이어: {playerWidth}x{Math.floor(playerHeight)}</DebugText>
+            <DebugText>
+              플레이어: {playerWidth}x{Math.floor(playerHeight)}
+            </DebugText>
             <DebugText>재생율: {currentPlaybackRate}x</DebugText>
             {progress && (
               <DebugText>

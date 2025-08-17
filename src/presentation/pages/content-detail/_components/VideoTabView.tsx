@@ -12,8 +12,9 @@ function VideoTabView({ onScrollChange }: { onScrollChange: (offset: number) => 
 
   return (
     <Tabs.ScrollView style={{ flex: 1 }}>
-      {/* 조회수 , 좋아요, 업로드일 */}
+      {/* YouTube 메트릭 정보 */}
       <VideoMetricsView />
+
       {/* 채널 정보 */}
       <ChannelInfoView />
 
