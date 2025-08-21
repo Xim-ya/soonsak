@@ -6,7 +6,7 @@ import EyeSvg from '@assets/icons/eye.svg';
 import ThumbSvg from '@assets/icons/thumb.svg';
 import SmallDateSvg from '@assets/icons/small_date.svg';
 import Gap from '@/presentation/components/view/Gap';
-import { useYouTubeVideo, YouTubeVideo } from '@/features/youtube';
+import { useYouTubeVideo } from '@/features/youtube';
 
 // Props 타입 정의
 interface VideoMetricsViewProps {
@@ -20,7 +20,7 @@ export const VideoMetricsView = ({ youtubeUrl, videoId }: VideoMetricsViewProps 
   const targetUrl = youtubeUrl || videoId || defaultYouTubeUrl;
 
   // 새로운 YouTube Hook 사용
-  const { data: videoInfo, isLoading: loading, error, isError } = useYouTubeVideo(targetUrl);
+  const { data: videoInfo, isLoading: loading } = useYouTubeVideo(targetUrl);
 
   const renderIcon = (iconName: string) => {
     switch (iconName) {
@@ -117,4 +117,3 @@ const DataText = styled.Text({
   color: colors.white,
   textAlign: 'center',
 });
-

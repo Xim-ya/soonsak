@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import { TouchableHighlight, Image, TouchableOpacity, Animated } from 'react-native';
 import styled from '@emotion/native';
 import { useNavigation } from '@react-navigation/native';
@@ -19,8 +19,9 @@ import { LoadableImageView } from '@/presentation/components/image/LoadableImage
 import { AppSize } from '@/shared/utils/appSize';
 import { useImageTransition } from '../_hooks/useImageTransition';
 import { routePages } from '@/shared/navigation/constant/routePages';
+import { useYouTubeVideo } from '@/features/youtube';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>; // Player 뷰
 
 /**
  * 콘텐츠 상세 페이지의 헤더 컴포넌트
@@ -43,6 +44,25 @@ const HeaderBackground = React.memo(() => {
   const { toggleImages, opacityValues } = useImageTransition();
   const navigation = useNavigation<NavigationProp>();
 
+  // YouTube 데이터 가져오기
+  const defaultYouTubeUrl = 'https://www.youtube.com/watch?v=U5TPQoEveJY';
+  const { data: videoInfo, isLoading: youtubeLoading } = useYouTubeVideo(defaultYouTubeUrl);
+
+  // YouTube 이미지 페이드인 애니메이션
+  const youtubeOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!youtubeLoading && videoInfo?.thumbnails?.high) {
+      Animated.timing(youtubeOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    } else if (youtubeLoading) {
+      youtubeOpacity.setValue(0);
+    }
+  }, [youtubeLoading, videoInfo?.thumbnails?.high, youtubeOpacity]);
+
   // 메모이제이션된 값들
   const thumbnailSize = useMemo(() => {
     const height = AppSize.ratioHeight(32);
@@ -52,22 +72,23 @@ const HeaderBackground = React.memo(() => {
 
   const imageUrls = useMemo(
     () => ({
-      youtube: 'https://i.ytimg.com/vi/U5TPQoEveJY/hq720.jpg',
+      youtube: videoInfo?.thumbnails?.high || '',
       tmdb: data?.backdropPath
         ? formatter.prefixTmdbImgUrl(data.backdropPath, { size: TmdbImageSize.w780 })
         : '',
     }),
-    [data?.backdropPath],
+    [data?.backdropPath, videoInfo?.thumbnails?.high],
   );
 
   // 이벤트 핸들러들
   const handlePlayPress = useCallback(() => {
     const title = data?.title || '';
+    const videoId = videoInfo?.id || 'U5TPQoEveJY'; // 기본값 유지
     navigation.navigate(routePages.player, {
-      videoId: 'U5TPQoEveJY',
+      videoId: videoId,
       title: title,
     });
-  }, [navigation, data?.title]);
+  }, [navigation, data?.title, videoInfo?.id]);
 
   const handleThumbnailPress = useCallback(() => {
     toggleImages();
@@ -87,7 +108,9 @@ const HeaderBackground = React.memo(() => {
         {imageUrls.youtube && (
           <AnimatedBackgroundImage
             source={{ uri: imageUrls.youtube }}
-            style={{ opacity: opacityValues.secondary }}
+            style={{
+              opacity: Animated.multiply(opacityValues.secondary, youtubeOpacity),
+            }}
           />
         )}
       </ImageWrapper>
@@ -130,7 +153,12 @@ const HeaderBackground = React.memo(() => {
             )}
             {/* YouTube 썸네일 */}
             {imageUrls.youtube && (
-              <Animated.View style={{ position: 'absolute', opacity: opacityValues.primary }}>
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  opacity: Animated.multiply(opacityValues.primary, youtubeOpacity),
+                }}
+              >
                 <LoadableImageView
                   source={imageUrls.youtube}
                   width={thumbnailSize.width}
@@ -318,16 +346,6 @@ const SubText = styled.Text({
 
 const RatingWrapper = styled.View({
   alignItems: 'center',
-});
-
-const BackgroundImage = styled.Image({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  width: '100%',
-  height: '100%',
 });
 
 const AnimatedBackgroundImage = styled(Animated.Image)({
