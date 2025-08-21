@@ -78,4 +78,3 @@ export enum YouTubeErrorCode {
   PARSING_ERROR = 'PARSING_ERROR',
   RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
 }
-

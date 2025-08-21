@@ -16,6 +16,7 @@ import { pageScraper } from './scrapers/pageScraper';
 
 /**
  * 백그라운드 작업 실행기 - UI 블로킹 방지
+ * XIYA NOTE : 이건 feature/utils에 적절하게 위치시키기ㅣ
  */
 const runInBackground = <T>(task: () => Promise<T>): Promise<T> => {
   return new Promise((resolve, reject) => {
@@ -179,20 +180,5 @@ export const youtubeApi = {
         ...(oembedData.html && { embedHtml: oembedData.html }),
       },
     };
-  },
-
-  /**
-   * 캐시된 데이터 확인 (향후 구현 가능)
-   */
-  getCachedVideo(videoId: string): YouTubeVideo | null {
-    // 추후 localStorage나 메모리 캐시 구현
-    return null;
-  },
-
-  /**
-   * 비디오 데이터 캐싱 (향후 구현 가능)
-   */
-  cacheVideo(videoId: string, data: YouTubeVideo): void {
-    // 추후 캐싱 로직 구현
   },
 };

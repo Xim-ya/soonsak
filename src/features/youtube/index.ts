@@ -28,8 +28,4 @@ export {
   useProgressiveYouTubeVideo,
   useMultipleYouTubeVideos,
 } from './hooks/useYouTubeVideo';
-export {
-  useYouTubeMetrics,
-  useRealTimeYouTubeMetrics,
-  useFormattedMetrics,
-} from './hooks/useYouTubeMetrics';
+export { useYouTubeMetrics, useFormattedMetrics } from './hooks/useYouTubeMetrics';

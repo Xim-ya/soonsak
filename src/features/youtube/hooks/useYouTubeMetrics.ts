@@ -4,7 +4,6 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { YouTubeVideo, YouTubeApiError } from '../types';
 import { youtubeApi } from '../api';
 
@@ -15,16 +14,14 @@ export const useYouTubeMetrics = (
   urlOrId?: string,
   options?: {
     enabled?: boolean;
-    refetchInterval?: number; // 실시간 업데이트 간격 (ms)
   },
 ) => {
   return useQuery({
     queryKey: ['youtube', 'metrics', urlOrId],
     queryFn: () => youtubeApi.getVideoMetrics(urlOrId!),
     enabled: !!urlOrId && (options?.enabled ?? true),
-    staleTime: 2 * 60 * 1000, // 2분 fresh (메트릭스는 자주 변경)
-    gcTime: 10 * 60 * 1000, // 10분 캐시
-    ...(options?.refetchInterval && { refetchInterval: options.refetchInterval }), // 실시간 업데이트
+    staleTime: Infinity, // 데이터는 한 번 가져온 후 수동 새로고침 전까지 유지
+    gcTime: Infinity, // 캐시는 명시적으로 제거하기 전까지 유지
     retry: (failureCount, error) => {
       if (error instanceof YouTubeApiError) {
         return error.retry && failureCount < 1;
@@ -35,13 +32,11 @@ export const useYouTubeMetrics = (
 };
 
 /**
- * 실시간 메트릭스 업데이트 Hook
- * 일정 간격으로 메트릭스를 갱신
+ * 메트릭스 수동 갱신 Hook
+ * 필요 시 수동으로 메트릭스를 갱신
+ * @deprecated 자동 갱신 제거 - 불필요한 네트워크 요청 방지
  */
-export const useRealTimeYouTubeMetrics = (
-  urlOrId?: string,
-  updateInterval: number = 60000, // 기본 1분
-) => {
+export const useManualRefreshMetrics = (urlOrId?: string) => {
   const queryClient = useQueryClient();
 
   // 수동 갱신 함수
@@ -50,14 +45,6 @@ export const useRealTimeYouTubeMetrics = (
       queryClient.invalidateQueries({ queryKey: ['youtube', 'metrics', urlOrId] });
     }
   };
-
-  // 자동 갱신 설정
-  useEffect(() => {
-    if (!urlOrId) return;
-
-    const timer = setInterval(refreshMetrics, updateInterval);
-    return () => clearInterval(timer);
-  }, [urlOrId, updateInterval]);
 
   const query = useYouTubeMetrics(urlOrId);
 

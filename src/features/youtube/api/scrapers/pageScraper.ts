@@ -26,11 +26,26 @@ export const pageScraper = {
     try {
       const response = await fetch(url, {
         headers: {
+          // 데스크톱 Chrome UA로 변경 (모바일이 아닌 데스크톱 버전 요청)
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           Accept:
-            'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
           'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
+          // 데스크톱 관련 헤더
+          'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'sec-ch-ua-mobile': '?0', // 모바일 아님
+          'sec-ch-ua-platform': '"Windows"',
+          // YouTube 동의 쿠키 추가 (CONSENT 쿠키로 동의 화면 회피)
+          'Cookie': 'CONSENT=YES+cb.20210328-17-p0.en+FX+100',
         },
       });
 
@@ -80,15 +95,37 @@ export const pageScraper = {
       duration: '0:00',
     };
 
-    // HTML에서 직접 업로드 날짜 추출
-    this.extractUploadDateFromHtml(html, data);
+    // JSON-LD 구조화 데이터 추출 (microformat에서)
+    // TODO: 개선 필요 - YouTube가 프로그래밍 방식 접근을 감지하여 JSON-LD 제공 안 함
+    // 병목: YouTube는 실제 브라우저와 fetch 요청을 구분하여 다른 HTML 제공
+    // - 브라우저: JavaScript 실행 후 동적으로 JSON-LD 삽입
+    // - fetch: 초기 HTML만 제공, JSON-LD 없음
+    // 향후 개선 방안:
+    // 1. WebView를 통한 실제 브라우저 렌더링 후 데이터 추출
+    // 2. YouTube Data API v3 사용 (공식 방법)
+    // 3. ytInitialData/ytInitialPlayerResponse 파싱
+    // this.extractMicroformatJsonLd(html, data);
+    // await yieldToMain();
+
+    // HTML에서 직접 업로드 날짜 추출 (백업)
+    if (!data.uploadDate) {
+      this.extractUploadDateFromHtml(html, data);
+    }
     await yieldToMain();
 
-    // ytInitialData에서 추가 데이터 추출
-    this.extractYtInitialData(html, data);
-    await yieldToMain();
+    // ytInitialData에서 추가 데이터 추출 (좋아요수 백업)
+    if (!data.likeCount) {
+      this.extractYtInitialData(html, data);
+      await yieldToMain();
+    }
 
-    // 메타데이터에서 추가 정보 추출
+    // 강화된 메타데이터 추출 (백업)
+    if (!data.likeCount || !data.viewCount) {
+      this.extractEnhancedMetadata(html, data);
+      await yieldToMain();
+    }
+
+    // 메타데이터에서 추가 정보 추출 (조회수/길이 백업)
     this.extractMetadata(html, data);
 
     console.log('✅ 스크래핑 완료:', {
@@ -103,43 +140,257 @@ export const pageScraper = {
   },
 
   /**
-   * ytInitialData에서 데이터 추출
+   * microformat JSON-LD에서 정확한 데이터 추출
+   * @deprecated YouTube가 fetch 요청에 JSON-LD를 제공하지 않음
+   * TODO: WebView 또는 YouTube Data API v3로 대체 필요
+   */
+  extractMicroformatJsonLd(html: string, data: ScrapedVideoData): void {
+    // 여러 가지 JSON-LD 패턴 시도 (nonce 속성 등을 고려한 더 유연한 패턴)
+    const patterns = [
+      // 가장 유연한 패턴 (어떤 속성이든 허용) - nonce 포함
+      /<script[^>]*type=["']application\/ld\+json["'][^>]*nonce=["'][^"']*["'][^>]*>([\s\S]*?)<\/script>/gi,
+      /<script[^>]*nonce=["'][^"']*["'][^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+      // 기존 패턴들 (nonce 없는 경우)
+      /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+      /<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+      /<script[^>]*\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+      /<script\s+[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+    ];
+
+    let jsonLdMatches = null;
+
+    for (const pattern of patterns) {
+      jsonLdMatches = html.match(pattern);
+      if (jsonLdMatches && jsonLdMatches.length > 0) {
+        console.log(
+          `🔍 JSON-LD 스크립트 ${jsonLdMatches.length}개 발견 (패턴: ${pattern.source.substring(0, 50)}...)`,
+        );
+        break;
+      } else {
+        console.log(`❌ 패턴 실패: ${pattern.source.substring(0, 50)}...`);
+      }
+    }
+
+    if (!jsonLdMatches || jsonLdMatches.length === 0) {
+      // HTML에서 JSON-LD 관련 텍스트 존재 여부 확인
+      const hasJsonLd = html.includes('application/ld+json');
+      const hasMicroformat = html.includes('microformat');
+      const hasVideoObject = html.includes('"@type":"VideoObject"');
+
+      console.log('❌ JSON-LD 스크립트를 찾을 수 없습니다');
+      console.log('🔍 디버깅 정보:');
+      console.log('  - application/ld+json 포함:', hasJsonLd);
+      console.log('  - microformat 포함:', hasMicroformat);
+      console.log('  - VideoObject 포함:', hasVideoObject);
+
+      // 실제 script 태그가 있는지 직접 확인하고 로그 출력
+      if (hasJsonLd) {
+        console.log('🔍 실제 script 태그 찾기 시도...');
+
+        // 더 간단한 패턴으로 script 태그 찾기 (nonce 속성 포함)
+        const simplePatterns = [
+          /<script[^>]*application\/ld\+json[^>]*nonce[^>]*>[\s\S]*?<\/script>/gi,
+          /<script[^>]*nonce[^>]*application\/ld\+json[^>]*>[\s\S]*?<\/script>/gi,
+          /<script[^>]*application\/ld\+json[^>]*>[\s\S]*?<\/script>/gi,
+        ];
+        
+        let simpleScriptMatch = null;
+        for (const pattern of simplePatterns) {
+          simpleScriptMatch = html.match(pattern);
+          if (simpleScriptMatch && simpleScriptMatch.length > 0) {
+            console.log(`🎯 간단한 패턴 매치 (${pattern.source.substring(0, 30)}...): ${simpleScriptMatch.length}개`);
+            break;
+          }
+        }
+        if (simpleScriptMatch) {
+          console.log(`🎯 간단한 패턴으로 ${simpleScriptMatch.length}개 script 태그 발견!`);
+          simpleScriptMatch.forEach((script, index) => {
+            const shortScript = script.length > 200 ? script.substring(0, 200) + '...' : script;
+            console.log(`📋 Script ${index + 1}:`, shortScript);
+          });
+
+          // 첫 번째 스크립트에서 JSON 추출 시도
+          if (simpleScriptMatch[0]) {
+            const jsonContent = simpleScriptMatch[0].match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+            if (jsonContent?.[1]) {
+              try {
+                // JSON 문자열 정리 (제어 문자 처리)
+                let cleanJsonString = jsonContent[1].trim();
+                console.log('📋 JSON-LD 원본 (첫 300자):', cleanJsonString.substring(0, 300));
+                console.log('📋 JSON-LD 원본 (마지막 100자):', cleanJsonString.substring(cleanJsonString.length - 100));
+                
+                // 안전하게 JSON 파싱 (제어 문자는 그대로 유지 - Node.js는 JSON 내부의 실제 줄바꿈을 처리할 수 있음)
+                const jsonData = JSON.parse(cleanJsonString);
+                if (jsonData['@type'] === 'VideoObject') {
+                  console.log('🎯 VideoObject 발견! 직접 파싱 시도');
+                  // 조회수 추출
+                  if (jsonData.interactionStatistic) {
+                    const viewStat = jsonData.interactionStatistic.find(
+                      (stat: any) => stat.interactionType === 'https://schema.org/WatchAction',
+                    );
+                    const likeStat = jsonData.interactionStatistic.find(
+                      (stat: any) => stat.interactionType === 'https://schema.org/LikeAction',
+                    );
+
+                    if (viewStat?.userInteractionCount) {
+                      data.viewCount = parseInt(viewStat.userInteractionCount.toString());
+                      console.log('✅ 직접 추출 조회수:', data.viewCount);
+                    }
+
+                    if (likeStat?.userInteractionCount) {
+                      data.likeCount = parseInt(likeStat.userInteractionCount.toString());
+                      console.log('✅ 직접 추출 좋아요수:', data.likeCount);
+                    }
+                  }
+
+                  // 기타 데이터
+                  if (jsonData.uploadDate) {
+                    data.uploadDate = new Date(jsonData.uploadDate).toISOString();
+                    console.log('✅ 직접 추출 업로드일:', jsonData.uploadDate.split('T')[0]);
+                  }
+
+                  if (jsonData.duration) {
+                    data.duration = formatYouTubeDuration(jsonData.duration);
+                    console.log('✅ 직접 추출 영상 길이:', data.duration);
+                  }
+
+                  if (jsonData.description) {
+                    data.description = jsonData.description;
+                  }
+
+                  if (jsonData.author) {
+                    data.channelName =
+                      typeof jsonData.author === 'string' ? jsonData.author : jsonData.author.name;
+                  }
+
+                  return; // 성공적으로 추출했으므로 종료
+                }
+              } catch (error) {
+                console.log('❌ 직접 JSON 파싱 실패:', error);
+              }
+            }
+          }
+        } else {
+          console.log('❌ 간단한 패턴으로도 script 태그를 찾을 수 없음');
+
+          // HTML 샘플 출력 (디버깅용)
+          const jsonLdIndex = html.indexOf('application/ld+json');
+          if (jsonLdIndex !== -1) {
+            const startIndex = Math.max(0, jsonLdIndex - 100);
+            const endIndex = Math.min(html.length, jsonLdIndex + 500);
+            const sample = html.substring(startIndex, endIndex);
+            console.log('🔍 application/ld+json 주변 HTML:', sample);
+          }
+        }
+      }
+
+      if (hasVideoObject) {
+        console.log('🎯 VideoObject가 HTML에 있습니다. 기존 방식으로 직접 추출을 시도합니다.');
+        this.extractVideoObjectDirectly(html, data);
+      }
+      return;
+    }
+
+    console.log(`🔍 JSON-LD 스크립트 ${jsonLdMatches.length}개 발견`);
+
+    let jsonLdData = null;
+
+    // 각 JSON-LD 스크립트에서 VideoObject 찾기
+    for (let i = 0; i < jsonLdMatches!.length; i++) {
+      const fullMatch = jsonLdMatches![i];
+      // 스크립트 태그 내부 JSON 내용만 추출 (더 유연한 패턴 사용)
+      const scriptContent = fullMatch?.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+      if (!scriptContent || !scriptContent[1]) continue;
+
+      try {
+        // JSON 문자열 정리 (제어 문자 처리)
+        const cleanJsonString = scriptContent[1].trim();
+        console.log(`📋 메인 JSON-LD ${i + 1} 원본 (첫 300자):`, cleanJsonString.substring(0, 300));
+        const jsonLd = JSON.parse(cleanJsonString);
+        console.log(`📋 JSON-LD ${i + 1} 타입:`, jsonLd['@type']);
+
+        if (jsonLd['@type'] === 'VideoObject') {
+          jsonLdData = jsonLd;
+          console.log('🎯 VideoObject JSON-LD 발견!');
+          break;
+        }
+      } catch (error) {
+        console.log(`❌ JSON-LD ${i + 1} 파싱 실패:`, error);
+      }
+    }
+
+    if (!jsonLdData) {
+      console.log('❌ VideoObject 타입의 JSON-LD를 찾을 수 없습니다');
+      return;
+    }
+
+    try {
+      const jsonLd = jsonLdData;
+      console.log('🎯 JSON-LD 데이터 파싱 성공!');
+
+      // VideoObject 타입 확인
+      if (jsonLd['@type'] === 'VideoObject') {
+        // 정확한 조회수 추출 (WatchAction)
+        if (jsonLd.interactionStatistic) {
+          const viewStat = jsonLd.interactionStatistic.find(
+            (stat: any) => stat.interactionType === 'https://schema.org/WatchAction',
+          );
+          if (viewStat?.userInteractionCount) {
+            data.viewCount = parseInt(viewStat.userInteractionCount.toString());
+            console.log('✅ 정확한 조회수:', data.viewCount);
+          }
+
+          // 정확한 좋아요수 추출 (LikeAction)
+          const likeStat = jsonLd.interactionStatistic.find(
+            (stat: any) => stat.interactionType === 'https://schema.org/LikeAction',
+          );
+          if (likeStat?.userInteractionCount) {
+            data.likeCount = parseInt(likeStat.userInteractionCount.toString());
+            console.log('✅ 정확한 좋아요수:', data.likeCount);
+          }
+        }
+
+        // 업로드 날짜
+        if (jsonLd.uploadDate) {
+          data.uploadDate = new Date(jsonLd.uploadDate).toISOString();
+          console.log('✅ 업로드일:', jsonLd.uploadDate.split('T')[0]);
+        }
+
+        // 영상 길이
+        if (jsonLd.duration) {
+          data.duration = formatYouTubeDuration(jsonLd.duration);
+          console.log('✅ 영상 길이:', data.duration);
+        }
+
+        // 설명
+        if (jsonLd.description) {
+          data.description = jsonLd.description;
+        }
+
+        // 채널명
+        if (jsonLd.author) {
+          data.channelName = typeof jsonLd.author === 'string' ? jsonLd.author : jsonLd.author.name;
+        }
+      }
+    } catch (error) {
+      console.log('❌ JSON-LD 데이터 처리 실패:', error);
+    }
+  },
+
+  /**
+   * ytInitialData에서 데이터 추출 (기본)
    */
   extractYtInitialData(html: string, data: ScrapedVideoData): void {
     const ytDataMatch = html.match(/var\s+ytInitialData\s*=\s*({[\s\S]*?});/);
-    if (!ytDataMatch || !ytDataMatch[1]) return;
+    if (!ytDataMatch || !ytDataMatch[1]) {
+      console.log('❌ 기본 ytInitialData 패턴을 찾을 수 없음');
+      return;
+    }
 
     try {
       const ytData = JSON.parse(ytDataMatch[1]);
-      console.log('🎯 ytInitialData 파싱 성공');
-
-      // 좋아요 수 추출 시도
-      const likeButtonPaths = [
-        // 최신 YouTube 구조
-        ytData?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.[0]
-          ?.videoPrimaryInfoRenderer?.videoActions?.menuRenderer?.topLevelButtons?.[0]
-          ?.segmentedLikeDislikeButtonViewModel?.likeButtonViewModel?.likeButtonViewModel
-          ?.toggleButtonViewModel?.toggleButtonViewModel?.defaultButtonViewModel?.buttonViewModel
-          ?.title,
-        // 대체 경로
-        ytData?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.[0]
-          ?.videoPrimaryInfoRenderer?.videoActions?.menuRenderer?.topLevelButtons?.[0]
-          ?.toggleButtonRenderer?.defaultText?.accessibility?.accessibilityData?.label,
-      ];
-
-      for (const path of likeButtonPaths) {
-        if (!path) continue;
-
-        const likeData = this.extractLikeCount(path);
-        if (likeData.count > 0) {
-          data.likeCount = likeData.count;
-          if (likeData.text) {
-            data.likeText = likeData.text;
-          }
-          console.log('✅ 좋아요:', data.likeText || data.likeCount);
-          break;
-        }
-      }
+      console.log('🎯 기본 ytInitialData 파싱 성공');
+      this.extractFromYtData(ytData, data);
 
       // 채널 정보 추출
       const channelInfo =
@@ -151,10 +402,9 @@ export const pageScraper = {
         if (channelTitle) {
           data.channelName = channelTitle;
         }
-        // channelId는 현재 타입에서 제거됨
       }
     } catch (error) {
-      console.log('❌ ytInitialData 파싱 실패:', error);
+      console.log('❌ 기본 ytInitialData 파싱 실패:', error);
     }
   },
 
@@ -200,30 +450,56 @@ export const pageScraper = {
 
     // 좋아요수가 없으면 다양한 방법으로 추출
     if (!data.likeCount) {
-      // 1. JSON 데이터에서 좋아요수 찾기
-      const likePatterns = [
-        /"defaultText":{"accessibility":{"accessibilityData":{"label":"([^"]*좋아요[^"]*)"}}/,
-        /"likeCountText":"([^"]+)"/,
-        /"toggledText":"([^"]*좋아요[^"]*)"/,
-        /"title":"([^"]*좋아요[^"]*)"/,
+      // 1. 정확한 숫자 패턴 우선 시도
+      const exactLikePatterns = [
+        /"likeCount":(\d+)/, // 정확한 숫자 필드
+        /"likeCountIfIndifferent":(\d+)/,
+        /"likeCountWithoutText":(\d+)/,
+        /"rawLikeCount":(\d+)/,
+        /"userInteractionCount":"(\d+)"/, // Schema.org 형식
       ];
 
-      for (const pattern of likePatterns) {
+      for (const pattern of exactLikePatterns) {
         const match = html.match(pattern);
         if (match?.[1]) {
-          const likeData = this.extractLikeCount(match[1]);
-          if (likeData.count > 0) {
-            data.likeCount = likeData.count;
-            if (likeData.text) data.likeText = likeData.text;
-            console.log('✅ JSON 패턴 좋아요:', data.likeText || data.likeCount);
+          const count = parseInt(match[1]);
+          if (count > 0 && count < 100000000) {
+            data.likeCount = count;
+            console.log('✅ 정확한 좋아요수:', data.likeCount);
             break;
           }
         }
       }
 
-      // 2. aria-label에서 좋아요 수 추출 (백업)
+      // 2. JSON 데이터에서 좋아요수 찾기 (백업)
+      if (!data.likeCount) {
+        const likePatterns = [
+          /"defaultText":{"accessibility":{"accessibilityData":{"label":"([^"]*좋아요[^"]*)"}}/,
+          /"likeCountText":"([^"]+)"/,
+          /"toggledText":"([^"]*좋아요[^"]*)"/,
+          /"title":"([^"]*좋아요[^"]*)"/,
+        ];
+
+        for (const pattern of likePatterns) {
+          const match = html.match(pattern);
+          if (match?.[1]) {
+            const likeData = this.extractLikeCount(match[1]);
+            if (likeData.count > 0) {
+              data.likeCount = likeData.count;
+              if (likeData.text) data.likeText = likeData.text;
+              console.log('✅ JSON 패턴 좋아요:', data.likeText || data.likeCount);
+              break;
+            }
+          }
+        }
+      }
+
+      // 3. aria-label에서 정확한 숫자 추출 (최종 백업)
       if (!data.likeCount) {
         const ariaPatterns = [
+          // 정확한 숫자가 포함된 aria-label
+          /aria-label="[^"]*정확히\s*([\d,]+)\s*명/i,
+          /aria-label="[^"]*([\d,]+)\s*명이\s*좋아요/i,
           /aria-label="[^"]*사용자\s*([\d,]+)\s*명[^"]*좋아/i,
           /aria-label="[^"]*([\d,]+)\s*명[^"]*좋아/i,
           /aria-label="[^"]*([\d,]+)\s*(?:others?|people)?[^"]*like/i,
@@ -331,5 +607,264 @@ export const pageScraper = {
     }
 
     console.log('❌ HTML에서도 uploadDate를 찾을 수 없습니다');
+  },
+
+  /**
+   * 강화된 메타데이터 추출 (최신 YouTube 구조 대응)
+   */
+  extractEnhancedMetadata(html: string, data: ScrapedVideoData): void {
+    console.log('🔍 강화된 메타데이터 추출 시작');
+
+    // 다양한 ytInitialData 패턴 시도
+    const ytDataPatterns = [
+      /var\s+ytInitialData\s*=\s*({[\s\S]*?});/,
+      /ytInitialData\s*=\s*({[\s\S]*?});/,
+      /window\["ytInitialData"\]\s*=\s*({[\s\S]*?});/,
+      /"ytInitialData":\s*({[\s\S]*?}),/,
+      /ytInitialData"?\s*:\s*({[\s\S]*?})[,}]/,
+    ];
+
+    let ytDataMatch = null;
+    for (const pattern of ytDataPatterns) {
+      ytDataMatch = html.match(pattern);
+      if (ytDataMatch) {
+        console.log('🎯 ytInitialData 패턴 매치:', pattern.source.substring(0, 30) + '...');
+        break;
+      }
+    }
+
+    if (ytDataMatch) {
+      try {
+        const ytData = JSON.parse(ytDataMatch[1]!);
+        console.log('🎯 강화된 ytInitialData 파싱 성공');
+        this.extractFromYtData(ytData, data);
+      } catch (error) {
+        console.log('❌ 강화된 ytInitialData 파싱 실패:', error);
+      }
+    }
+
+    // 정규표현식으로 직접 좋아요수 찾기
+    if (!data.likeCount) {
+      const enhancedLikePatterns = [
+        // YouTube API 응답에서 찾을 수 있는 패턴들
+        /"toggledText":\s*{\s*"accessibility":\s*{\s*"accessibilityData":\s*{\s*"label":\s*"([^"]*좋아요[^"]*)"/gi,
+        /"defaultText":\s*{\s*"accessibility":\s*{\s*"accessibilityData":\s*{\s*"label":\s*"([^"]*좋아요[^"]*)"/gi,
+        /"title":\s*"([^"]*좋아요[^"]*)"/gi,
+        /"ariaLabel":\s*"([^"]*좋아요[^"]*)"/gi,
+        /"label":\s*"([^"]*\d+[^"]*좋아요[^"]*)"/gi,
+        // 영어 패턴
+        /"label":\s*"([^"]*\d+[^"]*like[^"]*)"/gi,
+        /"title":\s*"([^"]*\d+[^"]*like[^"]*)"/gi,
+      ];
+
+      for (const pattern of enhancedLikePatterns) {
+        const matches = Array.from(html.matchAll(pattern));
+        for (const match of matches) {
+          if (match[1]) {
+            const likeData = this.extractLikeCount(match[1]);
+            if (likeData.count > 0) {
+              data.likeCount = likeData.count;
+              if (likeData.text) data.likeText = likeData.text;
+              console.log('✅ 강화된 패턴 좋아요:', data.likeText || data.likeCount);
+              break;
+            }
+          }
+        }
+        if (data.likeCount > 0) break;
+      }
+    }
+
+    // 조회수 패턴 강화
+    if (!data.viewCount) {
+      const enhancedViewPatterns = [
+        /"viewCountText":\s*{\s*"simpleText":\s*"([^"]+)"/gi,
+        /"shortViewCountText":\s*{\s*"simpleText":\s*"([^"]+)"/gi,
+        /"viewCount":\s*{\s*"simpleText":\s*"([^"]+)"/gi,
+        /"views":\s*"([^"]+)"/gi,
+        /조회수\s*([\d,]+)/gi,
+        /views?\s*([\d,]+)/gi,
+      ];
+
+      for (const pattern of enhancedViewPatterns) {
+        const match = html.match(pattern);
+        if (match?.[1]) {
+          const viewText = match[1];
+          const viewNum = this.parseViewCount(viewText);
+          if (viewNum > 0) {
+            data.viewCount = viewNum;
+            console.log('✅ 강화된 조회수:', data.viewCount);
+            break;
+          }
+        }
+      }
+    }
+  },
+
+  /**
+   * ytData에서 데이터 추출 (공통 로직)
+   */
+  extractFromYtData(ytData: any, data: ScrapedVideoData): void {
+    try {
+      // videoPrimaryInfoRenderer에서 정보 추출
+      const videoDetails =
+        ytData?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.[0]
+          ?.videoPrimaryInfoRenderer;
+
+      if (videoDetails) {
+        console.log('📋 videoPrimaryInfoRenderer 발견');
+
+        // videoActions에서 좋아요 버튼 찾기
+        const videoActions = videoDetails.videoActions?.menuRenderer?.topLevelButtons;
+        if (videoActions && Array.isArray(videoActions)) {
+          console.log('📋 topLevelButtons 개수:', videoActions.length);
+
+          for (const button of videoActions) {
+            // 새로운 segmentedLikeDislikeButtonViewModel 구조
+            if (button.segmentedLikeDislikeButtonViewModel) {
+              const likeViewModel =
+                button.segmentedLikeDislikeButtonViewModel?.likeButtonViewModel?.likeButtonViewModel
+                  ?.toggleButtonViewModel?.toggleButtonViewModel?.defaultButtonViewModel
+                  ?.buttonViewModel;
+
+              if (likeViewModel?.title) {
+                const likeData = this.extractLikeCount(likeViewModel.title);
+                if (likeData.count > 0) {
+                  data.likeCount = likeData.count;
+                  if (likeData.text) data.likeText = likeData.text;
+                  console.log('✅ segmentedLikeDislike 좋아요:', data.likeText || data.likeCount);
+                  break;
+                }
+              }
+            }
+
+            // 기존 toggleButtonRenderer 구조
+            if (button.toggleButtonRenderer) {
+              const toggleText =
+                button.toggleButtonRenderer?.defaultText?.accessibility?.accessibilityData?.label ||
+                button.toggleButtonRenderer?.toggledText?.accessibility?.accessibilityData?.label;
+
+              if (toggleText) {
+                const likeData = this.extractLikeCount(toggleText);
+                if (likeData.count > 0) {
+                  data.likeCount = likeData.count;
+                  if (likeData.text) data.likeText = likeData.text;
+                  console.log('✅ toggleButton 좋아요:', data.likeText || data.likeCount);
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // 조회수 정보
+        const viewCountText =
+          videoDetails.viewCount?.videoViewCountRenderer?.viewCount?.simpleText ||
+          videoDetails.viewCount?.videoViewCountRenderer?.shortViewCount?.simpleText;
+
+        if (viewCountText && !data.viewCount) {
+          const viewNum = this.parseViewCount(viewCountText);
+          if (viewNum > 0) {
+            data.viewCount = viewNum;
+            console.log('✅ videoPrimaryInfo 조회수:', data.viewCount);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('❌ ytData 추출 실패:', error);
+    }
+  },
+
+  /**
+   * 조회수 텍스트 파싱
+   */
+  parseViewCount(text: string): number {
+    if (!text) return 0;
+
+    // "1,234,567회 시청" -> 1234567
+    const koreanMatch = text.match(/([\d,]+)(?:회|번|명)/);
+    if (koreanMatch) {
+      return parseInt(koreanMatch[1]!.replace(/,/g, ''));
+    }
+
+    // "1.2M views" -> 1200000
+    const englishMatch = text.match(/([\d.]+)([KMB])\s*views?/i);
+    if (englishMatch) {
+      return parseAbbreviatedNumber(englishMatch[1]! + englishMatch[2]!);
+    }
+
+    // "1,234,567 views" -> 1234567
+    const numberMatch = text.match(/([\d,]+)/);
+    if (numberMatch) {
+      const num = parseInt(numberMatch[1]!.replace(/,/g, ''));
+      if (num > 100) return num;
+    }
+
+    return 0;
+  },
+
+  /**
+   * HTML에서 VideoObject JSON 데이터 직접 추출
+   */
+  extractVideoObjectDirectly(html: string, data: ScrapedVideoData): void {
+    console.log('🔍 VideoObject 직접 추출 시도');
+
+    // VideoObject JSON 패턴 찾기 (스크립트 태그 없이)
+    const videoObjectMatch = html.match(
+      /{"@context":"https:\/\/schema\.org","@type":"VideoObject"[\s\S]*?"author":"[^"]+"\}/,
+    );
+
+    if (!videoObjectMatch) {
+      console.log('❌ VideoObject JSON을 찾을 수 없습니다');
+      return;
+    }
+
+    try {
+      const jsonLd = JSON.parse(videoObjectMatch[0]);
+      console.log('🎯 VideoObject 직접 추출 성공!');
+
+      // 정확한 조회수 추출 (WatchAction)
+      if (jsonLd.interactionStatistic) {
+        const viewStat = jsonLd.interactionStatistic.find(
+          (stat: any) => stat.interactionType === 'https://schema.org/WatchAction',
+        );
+        if (viewStat?.userInteractionCount) {
+          data.viewCount = parseInt(viewStat.userInteractionCount.toString());
+          console.log('✅ 정확한 조회수:', data.viewCount);
+        }
+
+        // 정확한 좋아요수 추출 (LikeAction)
+        const likeStat = jsonLd.interactionStatistic.find(
+          (stat: any) => stat.interactionType === 'https://schema.org/LikeAction',
+        );
+        if (likeStat?.userInteractionCount) {
+          data.likeCount = parseInt(likeStat.userInteractionCount.toString());
+          console.log('✅ 정확한 좋아요수:', data.likeCount);
+        }
+      }
+
+      // 업로드 날짜
+      if (jsonLd.uploadDate) {
+        data.uploadDate = new Date(jsonLd.uploadDate).toISOString();
+        console.log('✅ 업로드일:', jsonLd.uploadDate.split('T')[0]);
+      }
+
+      // 영상 길이
+      if (jsonLd.duration) {
+        data.duration = formatYouTubeDuration(jsonLd.duration);
+        console.log('✅ 영상 길이:', data.duration);
+      }
+
+      // 설명
+      if (jsonLd.description) {
+        data.description = jsonLd.description;
+      }
+
+      // 채널명
+      if (jsonLd.author) {
+        data.channelName = typeof jsonLd.author === 'string' ? jsonLd.author : jsonLd.author.name;
+      }
+    } catch (error) {
+      console.log('❌ VideoObject 직접 파싱 실패:', error);
+    }
   },
 };

@@ -16,34 +16,11 @@ interface VideoMetricsViewProps {
 
 export const VideoMetricsView = ({ youtubeUrl, videoId }: VideoMetricsViewProps = {}) => {
   // 기본 YouTube URL (사용자가 제공한 URL)
-  const defaultYouTubeUrl = 'https://www.youtube.com/watch?v=KfbFaQJK7Sc';
+  const defaultYouTubeUrl = 'https://www.youtube.com/watch?v=U5TPQoEveJY';
   const targetUrl = youtubeUrl || videoId || defaultYouTubeUrl;
 
   // 새로운 YouTube Hook 사용
-  const {
-    data: videoInfo,
-    isLoading: loading,
-    error,
-    isError,
-  } = useYouTubeVideo(targetUrl);
-
-  // 에러 시 Mock 데이터 제공
-  const displayData = isError
-    ? {
-        metrics: {
-          viewCount: 1234567,
-          likeCount: 89123,
-          likeText: '8.9만',
-        },
-        metadata: {
-          uploadDate: '2024-01-15T10:30:00Z',
-          duration: '10:30',
-        },
-        title: 'Sample Video',
-        description: 'Sample Description',
-        channelName: 'Sample Channel',
-      }
-    : videoInfo;
+  const { data: videoInfo, isLoading: loading, error, isError } = useYouTubeVideo(targetUrl);
 
   const renderIcon = (iconName: string) => {
     switch (iconName) {
@@ -67,7 +44,7 @@ export const VideoMetricsView = ({ youtubeUrl, videoId }: VideoMetricsViewProps 
             <TitleText>{title}</TitleText>
           </TopSection>
           <Gap size={4} />
-          <DataText>{loading ? '로딩중...' : (data ?? '정보없음')}</DataText>
+          <DataText>{loading ? '-' : (data ?? '-')}</DataText>
         </StackContainer>
       </ColumnContainer>
     );
@@ -75,34 +52,28 @@ export const VideoMetricsView = ({ youtubeUrl, videoId }: VideoMetricsViewProps 
 
   return (
     <Container>
-      {isError && (
-        <ErrorContainer>
-          <ErrorText>YouTube 데이터를 불러올 수 없습니다. (Mock 데이터 표시)</ErrorText>
-        </ErrorContainer>
-      )}
-
       {renderColumnItem(
         '조회수',
         'eye',
-        displayData?.metrics
-          ? formatter.formatNumberWithUnit(displayData.metrics.viewCount, true)
+        videoInfo?.metrics
+          ? formatter.formatNumberWithUnit(videoInfo.metrics.viewCount, true)
           : null,
       )}
       {renderColumnItem(
         '좋아요',
         'thumb',
-        displayData?.metrics
-          ? displayData.metrics.likeCount > 0
-            ? formatter.formatNumberWithUnit(displayData.metrics.likeCount, false)
-            : displayData.metrics.likeText || '비공개'
+        videoInfo?.metrics
+          ? videoInfo.metrics.likeCount > 0
+            ? formatter.formatNumberWithUnit(videoInfo.metrics.likeCount, false)
+            : videoInfo.metrics.likeText || '비공개'
           : null,
       )}
       {renderColumnItem(
         '업로드일',
         'small_date',
-        displayData?.metadata
-          ? displayData.metadata.uploadDate !== new Date().toISOString().split('T')[0]
-            ? formatter.getDateDifferenceFromNow(displayData.metadata.uploadDate)
+        videoInfo?.metadata
+          ? videoInfo.metadata.uploadDate !== new Date().toISOString().split('T')[0]
+            ? formatter.getDateDifferenceFromNow(videoInfo.metadata.uploadDate)
             : '오늘'
           : null,
       )}
@@ -147,16 +118,3 @@ const DataText = styled.Text({
   textAlign: 'center',
 });
 
-const ErrorContainer = styled.View({
-  position: 'absolute',
-  top: -20,
-  left: 0,
-  right: 0,
-  zIndex: 1,
-});
-
-const ErrorText = styled.Text({
-  ...textStyles.nav,
-  color: colors.red,
-  textAlign: 'center',
-});
