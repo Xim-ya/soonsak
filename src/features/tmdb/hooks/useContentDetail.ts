@@ -4,7 +4,7 @@
  */
 
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { TmdbApiError } from '../types/common';
+import { TmdbApiError } from '../types/common';
 import { MovieDto } from '../types/movieDto';
 import { TvSeriesDto } from '../types/tvDto';
 import { tmdbApi } from '../api/tmdbApi';
@@ -12,20 +12,20 @@ import { ContentType } from '@/presentation/types/content/contentType.enum';
 
 /**
  * 콘텐츠 상세 정보 조회 Hook
- * @param contentId 콘텐츠 ID (영화 ID 또는 TV 시리즈 ID)
- * @param contentType 콘텐츠 타입 ('movie' | 'tv' | 'unknown')
+ * @param contentId 콘텐츠 ID (영화 ID 또는 TV 시리즈 ID) - 필수, number 타입
+ * @param contentType 콘텐츠 타입 ('movie' | 'tv' | 'unknown') - 필수
  * @param options React Query 옵션
  */
 export const useContentDetail = (
-  contentId?: number | string,
-  contentType: ContentType = 'movie',
+  contentId: number,
+  contentType: ContentType,
   options?: {
     enabled?: boolean;
     staleTime?: number;
     gcTime?: number;
   },
 ): UseQueryResult<MovieDto | TvSeriesDto, TmdbApiError> => {
-  const id = typeof contentId === 'string' ? parseInt(contentId, 10) : contentId;
+  const id = contentId;
 
   return useQuery({
     queryKey: ['tmdb', contentType, id],
@@ -34,9 +34,9 @@ export const useContentDetail = (
         let response;
 
         if (contentType === 'movie') {
-          response = await tmdbApi.getMovieDetails(id!);
+          response = await tmdbApi.getMovieDetails(id);
         } else if (contentType === 'tv') {
-          response = await tmdbApi.getTvDetails(id!);
+          response = await tmdbApi.getTvDetails(id);
         } else {
           throw new TmdbApiError(`지원하지 않는 콘텐츠 타입: ${contentType}`, 400, false);
         }
@@ -59,8 +59,7 @@ export const useContentDetail = (
         throw error; // React Query가 처리하도록 에러 재발생
       }
     },
-    enabled:
-      !!id && (contentType === 'movie' || contentType === 'tv') && (options?.enabled ?? true),
+    enabled: (contentType === 'movie' || contentType === 'tv') && (options?.enabled ?? true),
     retry: false,
   });
 };

@@ -3,7 +3,7 @@
  * TV 시리즈 특화 DTO들
  */
 
-import { GenreDto, ProductionCompanyDto, ProductionCountryDto, SpokenLanguageDto } from './common';
+import { GenreDto, ProductionCompanyDto, ProductionCountryDto, SpokenLanguageDto } from './common';
 
 /**
  * TV 시리즈 제작자 정보

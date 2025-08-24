@@ -29,7 +29,7 @@ export type {
   TmdbErrorDto,
   TmdbApiResponse,
   TmdbApiError,
-} from './types/common';
+} from './types/common';
 
 export type { MovieDto, CollectionDto } from './types/movieDto';
 export type { TvSeriesDto, CreatorDto, NetworkDto, EpisodeDto, SeasonDto } from './types/tvDto';

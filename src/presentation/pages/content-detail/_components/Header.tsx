@@ -13,7 +13,7 @@ import { ContentType } from '@/presentation/types/content/contentType.enum';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { StartRateView } from './StartRateView';
-import { useContentDetailTemp } from '../_hooks/useContentDetail';
+import { useContentDetail } from '../_hooks/useContentDetail';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { AppSize } from '@/shared/utils/appSize';
@@ -21,7 +21,6 @@ import { useImageTransition } from '../_hooks/useImageTransition';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { useYouTubeVideo } from '@/features/youtube';
 import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
-import { useContentDetail } from '@/features/tmdb/hooks/useContentDetail';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>; // Player 뷰
 
@@ -47,7 +46,7 @@ const HeaderBackground = React.memo(() => {
     data: contentInfo,
     isLoading: isContentInfoLoading,
     error: contentInfoError,
-  } = useContentDetail(id, type);
+  } = useContentDetail(Number(id), type);
 
   const { toggleImages, opacityValues } = useImageTransition();
   const navigation = useNavigation<NavigationProp>();
@@ -202,18 +201,14 @@ const ContentInfo = React.memo(() => {
     data: contentInfo,
     isLoading: isContentInfoLoading,
     error: contentInfoError,
-  } = useContentDetail(id, type);
+  } = useContentDetail(Number(id), type);
 
   const dotText = ' · ';
 
-  // Movie/TV에 따른 연도 추출
-  const releaseYear = contentInfo
-    ? type === 'movie' 
-      ? (contentInfo as any)?.releaseDate ? formatter.dateToYear((contentInfo as any).releaseDate) : ''
-      : (contentInfo as any)?.firstAirDate ? formatter.dateToYear((contentInfo as any).firstAirDate) : ''
-    : '';
+  // 연도 추출 (ContentDetailModel은 이미 releaseDate로 통합됨)
+  const releaseYear = contentInfo?.releaseDate ? formatter.dateToYear(contentInfo.releaseDate) : '';
 
-  // Movie/TV에 따른 평점 추출 
+  // 평점 추출
   const rating = contentInfo?.voteAverage ? contentInfo.voteAverage / 2 : 0;
 
   // route params에서 title과 type이 있으면 바로 표시 (스켈레톤 대신)
@@ -239,7 +234,7 @@ const ContentInfo = React.memo(() => {
             <>
               {releaseYear && <DotText>{dotText}</DotText>}
               {contentInfo.genres.map((genre, index) => (
-                <React.Fragment key={index}>
+                <React.Fragment key={genre.id}>
                   <SubText>{genre.name}</SubText>
                   {index < contentInfo.genres.length - 1 && <SubText>{dotText}</SubText>}
                 </React.Fragment>

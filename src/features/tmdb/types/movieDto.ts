@@ -3,7 +3,7 @@
  * 영화 특화 DTO들
  */
 
-import { GenreDto, ProductionCompanyDto, ProductionCountryDto, SpokenLanguageDto } from './common';
+import { GenreDto, ProductionCompanyDto, ProductionCountryDto, SpokenLanguageDto } from './common';
 
 /**
  * 컬렉션 정보 DTO (belongsToCollection)

@@ -1,5 +1,6 @@
 import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
+import { GenreDto, MovieDto, TvSeriesDto } from '@/features/tmdb';
 
 /**
  * 콘텐츠 상세 페이지 데이터 모델
@@ -15,10 +16,51 @@ export interface ContentDetailModel extends BaseContentModel {
   readonly backdropPath: string;
   /** 출시일 */
   readonly releaseDate: string;
-  /** 장르 이름 목록 */
-  readonly genreNames: string[];
+  /** 장르 목록 */
+  readonly genres: GenreDto[];
   /** 줄거리 */
   readonly overview: string;
   /** 평점 */
   readonly voteAverage: number;
+}
+
+export namespace ContentDetailModel {
+  /**
+   * TMDB API DTO를 ContentDetailModel로 변환
+   * @param dto MovieDto 또는 TvSeriesDto
+   * @param contentType 콘텐츠 타입 ('movie' | 'tv')
+   * @returns ContentDetailModel
+   */
+  export function fromDto(
+    dto: MovieDto | TvSeriesDto,
+    contentType: ContentType,
+  ): ContentDetailModel {
+    // Movie와 TV 공통 필드
+    const baseData = {
+      id: dto.id,
+      backdropPath: dto.backdropPath || '',
+      genres: dto.genres,
+      overview: dto.overview,
+      voteAverage: dto.voteAverage,
+      posterPath: dto.posterPath || '',
+      type: contentType,
+    };
+
+    // Movie/TV별 특화 필드 처리
+    if (contentType === 'movie') {
+      const movieDto = dto as MovieDto;
+      return {
+        ...baseData,
+        title: movieDto.title,
+        releaseDate: movieDto.releaseDate,
+      };
+    } else {
+      const tvDto = dto as TvSeriesDto;
+      return {
+        ...baseData,
+        title: tvDto.name, // TV는 name 필드 사용
+        releaseDate: tvDto.firstAirDate, // TV는 firstAirDate 사용
+      };
+    }
+  }
 }
