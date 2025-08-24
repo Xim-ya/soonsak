@@ -10,7 +10,7 @@ export const tmdbApi = {
    * @returns 영화 상세 정보 (한국어)
    */
   getMovieDetails: (movieId: number) => tmdbClient.get<MovieDto>(`/movie/${movieId}`),
-  
+
   /**
    * TV 시리즈 상세 정보 조회
    * @param seriesId TV 시리즈 ID
@@ -30,5 +30,6 @@ export const tmdbApi = {
    * @param movieId 영화 ID
    * @returns 영화 크레딧 정보 (한국어)
    */
-  getMovieCredits: (movieId: number) => tmdbClient.get<MovieCreditsResponse>(`/movie/${movieId}/credits`),
+  getMovieCredits: (movieId: number) =>
+    tmdbClient.get<MovieCreditsResponse>(`/movie/${movieId}/credits`),
 };

@@ -22,7 +22,7 @@ export const snakeToCamel = <T = any>(obj: any): T => {
 
   // 배열 처리
   if (Array.isArray(obj)) {
-    return obj.map(item => snakeToCamel(item)) as T;
+    return obj.map((item) => snakeToCamel(item)) as T;
   }
 
   // 객체가 아닌 기본 타입 처리
@@ -51,7 +51,7 @@ export const snakeToCamel = <T = any>(obj: any): T => {
  * camelCase를 snake_case로 변환 (요청 시 사용)
  */
 const camelToSnakeString = (str: string): string => {
-  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 };
 
 /**
@@ -67,7 +67,7 @@ export const camelToSnake = <T = any>(obj: any): T => {
 
   // 배열 처리
   if (Array.isArray(obj)) {
-    return obj.map(item => camelToSnake(item)) as T;
+    return obj.map((item) => camelToSnake(item)) as T;
   }
 
   // 객체가 아닌 기본 타입 처리

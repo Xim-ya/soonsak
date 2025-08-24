@@ -6,18 +6,18 @@ import { TVCreditsResponse, MovieCreditsResponse } from '@/features/tmdb/types/c
 
 /**
  * useCredits - 콘텐츠 크레딧 정보를 관리하는 훅
- * 
+ *
  * TMDB API를 직접 호출하여 Movie/TV Credits 데이터를 CreditPersonModel[]로 변환합니다.
  * React Query를 사용하여 캐싱과 중복 요청 방지를 자동으로 처리합니다.
- * 
+ *
  * @param contentId - 콘텐츠 고유 ID (필수)
  * @param contentType - 콘텐츠 타입 ('movie' | 'tv') (필수)
  * @returns 크레딧 데이터, 로딩 상태, 에러 상태
- * 
+ *
  * @example
  * // Movie Credits 조회
  * const { data, isLoading, error } = useCredits(550, 'movie');
- * 
+ *
  * // TV Series Credits 조회
  * const { data, isLoading, error } = useCredits(1396, 'tv');
  */

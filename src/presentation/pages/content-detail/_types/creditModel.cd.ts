@@ -3,7 +3,7 @@ import { ContentType } from '@/presentation/types/content/contentType.enum';
 
 /**
  * CreditPersonModel - 크레딧 인물 정보
- * 
+ *
  * 요청하신 공통 필드만 포함: id, knownForDepartment, name, character, profilePath
  */
 export interface CreditPersonModel {
@@ -20,7 +20,7 @@ export namespace CreditPersonModel {
    */
   export function fromDto(
     response: TVCreditsResponse | MovieCreditsResponse,
-    contentType: ContentType
+    contentType: ContentType,
   ): CreditPersonModel[] {
     if (contentType === 'movie') {
       const movieResponse = response as MovieCreditsResponse;

@@ -9,37 +9,14 @@ import ChannelModel from '../_types/channelModel.cd';
 import { useQuery } from '@tanstack/react-query';
 import { formatter } from '@/shared/utils/formatter';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
+import { useYouTubeChannel } from '@/features/youtube';
 
 /**
  *  채널 정보를 보여주는 뷰
  */
 function ChannelInfoView() {
-  const channelId = 'sdf3930Iss3l3333dD';
-  const {
-    data: channel,
-    isLoading,
-    error,
-  } = useQuery<ChannelModel>({
-    queryKey: ['channel', channelId], // TODO: 실제 채널 ID로 교체
-    queryFn: () =>
-      new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // 에러 테스트용 (실제로는 제거)
-          // if (Math.random() > 0.7) {
-          //   reject(new Error('채널 정보를 불러올 수 없습니다'));
-          //   return;
-          // }
-
-          resolve({
-            id: '1',
-            name: '영읽남',
-            channelImgUrl:
-              'https://yt3.googleusercontent.com/CjYn6rDN0JAM8a9PJ1DWr4UiElK48RFVzA3BlmkBnUEGn06Fe2o-5kNQuYKsiZRsLWvf_hxyKtg=s160-c-k-c0x00ffffff-no-rj',
-            subscribers: 934000,
-          });
-        }, 500); // 0.5초로 단축 (독립적 로딩)
-      }),
-  });
+  const channelId = '@어퍼컷';
+  const { data: channel, isLoading, error } = useYouTubeChannel(channelId);
 
   function handlePress() {
     if (isLoading || error) return;
@@ -59,7 +36,7 @@ function ChannelInfoView() {
 
       <Pressable onPress={handlePress}>
         <InfoWrapper>
-          <RoundedAvatorView source={channel?.channelImgUrl || ''} size={64} />
+          <RoundedAvatorView source={channel?.images.avatar || ''} size={64} />
           <ColumnWrapper>
             {isLoading ? (
               <>
@@ -70,9 +47,7 @@ function ChannelInfoView() {
             ) : (
               <>
                 <Name>{channel?.name}</Name>
-                <SubscriberCount>
-                  {channel ? `${formatter.formatNumberWithUnit(channel.subscribers, false)}명` : ''}
-                </SubscriberCount>
+                <SubscriberCount>{channel?.subscriberText}명</SubscriberCount>
               </>
             )}
           </ColumnWrapper>

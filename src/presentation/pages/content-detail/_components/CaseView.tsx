@@ -34,7 +34,11 @@ function CaseView() {
       {page.map((credit) => (
         <CreditItem key={credit.id}>
           <RoundedAvatorView
-            source={credit?.profilePath ? formatter.prefixTmdbImgUrl(credit.profilePath, { size: TmdbImageSize.w185 }) : ''}
+            source={
+              credit?.profilePath
+                ? formatter.prefixTmdbImgUrl(credit.profilePath, { size: TmdbImageSize.w185 })
+                : ''
+            }
             size={56}
           />
           <InfoContainer>
@@ -50,10 +54,7 @@ function CaseView() {
   const renderLoadingSkeleton = () => {
     const skeletonItems = Array.from({ length: 6 }, (_, index) => (
       <CreditItem key={index}>
-        <RoundedAvatorView
-          source=""
-          size={56}
-        />
+        <RoundedAvatorView source="" size={56} />
         <InfoContainer>
           <SkeletonContainer>
             <SkeletonView width={80} height={16} />
@@ -73,7 +74,7 @@ function CaseView() {
       </PageContainer>,
       <PageContainer key="page2" style={{ width: pageWidth }}>
         {page2}
-      </PageContainer>
+      </PageContainer>,
     ];
   };
 

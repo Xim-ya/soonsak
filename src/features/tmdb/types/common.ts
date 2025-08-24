@@ -53,7 +53,6 @@ export interface SpokenLanguageDto {
   readonly name: string;
 }
 
-
 /**
  * TMDB API 에러 응답 DTO
  */

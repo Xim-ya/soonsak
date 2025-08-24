@@ -60,4 +60,3 @@ export function useContentDetail(contentId: number, contentType: ContentType) {
     error: error as Error | null,
   };
 }
-

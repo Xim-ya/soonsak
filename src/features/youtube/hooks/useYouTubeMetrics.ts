@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { YouTubeVideo, YouTubeApiError } from '../types';
+import { YouTubeApiError, YouTubeVideoDto } from '../types';
 import { youtubeApi } from '../api';
 
 /**
@@ -59,7 +59,7 @@ export const useManualRefreshMetrics = (urlOrId?: string) => {
  * 메트릭스 포맷팅 Hook
  * 숫자를 한국어/영어 축약 형태로 변환
  */
-export const useFormattedMetrics = (metrics?: YouTubeVideo['metrics']) => {
+export const useFormattedMetrics = (metrics?: YouTubeVideoDto['metrics']) => {
   if (!metrics) return null;
 
   const formatNumber = (num: number, korean: boolean = true) => {

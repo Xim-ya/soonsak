@@ -3,8 +3,15 @@
  * 페이지 HTML에서 추가 메타데이터 추출
  */
 
-import { ScrapedVideoData, YouTubeApiError, YouTubeErrorCode } from '../../types';
+import { ScrapedVideoDto, YouTubeApiError, YouTubeErrorCode } from '../../types';
 import { parseAbbreviatedNumber, formatYouTubeDuration } from '../../utils';
+
+// 스키마 기반 데이터 추출 타입
+interface InteractionStatistic {
+  '@type': string;
+  interactionType: string;
+  userInteractionCount: number;
+}
 
 /**
  * 작업 분할 유틸리티 - UI 블로킹 방지
@@ -19,7 +26,7 @@ export const pageScraper = {
   /**
    * YouTube 페이지에서 전체 데이터 스크래핑
    */
-  async scrapeVideoPage(videoId: string): Promise<ScrapedVideoData> {
+  async scrapeVideoPage(videoId: string): Promise<ScrapedVideoDto> {
     const url = `https://www.youtube.com/watch?v=${videoId}`;
     console.log('🔍 YouTube 페이지 스크래핑 시작:', videoId);
 
@@ -74,7 +81,7 @@ export const pageScraper = {
    */
   async scrapeMetrics(
     videoId: string,
-  ): Promise<Pick<ScrapedVideoData, 'viewCount' | 'likeCount' | 'likeText' | 'uploadDate'>> {
+  ): Promise<Pick<ScrapedVideoDto, 'viewCount' | 'likeCount' | 'likeText' | 'uploadDate'>> {
     const fullData = await this.scrapeVideoPage(videoId);
     return {
       viewCount: fullData.viewCount,
@@ -87,8 +94,8 @@ export const pageScraper = {
   /**
    * HTML에서 데이터 추출
    */
-  async extractDataFromHtml(html: string): Promise<ScrapedVideoData> {
-    const data: ScrapedVideoData = {
+  async extractDataFromHtml(html: string): Promise<ScrapedVideoDto> {
+    const data: ScrapedVideoDto = {
       viewCount: 0,
       likeCount: 0,
       uploadDate: '', // 빈 값으로 초기화, JSON-LD에서 추출된 값으로 덮어씀
@@ -144,7 +151,7 @@ export const pageScraper = {
    * @deprecated YouTube가 fetch 요청에 JSON-LD를 제공하지 않음
    * TODO: WebView 또는 YouTube Data API v3로 대체 필요
    */
-  extractMicroformatJsonLd(html: string, data: ScrapedVideoData): void {
+  extractMicroformatJsonLd(html: string, data: ScrapedVideoDto): void {
     // 여러 가지 JSON-LD 패턴 시도 (nonce 속성 등을 고려한 더 유연한 패턴)
     const patterns = [
       // 가장 유연한 패턴 (어떤 속성이든 허용) - nonce 포함
@@ -231,10 +238,12 @@ export const pageScraper = {
                   // 조회수 추출
                   if (jsonData.interactionStatistic) {
                     const viewStat = jsonData.interactionStatistic.find(
-                      (stat: any) => stat.interactionType === 'https://schema.org/WatchAction',
+                      (stat: InteractionStatistic) =>
+                        stat.interactionType === 'https://schema.org/WatchAction',
                     );
                     const likeStat = jsonData.interactionStatistic.find(
-                      (stat: any) => stat.interactionType === 'https://schema.org/LikeAction',
+                      (stat: InteractionStatistic) =>
+                        stat.interactionType === 'https://schema.org/LikeAction',
                     );
 
                     if (viewStat?.userInteractionCount) {
@@ -338,7 +347,8 @@ export const pageScraper = {
         // 정확한 조회수 추출 (WatchAction)
         if (jsonLd.interactionStatistic) {
           const viewStat = jsonLd.interactionStatistic.find(
-            (stat: any) => stat.interactionType === 'https://schema.org/WatchAction',
+            (stat: InteractionStatistic) =>
+              stat.interactionType === 'https://schema.org/WatchAction',
           );
           if (viewStat?.userInteractionCount) {
             data.viewCount = parseInt(viewStat.userInteractionCount.toString());
@@ -347,7 +357,8 @@ export const pageScraper = {
 
           // 정확한 좋아요수 추출 (LikeAction)
           const likeStat = jsonLd.interactionStatistic.find(
-            (stat: any) => stat.interactionType === 'https://schema.org/LikeAction',
+            (stat: InteractionStatistic) =>
+              stat.interactionType === 'https://schema.org/LikeAction',
           );
           if (likeStat?.userInteractionCount) {
             data.likeCount = parseInt(likeStat.userInteractionCount.toString());
@@ -385,7 +396,7 @@ export const pageScraper = {
   /**
    * ytInitialData에서 데이터 추출 (기본)
    */
-  extractYtInitialData(html: string, data: ScrapedVideoData): void {
+  extractYtInitialData(html: string, data: ScrapedVideoDto): void {
     const ytDataMatch = html.match(/var\s+ytInitialData\s*=\s*({[\s\S]*?});/);
     if (!ytDataMatch || !ytDataMatch[1]) {
       console.log('❌ 기본 ytInitialData 패턴을 찾을 수 없음');
@@ -416,7 +427,7 @@ export const pageScraper = {
   /**
    * 메타데이터에서 추가 정보 추출
    */
-  extractMetadata(html: string, data: ScrapedVideoData): void {
+  extractMetadata(html: string, data: ScrapedVideoDto): void {
     // 조회수가 없으면 메타데이터에서 추출
     if (!data.viewCount) {
       const viewCountMatch = html.match(/"viewCount":"(\d+)"/);
@@ -580,7 +591,7 @@ export const pageScraper = {
   /**
    * HTML에서 직접 업로드 날짜 추출 (JSON-LD 실패 시 백업)
    */
-  extractUploadDateFromHtml(html: string, data: ScrapedVideoData): void {
+  extractUploadDateFromHtml(html: string, data: ScrapedVideoDto): void {
     console.log('🔍 HTML에서 uploadDate 직접 추출 시도');
 
     // 다양한 업로드 날짜 패턴 시도
@@ -617,7 +628,7 @@ export const pageScraper = {
   /**
    * 강화된 메타데이터 추출 (최신 YouTube 구조 대응)
    */
-  extractEnhancedMetadata(html: string, data: ScrapedVideoData): void {
+  extractEnhancedMetadata(html: string, data: ScrapedVideoDto): void {
     console.log('🔍 강화된 메타데이터 추출 시작');
 
     // 다양한 ytInitialData 패턴 시도
@@ -708,7 +719,7 @@ export const pageScraper = {
   /**
    * ytData에서 데이터 추출 (공통 로직)
    */
-  extractFromYtData(ytData: any, data: ScrapedVideoData): void {
+  extractFromYtData(ytData: any, data: ScrapedVideoDto): void {
     try {
       // videoPrimaryInfoRenderer에서 정보 추출
       const videoDetails =
@@ -810,7 +821,7 @@ export const pageScraper = {
   /**
    * HTML에서 VideoObject JSON 데이터 직접 추출
    */
-  extractVideoObjectDirectly(html: string, data: ScrapedVideoData): void {
+  extractVideoObjectDirectly(html: string, data: ScrapedVideoDto): void {
     console.log('🔍 VideoObject 직접 추출 시도');
 
     // VideoObject JSON 패턴 찾기 (스크립트 태그 없이)
@@ -830,7 +841,7 @@ export const pageScraper = {
       // 정확한 조회수 추출 (WatchAction)
       if (jsonLd.interactionStatistic) {
         const viewStat = jsonLd.interactionStatistic.find(
-          (stat: any) => stat.interactionType === 'https://schema.org/WatchAction',
+          (stat: InteractionStatistic) => stat.interactionType === 'https://schema.org/WatchAction',
         );
         if (viewStat?.userInteractionCount) {
           data.viewCount = parseInt(viewStat.userInteractionCount.toString());
@@ -839,7 +850,7 @@ export const pageScraper = {
 
         // 정확한 좋아요수 추출 (LikeAction)
         const likeStat = jsonLd.interactionStatistic.find(
-          (stat: any) => stat.interactionType === 'https://schema.org/LikeAction',
+          (stat: InteractionStatistic) => stat.interactionType === 'https://schema.org/LikeAction',
         );
         if (likeStat?.userInteractionCount) {
           data.likeCount = parseInt(likeStat.userInteractionCount.toString());

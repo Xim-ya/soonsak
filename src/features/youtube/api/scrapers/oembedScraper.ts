@@ -2,7 +2,7 @@
  * YouTube oEmbed API 스크래퍼
  */
 
-import { OEmbedResponse, YouTubeApiError, YouTubeErrorCode } from '../../types';
+import { OEmbedDto, YouTubeApiError, YouTubeErrorCode } from '../../types';
 
 /**
  * oEmbed API를 통해 YouTube 비디오 기본 정보 가져오기
@@ -13,7 +13,7 @@ export const oembedScraper = {
    * @param videoId YouTube 비디오 ID
    * @returns oEmbed 응답 데이터
    */
-  async fetchOEmbedData(videoId: string): Promise<OEmbedResponse> {
+  async fetchOEmbedData(videoId: string): Promise<OEmbedDto> {
     const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
 
     try {
@@ -56,7 +56,7 @@ export const oembedScraper = {
    * @param oembedData oEmbed 응답 데이터
    * @returns 다양한 품질의 썸네일 URL
    */
-  extractThumbnails(oembedData: OEmbedResponse) {
+  extractThumbnails(oembedData: OEmbedDto) {
     const thumbnailUrl = oembedData.thumbnail_url;
     if (!thumbnailUrl) return {};
 

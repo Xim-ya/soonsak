@@ -88,8 +88,8 @@ const HeaderBackground = React.memo(() => {
   );
 
   // Movie/TV에 따른 제목 추출
-  const contentTitle = contentInfo 
-    ? type === 'movie' 
+  const contentTitle = contentInfo
+    ? type === 'movie'
       ? (contentInfo as any)?.title || ''
       : (contentInfo as any)?.name || ''
     : '';

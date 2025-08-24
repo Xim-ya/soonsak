@@ -3,7 +3,7 @@
  */
 
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { YouTubeVideo, YouTubeApiError } from '../types';
+import { YouTubeVideoDto, YouTubeApiError } from '../types';
 import { youtubeApi } from '../api';
 
 /**
@@ -16,7 +16,7 @@ export const useYouTubeVideo = (
     staleTime?: number;
     gcTime?: number;
   },
-): UseQueryResult<YouTubeVideo, YouTubeApiError> => {
+): UseQueryResult<YouTubeVideoDto, YouTubeApiError> => {
   return useQuery({
     queryKey: ['youtube', 'video', urlOrId],
     queryFn: () => youtubeApi.getVideoMetadata(urlOrId!),
