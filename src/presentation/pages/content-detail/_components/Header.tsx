@@ -81,11 +81,11 @@ const HeaderBackground = React.memo(() => {
   const imageUrls = useMemo(
     () => ({
       youtube: videoInfo?.thumbnails?.high || '',
-      tmdb: contentInfo?.backdrop_path
-        ? formatter.prefixTmdbImgUrl(contentInfo.backdrop_path, { size: TmdbImageSize.w780 })
+      tmdb: contentInfo?.backdropPath
+        ? formatter.prefixTmdbImgUrl(contentInfo.backdropPath, { size: TmdbImageSize.w780 })
         : '',
     }),
-    [contentInfo?.backdrop_path, videoInfo?.thumbnails?.high],
+    [contentInfo?.backdropPath, videoInfo?.thumbnails?.high],
   );
 
   // 이벤트 핸들러들

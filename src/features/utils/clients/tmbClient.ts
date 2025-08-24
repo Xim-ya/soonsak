@@ -1,5 +1,6 @@
 import { TMDB_API_KEY, TMDB_BASE_URL } from '@/features/tmdb/config';
 import axios, { AxiosError, AxiosResponse } from 'axios';
+import { snakeToCamel } from '../caseConverter';
 
 /**
  * TMDB Axios 기본 클라이언트
@@ -14,9 +15,15 @@ export const tmdbClient = axios.create({
   timeout: 10000,
 });
 
-// 응답 interceptor - TMDB API 에러 처리
+// 응답 interceptor - snake_case를 camelCase로 변환 및 에러 처리
 tmdbClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    // snake_case를 camelCase로 변환
+    if (response.data) {
+      response.data = snakeToCamel(response.data);
+    }
+    return response;
+  },
   (error: AxiosError) => {
     if (error.response?.data) {
       const tmdbError = error.response.data as {

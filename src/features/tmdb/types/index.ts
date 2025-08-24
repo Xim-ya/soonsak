@@ -1,6 +1,7 @@
 /**
  * TMDB API 타입 정의
- * TMDB Movie Details API 응답과 1대1 대응
+ * interceptor에서 snake_case를 camelCase로 자동 변환하므로
+ * 인터페이스는 camelCase로 정의
  */
 
 /**
@@ -30,16 +31,16 @@ export interface GenreDto {
  */
 export interface ProductionCompanyDto {
   readonly id: number;
-  readonly logo_path: string | null;
+  readonly logoPath: string | null;
   readonly name: string;
-  readonly origin_country: string;
+  readonly originCountry: string;
 }
 
 /**
  * 제작 국가 정보 DTO
  */
 export interface ProductionCountryDto {
-  readonly iso_3166_1: string;
+  readonly iso31661: string;
   readonly name: string;
 }
 
@@ -47,52 +48,52 @@ export interface ProductionCountryDto {
  * 사용 언어 정보 DTO
  */
 export interface SpokenLanguageDto {
-  readonly english_name: string;
-  readonly iso_639_1: string;
+  readonly englishName: string;
+  readonly iso6391: string;
   readonly name: string;
 }
 
 /**
- * 컬렉션 정보 DTO (belongs_to_collection)
+ * 컬렉션 정보 DTO (belongsToCollection)
  */
 export interface CollectionDto {
   readonly id: number;
   readonly name: string;
-  readonly poster_path: string | null;
-  readonly backdrop_path: string | null;
+  readonly posterPath: string | null;
+  readonly backdropPath: string | null;
 }
 
 /**
  * TMDB 영화 상세 정보 DTO
- * TMDB Movie Details API 공식 응답과 완전 대응
+ * axios interceptor에서 snake_case를 camelCase로 자동 변환
  */
 export interface MovieDto {
   readonly adult: boolean;
-  readonly backdrop_path: string | null;
-  readonly belongs_to_collection: CollectionDto | null;
+  readonly backdropPath: string | null;
+  readonly belongsToCollection: CollectionDto | null;
   readonly budget: number;
   readonly genres: GenreDto[];
   readonly homepage: string;
   readonly id: number;
-  readonly imdb_id: string;
-  readonly origin_country: string[];
-  readonly original_language: string;
-  readonly original_title: string;
+  readonly imdbId: string;
+  readonly originCountry: string[];
+  readonly originalLanguage: string;
+  readonly originalTitle: string;
   readonly overview: string;
   readonly popularity: number;
-  readonly poster_path: string | null;
-  readonly production_companies: ProductionCompanyDto[];
-  readonly production_countries: ProductionCountryDto[];
-  readonly release_date: string;
+  readonly posterPath: string | null;
+  readonly productionCompanies: ProductionCompanyDto[];
+  readonly productionCountries: ProductionCountryDto[];
+  readonly releaseDate: string;
   readonly revenue: number;
   readonly runtime: number;
-  readonly spoken_languages: SpokenLanguageDto[];
+  readonly spokenLanguages: SpokenLanguageDto[];
   readonly status: string;
   readonly tagline: string;
   readonly title: string;
   readonly video: boolean;
-  readonly vote_average: number;
-  readonly vote_count: number;
+  readonly voteAverage: number;
+  readonly voteCount: number;
 }
 
 /**
@@ -100,8 +101,8 @@ export interface MovieDto {
  */
 export interface TmdbErrorDto {
   readonly success: boolean;
-  readonly status_code: number;
-  readonly status_message: string;
+  readonly statusCode: number;
+  readonly statusMessage: string;
 }
 
 /**
