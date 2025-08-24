@@ -40,7 +40,7 @@ const generalSupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
 /**
  * 🎯 API 클라이언트 통합 관리
  */
-export const apiClient = {
+export const superBaseClient = {
   /** Content 스키마 전용 (content.contents 등) */
   content: contentSupabaseClient,
 

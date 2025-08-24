@@ -36,6 +36,7 @@
     "@rneui/themed": "^4.0.0-rc.8",
     "@supabase/supabase-js": "^2.50.5",
     "@tanstack/react-query": "^5.80.6",
+    "axios": "^1.11.0",
     "base-64": "^1.0.0",
     "event-target-polyfill": "^0.0.4",
     "expo": "53.0.20",

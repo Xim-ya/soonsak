@@ -34,7 +34,7 @@ export const pageScraper = {
           'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
           'Accept-Encoding': 'gzip, deflate, br',
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
+          Pragma: 'no-cache',
           'Sec-Fetch-Dest': 'document',
           'Sec-Fetch-Mode': 'navigate',
           'Sec-Fetch-Site': 'none',
@@ -45,7 +45,7 @@ export const pageScraper = {
           'sec-ch-ua-mobile': '?0', // 모바일 아님
           'sec-ch-ua-platform': '"Windows"',
           // YouTube 동의 쿠키 추가 (CONSENT 쿠키로 동의 화면 회피)
-          'Cookie': 'CONSENT=YES+cb.20210328-17-p0.en+FX+100',
+          Cookie: 'CONSENT=YES+cb.20210328-17-p0.en+FX+100',
         },
       });
 
@@ -193,12 +193,14 @@ export const pageScraper = {
           /<script[^>]*nonce[^>]*application\/ld\+json[^>]*>[\s\S]*?<\/script>/gi,
           /<script[^>]*application\/ld\+json[^>]*>[\s\S]*?<\/script>/gi,
         ];
-        
+
         let simpleScriptMatch = null;
         for (const pattern of simplePatterns) {
           simpleScriptMatch = html.match(pattern);
           if (simpleScriptMatch && simpleScriptMatch.length > 0) {
-            console.log(`🎯 간단한 패턴 매치 (${pattern.source.substring(0, 30)}...): ${simpleScriptMatch.length}개`);
+            console.log(
+              `🎯 간단한 패턴 매치 (${pattern.source.substring(0, 30)}...): ${simpleScriptMatch.length}개`,
+            );
             break;
           }
         }
@@ -215,10 +217,13 @@ export const pageScraper = {
             if (jsonContent?.[1]) {
               try {
                 // JSON 문자열 정리 (제어 문자 처리)
-                let cleanJsonString = jsonContent[1].trim();
+                const cleanJsonString = jsonContent[1].trim();
                 console.log('📋 JSON-LD 원본 (첫 300자):', cleanJsonString.substring(0, 300));
-                console.log('📋 JSON-LD 원본 (마지막 100자):', cleanJsonString.substring(cleanJsonString.length - 100));
-                
+                console.log(
+                  '📋 JSON-LD 원본 (마지막 100자):',
+                  cleanJsonString.substring(cleanJsonString.length - 100),
+                );
+
                 // 안전하게 JSON 파싱 (제어 문자는 그대로 유지 - Node.js는 JSON 내부의 실제 줄바꿈을 처리할 수 있음)
                 const jsonData = JSON.parse(cleanJsonString);
                 if (jsonData['@type'] === 'VideoObject') {

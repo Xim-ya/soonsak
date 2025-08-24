@@ -6,7 +6,7 @@
  * @example
  * // 영화 상세 정보 조회 (기본: 영화 타입)
  * const { data: movie, isLoading } = useTmdbMovie(550);
- * 
+ *
  * // 콘텐츠 타입 지정
  * const { data: movie, isLoading } = useTmdbMovie(550, 'movie');
  */

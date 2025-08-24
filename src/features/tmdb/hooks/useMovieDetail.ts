@@ -24,7 +24,10 @@ export const useMovieDetail = (
 ): UseQueryResult<MovieDto, TmdbApiError> => {
   return useQuery({
     queryKey: ['tmdb', 'movie', movieId, contentType],
-    queryFn: () => tmdbApi.getMovieDetails(movieId!),
+    queryFn: async () => {
+      const response = await tmdbApi.getMovieDetails(movieId!);
+      return response.data;
+    },
     enabled: !!movieId && contentType === 'movie' && (options?.enabled ?? true),
     staleTime: options?.staleTime ?? 10 * 60 * 1000, // 10분 fresh
     gcTime: options?.gcTime ?? 30 * 60 * 1000, // 30분 캐시
