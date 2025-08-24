@@ -17,7 +17,7 @@ import { ContentDetailModel } from '../_types/contentDetailModel.cd';
  * // VideoTabView 컴포넌트에서 사용 (캐시된 데이터 재사용)
  * const { data } = useContentDetail(123);
  */
-export function useContentDetail(contentId: number) {
+export function useContentDetailTemp(contentId: number) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['contentDetail', contentId],
     queryFn: async (): Promise<ContentDetailModel> => {

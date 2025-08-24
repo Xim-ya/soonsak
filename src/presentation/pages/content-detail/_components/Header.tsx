@@ -13,7 +13,7 @@ import { ContentType } from '@/presentation/types/content/contentType.enum';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { StartRateView } from './StartRateView';
-import { useContentDetail } from '../_hooks/useContentDetail';
+import { useContentDetailTemp } from '../_hooks/useContentDetail';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { AppSize } from '@/shared/utils/appSize';
@@ -191,81 +191,58 @@ HeaderBackground.displayName = 'HeaderBackground';
  */
 const ContentInfo = React.memo(() => {
   const { id, title, type } = useContentDetailRoute();
-  const { data, isLoading, error } = useContentDetail(id);
+  const {
+    data: contentInfo,
+    isLoading: isContentInfoLoading,
+    error: contentInfoError,
+  } = useDetailInfo(id, 'movie');
 
   const dotText = ' · ';
 
   // 연도 추출
-  const releaseYear = data?.releaseDate ? formatter.dateToYear(data.releaseDate) : '';
+  const releaseYear = contentInfo?.releaseDate ? formatter.dateToYear(contentInfo.releaseDate) : '';
 
-  // 로딩 중일 때 스켈레톤 UI 표시
-  if (isLoading) {
-    return (
-      <ContentInfoContainer>
-        {/* ContentTypeChip 스켈레톤 - 실제 칩과 유사한 크기 */}
-        <SkeletonView width={50} height={20} borderRadius={4} />
-        <Gap size={4} />
-
-        {/* 제목 스켈레톤 - Title 스타일 컴포넌트와 동일한 높이 */}
-        <TitleSkeleton>
-          <SkeletonView width={180} height={28} borderRadius={4} />
-        </TitleSkeleton>
-        <Gap size={2} />
-
-        {/* 연도/장르 스켈레톤 - SubTextView 구조 유지 */}
+  // route params에서 title과 type이 있으면 바로 표시 (스켈레톤 대신)
+  return (
+    <ContentInfoContainer>
+      {/* 타입은 route params에서 바로 표시 */}
+      <ContentTypeChip contentType={type} />
+      <Gap size={4} />
+      
+      {/* 제목은 route params에서 바로 표시 */}
+      <Title>{title}</Title>
+      <Gap size={2} />
+      
+      {/* 연도/장르는 로딩 중이면 스켈레톤 */}
+      {isContentInfoLoading ? (
         <SubTextView>
           <SkeletonView width={200} height={16} borderRadius={4} />
         </SubTextView>
-        <Gap size={16} />
-
-        {/* 줄거리 스켈레톤 - ContentTitle과 동일한 구조 */}
-        <ContentTitleSkeleton>
-          <SkeletonView width={280} height={18} borderRadius={4} />
-        </ContentTitleSkeleton>
-        <Gap size={8} />
-
-        {/* 별점 - 비어있는 상태로 표시 */}
-        <RatingWrapper>
-          <StartRateView rating={0} />
-        </RatingWrapper>
-      </ContentInfoContainer>
-    );
-  }
-
-  // 에러 처리
-  if (error || !data) {
-    return (
-      <ContentInfoContainer>
-        <SubText>콘텐츠 정보를 불러올 수 없습니다.</SubText>
-      </ContentInfoContainer>
-    );
-  }
-
-  return (
-    <ContentInfoContainer>
-      <ContentTypeChip contentType={data.type as ContentType} />
-      <Gap size={4} />
-      <Title>{data.title}</Title>
-      <Gap size={2} />
-      <SubTextView>
-        {releaseYear && <SubText>{releaseYear}</SubText>}
-        {data.genreNames.length > 0 && (
-          <>
-            {releaseYear && <DotText>{dotText}</DotText>}
-            {data.genreNames.map((genre, index) => (
-              <React.Fragment key={index}>
-                <SubText>{genre}</SubText>
-                {index < data.genreNames.length - 1 && <SubText>{dotText}</SubText>}
-              </React.Fragment>
-            ))}
-          </>
-        )}
-      </SubTextView>
+      ) : contentInfoError ? null : (
+        <SubTextView>
+          {releaseYear && <SubText>{releaseYear}</SubText>}
+          {contentInfo?.genres && contentInfo.genres.length > 0 && (
+            <>
+              {releaseYear && <DotText>{dotText}</DotText>}
+              {contentInfo.genres.map((genre, index) => (
+                <React.Fragment key={index}>
+                  <SubText>{genre.name}</SubText>
+                  {index < contentInfo.genres.length - 1 && <SubText>{dotText}</SubText>}
+                </React.Fragment>
+              ))}
+            </>
+          )}
+        </SubTextView>
+      )}
       <Gap size={16} />
+      
+      {/* 컨텐츠 타이틀 */}
       <ContentTitle numberOfLines={1}>{'죽기 전에 꼭 봐야할 영화'}</ContentTitle>
       <Gap size={8} />
+      
+      {/* 별점은 로딩 중이면 0, 데이터 있으면 표시 */}
       <RatingWrapper>
-        <StartRateView rating={data.voteAverage / 2} />
+        <StartRateView rating={contentInfo?.voteAverage ? contentInfo.voteAverage / 2 : 0} />
       </RatingWrapper>
     </ContentInfoContainer>
   );
