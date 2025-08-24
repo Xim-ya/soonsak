@@ -8,17 +8,17 @@ interface BasePerson {
   adult: boolean;
   gender: number;
   id: number;
-  known_for_department: string;
+  knownForDepartment: string;
   name: string;
-  original_name: string;
+  originalName: string;
   popularity: number;
-  profile_path: string | null;
+  profilePath: string | null;
 }
 
 // Cast 공통 필드
 interface BaseCast extends BasePerson {
   character: string;
-  credit_id: string;
+  creditId: string;
   order: number;
 }
 
@@ -27,12 +27,12 @@ export interface TVCast extends BaseCast {}
 
 // Movie Cast (cast_id 있음)
 export interface MovieCast extends BaseCast {
-  cast_id: number;
+  castId: number;
 }
 
 // Crew (TV와 Movie 동일)
 export interface Crew extends BasePerson {
-  credit_id: string;
+  creditId: string;
   department: string;
   job: string;
 }

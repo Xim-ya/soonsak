@@ -4,102 +4,103 @@ import styled from '@emotion/native';
 import textStyles from '@/shared/styles/textStyles';
 import colors from '@/shared/styles/colors';
 import { RoundedAvatorView } from '@/presentation/components/image/RoundedAvatarView';
-
-// 임시 mock 데이터
-const mockCreditList = [
-  {
-    id: '1',
-    name: '송강호',
-    role: '기택 역',
-    profilePath:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-  {
-    id: '2',
-    name: '이선균',
-    role: '동익 역',
-    profilePath:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-  {
-    id: '3',
-    name: '조여정',
-    role: '연교 역',
-    profilePath:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-  {
-    id: '4',
-    name: '최우식',
-    role: '기우 역',
-    profilePath:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-  {
-    id: '5',
-    name: '박소담',
-    role: '기정 역',
-    profilePath:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-  {
-    id: '6',
-    name: '이정은',
-    role: '문광 역',
-    profilePath:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-  {
-    id: '7',
-    name: '장혜진',
-    role: '충숙 역',
-    profilePath:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-  {
-    id: '8',
-    name: '박명훈',
-    role: '근세 역',
-    profilePath:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-];
-
-interface CreditInfo {
-  id: string;
-  name: string;
-  role: string;
-  profilePath: string;
-}
+import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
+import { useCredits } from '../_hooks/useCredits';
+import { CreditPersonModel } from '../_types/creditModel.cd';
+import { ContentType } from '@/presentation/types/content/contentType.enum';
+import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
+import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 
 function CaseView() {
+  const { id, type } = useContentDetailRoute();
+  const { data: creditList, isLoading, error } = useCredits(id, type);
   const { width: screenWidth } = Dimensions.get('window');
   const pageWidth = screenWidth * 0.93; // viewportFraction: 0.93과 동일
 
-  // 3개씩 순서대로 채우기 (마지막 페이지에만 남은 개수)
-  const itemsPerPage = 3;
-  const pages: CreditInfo[][] = [];
-  for (let i = 0; i < mockCreditList.length; i += itemsPerPage) {
-    pages.push(mockCreditList.slice(i, i + itemsPerPage));
+  // 에러 발생 시 아무것도 렌더링하지 않음
+  if (error) {
+    return null;
   }
 
-  const renderPage = ({ item: page }: { item: CreditInfo[]; index: number }) => (
+  // 3개씩 순서대로 채우기 (마지막 페이지에만 남은 개수)
+  const itemsPerPage = 3;
+  const pages: CreditPersonModel[][] = [];
+  for (let i = 0; i < creditList.length; i += itemsPerPage) {
+    pages.push(creditList.slice(i, i + itemsPerPage));
+  }
+
+  const renderPage = ({ item: page }: { item: CreditPersonModel[]; index: number }) => (
     <PageContainer style={{ width: pageWidth }}>
       {page.map((credit) => (
         <CreditItem key={credit.id}>
-          <RoundedAvatorView source={credit.profilePath} size={56} />
+          <RoundedAvatorView
+            source={credit?.profilePath ? formatter.prefixTmdbImgUrl(credit.profilePath, { size: TmdbImageSize.w185 }) : ''}
+            size={56}
+          />
           <InfoContainer>
             <NameText>{credit.name}</NameText>
-            <RoleText>{credit.role}</RoleText>
+            <RoleText>{credit.character || '정보 없음'}</RoleText>
           </InfoContainer>
         </CreditItem>
       ))}
     </PageContainer>
   );
 
+  // 로딩 스켈레톤 렌더링 (6개 아이템)
+  const renderLoadingSkeleton = () => {
+    const skeletonItems = Array.from({ length: 6 }, (_, index) => (
+      <CreditItem key={index}>
+        <RoundedAvatorView
+          source=""
+          size={56}
+        />
+        <InfoContainer>
+          <SkeletonContainer>
+            <SkeletonView width={80} height={16} />
+          </SkeletonContainer>
+          <SkeletonView width={60} height={16} />
+        </InfoContainer>
+      </CreditItem>
+    ));
+
+    // 3개씩 2페이지로 분할
+    const page1 = skeletonItems.slice(0, 3);
+    const page2 = skeletonItems.slice(3, 6);
+
+    return [
+      <PageContainer key="page1" style={{ width: pageWidth }}>
+        {page1}
+      </PageContainer>,
+      <PageContainer key="page2" style={{ width: pageWidth }}>
+        {page2}
+      </PageContainer>
+    ];
+  };
+
+  if (isLoading) {
+    return (
+      <Container>
+        <TitleText>출연진</TitleText>
+        <FlatList
+          data={renderLoadingSkeleton()}
+          renderItem={({ item }) => item}
+          keyExtractor={(_, index) => `skeleton-${index}`}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={pageWidth}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+        />
+        <BottomSpace />
+      </Container>
+    );
+  }
+
   return (
     <Container>
-      {mockCreditList.length > 0 && (
+      {creditList.length > 0 && (
         <>
           <TitleText>출연진</TitleText>
 
@@ -165,6 +166,10 @@ const RoleText = styled.Text({
 
 const BottomSpace = styled.View({
   height: 40,
+});
+
+const SkeletonContainer = styled.View({
+  marginBottom: 2,
 });
 
 export default CaseView;
