@@ -11,4 +11,4 @@
  * const { data: movie, isLoading } = useTmdbMovie(550, 'movie');
  */
 
-export { useDetailInfo as useTmdbMovie } from './useMovieDetail';
+export { useContentDetail as useTmdbMovie } from './useContentDetail';

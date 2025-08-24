@@ -21,7 +21,7 @@ import { useImageTransition } from '../_hooks/useImageTransition';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { useYouTubeVideo } from '@/features/youtube';
 import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
-import { useDetailInfo } from '@/features/tmdb/hooks/useMovieDetail';
+import { useContentDetail } from '@/features/tmdb/hooks/useContentDetail';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>; // Player 뷰
 
@@ -42,12 +42,12 @@ export const Header = React.memo(() => {
  * 헤더 배경 이미지와 재생 버튼을 포함하는 컴포넌트
  */
 const HeaderBackground = React.memo(() => {
-  const { id } = useContentDetailRoute();
+  const { id, type } = useContentDetailRoute();
   const {
     data: contentInfo,
     isLoading: isContentInfoLoading,
     error: contentInfoError,
-  } = useDetailInfo(id, 'movie');
+  } = useContentDetail(id, type);
 
   const { toggleImages, opacityValues } = useImageTransition();
   const navigation = useNavigation<NavigationProp>();
@@ -88,15 +88,22 @@ const HeaderBackground = React.memo(() => {
     [contentInfo?.backdropPath, videoInfo?.thumbnails?.high],
   );
 
+  // Movie/TV에 따른 제목 추출
+  const contentTitle = contentInfo 
+    ? type === 'movie' 
+      ? (contentInfo as any)?.title || ''
+      : (contentInfo as any)?.name || ''
+    : '';
+
   // 이벤트 핸들러들
   const handlePlayPress = useCallback(() => {
-    const title = contentInfo?.title || '';
+    const title = contentTitle || '';
     const videoId = videoInfo?.id || 'U5TPQoEveJY'; // 기본값 유지
     navigation.navigate(routePages.player, {
       videoId: videoId,
       title: title,
     });
-  }, [navigation, contentInfo?.title, videoInfo?.id]);
+  }, [navigation, contentTitle, videoInfo?.id]);
 
   const handleThumbnailPress = useCallback(() => {
     toggleImages();
@@ -195,12 +202,19 @@ const ContentInfo = React.memo(() => {
     data: contentInfo,
     isLoading: isContentInfoLoading,
     error: contentInfoError,
-  } = useDetailInfo(id, 'movie');
+  } = useContentDetail(id, type);
 
   const dotText = ' · ';
 
-  // 연도 추출
-  const releaseYear = contentInfo?.releaseDate ? formatter.dateToYear(contentInfo.releaseDate) : '';
+  // Movie/TV에 따른 연도 추출
+  const releaseYear = contentInfo
+    ? type === 'movie' 
+      ? (contentInfo as any)?.releaseDate ? formatter.dateToYear((contentInfo as any).releaseDate) : ''
+      : (contentInfo as any)?.firstAirDate ? formatter.dateToYear((contentInfo as any).firstAirDate) : ''
+    : '';
+
+  // Movie/TV에 따른 평점 추출 
+  const rating = contentInfo?.voteAverage ? contentInfo.voteAverage / 2 : 0;
 
   // route params에서 title과 type이 있으면 바로 표시 (스켈레톤 대신)
   return (
@@ -208,11 +222,11 @@ const ContentInfo = React.memo(() => {
       {/* 타입은 route params에서 바로 표시 */}
       <ContentTypeChip contentType={type} />
       <Gap size={4} />
-      
+
       {/* 제목은 route params에서 바로 표시 */}
       <Title>{title}</Title>
       <Gap size={2} />
-      
+
       {/* 연도/장르는 로딩 중이면 스켈레톤 */}
       {isContentInfoLoading ? (
         <SubTextView>
@@ -235,14 +249,14 @@ const ContentInfo = React.memo(() => {
         </SubTextView>
       )}
       <Gap size={16} />
-      
+
       {/* 컨텐츠 타이틀 */}
       <ContentTitle numberOfLines={1}>{'죽기 전에 꼭 봐야할 영화'}</ContentTitle>
       <Gap size={8} />
-      
+
       {/* 별점은 로딩 중이면 0, 데이터 있으면 표시 */}
       <RatingWrapper>
-        <StartRateView rating={contentInfo?.voteAverage ? contentInfo.voteAverage / 2 : 0} />
+        <StartRateView rating={rating} />
       </RatingWrapper>
     </ContentInfoContainer>
   );
