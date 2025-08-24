@@ -4,6 +4,7 @@ import styled from '@emotion/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import textStyles from '@/shared/styles/textStyles';
 import colors from '@/shared/styles/colors';
+import Gap from '../view/Gap';
 
 interface ExpandableTextViewProps {
   text: string;
@@ -24,7 +25,8 @@ export const ExpandableTextView: React.FC<ExpandableTextViewProps> = ({
   // 두 높이가 모두 설정되었을 때 overflow 상태 확인
   useEffect(() => {
     if (collapsedHeight > 0 && textHeight > 0) {
-      setIsTextOverflowing(textHeight > collapsedHeight);
+      // 높이 차이가 2px 이상일 때만 overflow로 판정 (측정 오차 고려)
+      setIsTextOverflowing(textHeight - collapsedHeight > 2);
     }
   }, [collapsedHeight, textHeight]);
 
@@ -47,6 +49,7 @@ export const ExpandableTextView: React.FC<ExpandableTextViewProps> = ({
   if (isLoading) {
     return (
       <SkeletonContainer>
+        <Gap size={1} />
         <SkeletonBox />
         <SkeletonBox />
         <SkeletonBox />
@@ -107,14 +110,14 @@ const HiddenText = styled.Text({
   position: 'absolute',
   opacity: 0,
   ...textStyles.alert2,
-  lineHeight: 22,
+  lineHeight: 20.5, // ContentText와 동일하게 맞춤
 });
 
 const ToggleContainer = styled.View({
   position: 'absolute',
   right: 0,
   bottom: 20, // 항상 일정한 위치에 표시
-  height: 22,
+  height: 20,
   flexDirection: 'row',
   alignItems: 'center',
   paddingLeft: 40, // 그라데이션 영역 확보
@@ -143,12 +146,13 @@ const ToggleText = styled.Text({
 
 // 스켈레톤 UI 컴포넌트
 const SkeletonContainer = styled.View({
-  gap: 12,
+  gap: 0,
+  marginBottom: 14,
 });
 
 const SkeletonBox = styled.View({
-  height: 14,
+  height: 14.5, // ContentText의 lineHeight와 동일하게 설정
   backgroundColor: colors.gray05,
   borderRadius: 4,
-  opacity: 0.3,
+  marginBottom: 8,
 });
