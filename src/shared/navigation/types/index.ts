@@ -12,6 +12,7 @@
  */
 
 import { routePages } from '../constant/routePages';
+import { ContentType } from '@/presentation/types/content/contentType.enum';
 
 // routePages 객체의 값들을 Union 타입으로 추출
 // 예: "MainTabs" | "ContentDetail"
@@ -29,7 +30,11 @@ export type RouteNames = (typeof routePages)[keyof typeof routePages];
  */
 export type RootStackParamList = {
   [routePages.mainTabs]: undefined; // 탭 네비게이터 - 파라미터 없음
-  [routePages.contentDetail]: { id: number }; // 콘텐츠 상세 - id 파라미터 필수
+  [routePages.contentDetail]: {
+    id: number; // 콘텐츠 ID
+    title: string; // 콘텐츠 제목
+    type: ContentType; // 콘텐츠 타입 (movie | series | unknown)
+  }; // 콘텐츠 상세 - id, title, type 파라미터 필수
   [routePages.player]: { videoId: string; title: string }; // 플레이어 - 비디오 ID, 제목 파라미터 필수
 };
 

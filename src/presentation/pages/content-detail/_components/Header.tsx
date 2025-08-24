@@ -20,6 +20,8 @@ import { AppSize } from '@/shared/utils/appSize';
 import { useImageTransition } from '../_hooks/useImageTransition';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { useYouTubeVideo } from '@/features/youtube';
+import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
+import { useDetailInfo } from '@/features/tmdb/hooks/useMovieDetail';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>; // Player 뷰
 
@@ -40,7 +42,13 @@ export const Header = React.memo(() => {
  * 헤더 배경 이미지와 재생 버튼을 포함하는 컴포넌트
  */
 const HeaderBackground = React.memo(() => {
-  const { data } = useContentDetail(23);
+  const { id } = useContentDetailRoute();
+  const {
+    data: contentInfo,
+    isLoading: isContentInfoLoading,
+    error: contentInfoError,
+  } = useDetailInfo(id, 'movie');
+
   const { toggleImages, opacityValues } = useImageTransition();
   const navigation = useNavigation<NavigationProp>();
 
@@ -73,22 +81,22 @@ const HeaderBackground = React.memo(() => {
   const imageUrls = useMemo(
     () => ({
       youtube: videoInfo?.thumbnails?.high || '',
-      tmdb: data?.backdropPath
-        ? formatter.prefixTmdbImgUrl(data.backdropPath, { size: TmdbImageSize.w780 })
+      tmdb: contentInfo?.backdrop_path
+        ? formatter.prefixTmdbImgUrl(contentInfo.backdrop_path, { size: TmdbImageSize.w780 })
         : '',
     }),
-    [data?.backdropPath, videoInfo?.thumbnails?.high],
+    [contentInfo?.backdrop_path, videoInfo?.thumbnails?.high],
   );
 
   // 이벤트 핸들러들
   const handlePlayPress = useCallback(() => {
-    const title = data?.title || '';
+    const title = contentInfo?.title || '';
     const videoId = videoInfo?.id || 'U5TPQoEveJY'; // 기본값 유지
     navigation.navigate(routePages.player, {
       videoId: videoId,
       title: title,
     });
-  }, [navigation, data?.title, videoInfo?.id]);
+  }, [navigation, contentInfo?.title, videoInfo?.id]);
 
   const handleThumbnailPress = useCallback(() => {
     toggleImages();
@@ -182,7 +190,8 @@ HeaderBackground.displayName = 'HeaderBackground';
  * 콘텐츠 타입, 제목, 개봉년도, 장르 리스트를 표시합니다.
  */
 const ContentInfo = React.memo(() => {
-  const { data, isLoading, error } = useContentDetail(23);
+  const { id, title, type } = useContentDetailRoute();
+  const { data, isLoading, error } = useContentDetail(id);
 
   const dotText = ' · ';
 

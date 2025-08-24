@@ -13,7 +13,7 @@ import { ContentType } from '@/presentation/types/content/contentType.enum';
  * @param contentType 콘텐츠 타입 ('movie' | 'series' | 'unknown')
  * @param options React Query 옵션
  */
-export const useMovieDetail = (
+export const useDetailInfo = (
   movieId?: number,
   contentType: ContentType = 'movie',
   options?: {
@@ -25,18 +25,27 @@ export const useMovieDetail = (
   return useQuery({
     queryKey: ['tmdb', 'movie', movieId, contentType],
     queryFn: async () => {
-      const response = await tmdbApi.getMovieDetails(movieId!);
-      return response.data;
+      try {
+        const response = await tmdbApi.getMovieDetails(movieId!);
+        return response.data;
+      } catch (error) {
+        // 에러 로깅
+        console.error('[useDetailInfo] 영화 상세 정보 조회 실패:', {
+          movieId,
+          contentType,
+          error:
+            error instanceof TmdbApiError
+              ? {
+                  message: error.message,
+                  code: error.statusCode,
+                  status: error.statusCode,
+                }
+              : error,
+        });
+        throw error; // React Query가 처리하도록 에러 재발생
+      }
     },
     enabled: !!movieId && contentType === 'movie' && (options?.enabled ?? true),
-    staleTime: options?.staleTime ?? 10 * 60 * 1000, // 10분 fresh
-    gcTime: options?.gcTime ?? 30 * 60 * 1000, // 30분 캐시
-    retry: (failureCount, error) => {
-      if (error instanceof TmdbApiError) {
-        return error.retry && failureCount < 2;
-      }
-      return failureCount < 1;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: false,
   });
 };

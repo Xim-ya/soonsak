@@ -2,6 +2,7 @@ import React from 'react';
 import { Tabs, MaterialTabBar } from 'react-native-collapsible-tab-view';
 import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context';
 import styled from '@emotion/native';
+import { useRoute } from '@react-navigation/native';
 import { BasePage } from '../../components/page';
 import { BackButtonAppBar } from '../../components/app-bar';
 import { Header } from './_components';
@@ -15,8 +16,12 @@ import { TabBar } from './_components/TabBar';
 import { ContentTabView } from './_components/VideoTabView';
 import { OriginalTabView } from './_components/OriginContentTabView';
 import { AnimatedAppBAr } from './_components/AnimatedAppBar';
+import { ScreenRouteProp } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
 
 export default function ContentDetailPage() {
+  const route = useRoute<ScreenRouteProp<typeof routePages.contentDetail>>();
+  const { id, title, type } = route.params;
   const insets = useSafeAreaInsets();
   const appBarOpacity = useSharedValue(0);
 

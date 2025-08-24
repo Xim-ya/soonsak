@@ -21,7 +21,11 @@ export function RecentContentView() {
   });
 
   const handleContentTapped = (content: BaseContentModel) => {
-    navigation.navigate(routePages.contentDetail, { id: content.id });
+    navigation.navigate(routePages.contentDetail, {
+      id: content.id,
+      title: content.title,
+      type: content.type,
+    });
   };
 
   if (isError) {
