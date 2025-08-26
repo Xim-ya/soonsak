@@ -18,6 +18,8 @@ import { OriginalTabView } from './_components/OriginContentTabView';
 import { AnimatedAppBAr } from './_components/AnimatedAppBar';
 import { ScreenRouteProp } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
+import { ContentDetailProvider } from './_provider/ContentDetailProvider';
+import { ContentType } from '@/presentation/types/content/contentType.enum';
 
 export default function ContentDetailPage() {
   const route = useRoute<ScreenRouteProp<typeof routePages.contentDetail>>();
@@ -41,43 +43,45 @@ export default function ContentDetailPage() {
   );
 
   return (
-    <BasePage
-      useSafeArea={false}
-      touchableWithoutFeedback={false}
-      automaticallyAdjustKeyboardInsets={false}
-      dismissKeyboardOnTap={false}
-    >
-      <GradientContainer safeAreaHeight={insets.top}>
-        <DarkedLinearShadow height={insets.top + 140} align={LinearAlign.topBottom} />
-      </GradientContainer>
-      <BackgroundContainer
-        style={useAnimatedStyle(() => {
-          'worklet';
-          return {
-            backgroundColor: `rgba(0,0,0,${appBarOpacity.value})`,
-          };
-        }, [appBarOpacity])}
-        safeAreaHeight={insets.top}
-      />
-      <AnimatedAppBAr insets={insets} opacity={appBarOpacity} />
-      <TabsContainer paddingTop={insets.top}>
-        <Tabs.Container
-          renderHeader={() => <Header />}
-          renderTabBar={(props) => <TabBar {...props} />}
-          allowHeaderOverscroll={true}
-          headerHeight={480} // Header aspectRatio 높이 + ContentInfoView 예상 높이
-          tabBarHeight={48}
-          minHeaderHeight={48} // 앱바 높이만큼 최소 헤더 높이 설정
-        >
-          <Tabs.Tab name="영상" label="videoInfo">
-            <ContentTabView onScrollChange={handleScrollChange} />
-          </Tabs.Tab>
-          <Tabs.Tab name="원작" label="originalInfo ">
-            <OriginalTabView onScrollChange={handleScrollChange} />
-          </Tabs.Tab>
-        </Tabs.Container>
-      </TabsContainer>
-    </BasePage>
+    <ContentDetailProvider contentId={Number(id)} contentType={type as ContentType}>
+      <BasePage
+        useSafeArea={false}
+        touchableWithoutFeedback={false}
+        automaticallyAdjustKeyboardInsets={false}
+        dismissKeyboardOnTap={false}
+      >
+        <GradientContainer safeAreaHeight={insets.top}>
+          <DarkedLinearShadow height={insets.top + 140} align={LinearAlign.topBottom} />
+        </GradientContainer>
+        <BackgroundContainer
+          style={useAnimatedStyle(() => {
+            'worklet';
+            return {
+              backgroundColor: `rgba(0,0,0,${appBarOpacity.value})`,
+            };
+          }, [appBarOpacity])}
+          safeAreaHeight={insets.top}
+        />
+        <AnimatedAppBAr insets={insets} opacity={appBarOpacity} />
+        <TabsContainer paddingTop={insets.top}>
+          <Tabs.Container
+            renderHeader={() => <Header />}
+            renderTabBar={(props) => <TabBar {...props} />}
+            allowHeaderOverscroll={true}
+            headerHeight={480} // Header aspectRatio 높이 + ContentInfoView 예상 높이
+            tabBarHeight={48}
+            minHeaderHeight={48} // 앱바 높이만큼 최소 헤더 높이 설정
+          >
+            <Tabs.Tab name="영상" label="videoInfo">
+              <ContentTabView onScrollChange={handleScrollChange} />
+            </Tabs.Tab>
+            <Tabs.Tab name="원작" label="originalInfo ">
+              <OriginalTabView onScrollChange={handleScrollChange} />
+            </Tabs.Tab>
+          </Tabs.Container>
+        </TabsContainer>
+      </BasePage>
+    </ContentDetailProvider>
   );
 }
 

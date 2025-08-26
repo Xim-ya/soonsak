@@ -20,8 +20,12 @@ export const channelScraper = {
    * YouTube 채널 페이지에서 전체 데이터 스크래핑
    */
   async scrapeChannelPage(channelId: string): Promise<ScrapedChannelDto> {
-    const url = `https://www.youtube.com/${channelId}`;
-    console.log('🔍 YouTube 채널 페이지 스크래핑 시작:', channelId);
+    // channelId 타입에 따라 URL 형식 결정
+    const url = channelId.startsWith('UC') 
+      ? `https://www.youtube.com/channel/${channelId}`  // 실제 채널 ID
+      : `https://www.youtube.com/${channelId}`;         // handle ID (@channelname)
+    
+    console.log('🔍 YouTube 채널 페이지 스크래핑 시작:', channelId, '→', url);
 
     try {
       const response = await fetch(url, {
@@ -200,7 +204,11 @@ export const channelScraper = {
           if (subscriberData.text) {
             data.subscriberText = subscriberData.text;
           }
-          console.log('✅ 구독자 수 추출 성공:', data.subscriberText || data.subscriberCount, `(패턴 ${i + 1})`);
+          console.log(
+            '✅ 구독자 수 추출 성공:',
+            data.subscriberText || data.subscriberCount,
+            `(패턴 ${i + 1})`,
+          );
           return;
         } else {
           console.log(`❌ 패턴 ${i + 1} 파싱 실패:`, subscriberText);
@@ -233,7 +241,6 @@ export const channelScraper = {
         break;
       }
     }
-
 
     // 배너 이미지 패턴들 (직접적인 방법)
     const bannerPatterns = [

@@ -487,13 +487,27 @@ export const pageScraper = {
         }
       }
 
-      // 2. JSON 데이터에서 좋아요수 찾기 (백업)
+      // 2. JSON 데이터에서 좋아요수 찾기 (백업) - 패턴 강화
       if (!data.likeCount) {
         const likePatterns = [
+          // 최신 YouTube 구조 (2024년 기준)
+          /"likeButtonViewModel":{"likeButtonViewModel":{"toggleButtonViewModel":{"toggleButtonViewModel":{"defaultButtonViewModel":{"buttonViewModel":{"title":"([^"]+)"/,
+          /"likeButtonViewModel":{"toggleButtonViewModel":{"toggleButtonViewModel":{"defaultButtonViewModel":{"buttonViewModel":{"title":"([^"]+)"/,
+          /"segmentedLikeDislikeButtonViewModel":{"likeButtonViewModel":{"likeButtonViewModel":{"toggleButtonViewModel":{"toggleButtonViewModel":{"defaultButtonViewModel":{"buttonViewModel":{"title":"([^"]+)"/,
+          // 접근성 라벨 패턴들
           /"defaultText":{"accessibility":{"accessibilityData":{"label":"([^"]*좋아요[^"]*)"}}/,
+          /"toggledText":{"accessibility":{"accessibilityData":{"label":"([^"]*좋아요[^"]*)"}}/,
+          /"accessibilityData":{"label":"([^"]*\d+[^"]*좋아요[^"]*)"/,
+          // 일반 텍스트 패턴들
           /"likeCountText":"([^"]+)"/,
           /"toggledText":"([^"]*좋아요[^"]*)"/,
           /"title":"([^"]*좋아요[^"]*)"/,
+          // 버튼 텍스트 패턴
+          /"buttonText":{"simpleText":"([^"]*\d+[^"]*)"}/,
+          /"text":"([^"]*\d+[^"]*좋아요[^"]*)"/,
+          // aria-label 패턴들 강화
+          /aria-label="([^"]*\d+[^"]*좋아요[^"]*)"/gi,
+          /aria-label="([^"]*좋아요[^"]*\d+[^"]*)"/gi,
         ];
 
         for (const pattern of likePatterns) {
@@ -537,38 +551,97 @@ export const pageScraper = {
   },
 
   /**
-   * 좋아요 텍스트에서 숫자 추출
+   * 좋아요 텍스트에서 숫자 추출 (개선된 버전)
    */
   extractLikeCount(text: string): { count: number; text?: string } {
     if (!text) return { count: 0 };
 
-    // 한국어 축약 (3천, 1.5만)
-    const koreanMatch = text.match(/([\d.]+[천만억])/);
-    if (koreanMatch?.[1]) {
-      return {
-        count: parseAbbreviatedNumber(koreanMatch[1]),
-        text: koreanMatch[1],
-      };
+    console.log('🔍 좋아요 텍스트 분석:', text);
+
+    // 1. 한국어 축약 패턴 (3천, 1.5만, 2.3만)
+    const koreanPatterns = [
+      /([\d.]+)천/,
+      /([\d.]+)만/,
+      /([\d.]+)억/,
+      /(\d+\.?\d*)\s*천/,
+      /(\d+\.?\d*)\s*만/,
+      /(\d+\.?\d*)\s*억/,
+    ];
+
+    for (const pattern of koreanPatterns) {
+      const koreanMatch = text.match(pattern);
+      if (koreanMatch?.[1]) {
+        const result = {
+          count: parseAbbreviatedNumber(koreanMatch[1] + koreanMatch[0].slice(-1)),
+          text: koreanMatch[0],
+        };
+        console.log('✅ 한국어 축약 매치:', koreanMatch[0], '→', result.count);
+        return result;
+      }
     }
 
-    // 영어 축약 (3K, 1.5M)
-    const englishMatch = text.match(/([\d.]+[KMB])/i);
-    if (englishMatch?.[1]) {
-      return {
-        count: parseAbbreviatedNumber(englishMatch[1]),
-        text: englishMatch[1],
-      };
+    // 2. 영어 축약 패턴 (3K, 1.5M, 2.1B)
+    const englishPatterns = [
+      /([\d.]+)\s*K/i,
+      /([\d.]+)\s*M/i,
+      /([\d.]+)\s*B/i,
+      /(\d+\.?\d*)\s*[Kk]/,
+      /(\d+\.?\d*)\s*[Mm]/,
+      /(\d+\.?\d*)\s*[Bb]/,
+    ];
+
+    for (const pattern of englishPatterns) {
+      const englishMatch = text.match(pattern);
+      if (englishMatch?.[1]) {
+        const fullMatch = englishMatch[0].replace(/\s/g, '');
+        const result = {
+          count: parseAbbreviatedNumber(fullMatch),
+          text: fullMatch,
+        };
+        console.log('✅ 영어 축약 매치:', fullMatch, '→', result.count);
+        return result;
+      }
     }
 
-    // 일반 숫자 (3,072)
-    const numMatch = text.match(/([\d,]+)/);
-    if (numMatch?.[1] && (numMatch[1].includes(',') || numMatch[1].length >= 4)) {
-      const num = parseInt(numMatch[1].replace(/,/g, ''));
-      if (num > 100) {
+    // 3. 쉼표가 포함된 일반 숫자 (1,234, 12,345)
+    const commaNumMatch = text.match(/([\d,]+)/);
+    if (commaNumMatch?.[1] && commaNumMatch[1].includes(',')) {
+      const num = parseInt(commaNumMatch[1].replace(/,/g, ''));
+      if (num > 0) {
+        console.log('✅ 쉼표 숫자 매치:', commaNumMatch[1], '→', num);
         return { count: num };
       }
     }
 
+    // 4. 긴 일반 숫자 (1234, 12345 - 4자리 이상)
+    const longNumMatch = text.match(/(\d{4,})/);
+    if (longNumMatch?.[1]) {
+      const num = parseInt(longNumMatch[1]);
+      console.log('✅ 긴 숫자 매치:', longNumMatch[1], '→', num);
+      return { count: num };
+    }
+
+    // 5. 공백이 포함된 숫자 (1 234, 12 345)
+    const spaceNumMatch = text.match(/(\d+(?:\s+\d+)+)/);
+    if (spaceNumMatch?.[1]) {
+      const num = parseInt(spaceNumMatch[1].replace(/\s/g, ''));
+      if (num > 1000) {
+        console.log('✅ 공백 숫자 매치:', spaceNumMatch[1], '→', num);
+        return { count: num };
+      }
+    }
+
+    // 6. 작은 숫자도 허용 (100 이상)
+    const anyNumMatch = text.match(/(\d+)/);
+    if (anyNumMatch?.[1]) {
+      const num = parseInt(anyNumMatch[1]);
+      if (num >= 100) {
+        console.log('✅ 일반 숫자 매치:', anyNumMatch[1], '→', num);
+        return { count: num };
+      }
+    }
+
+    console.log('❌ 좋아요 수 추출 실패:', text);
     return { count: 0 };
   },
 
@@ -659,18 +732,27 @@ export const pageScraper = {
       }
     }
 
-    // 정규표현식으로 직접 좋아요수 찾기
+    // 정규표현식으로 직접 좋아요수 찾기 (패턴 강화)
     if (!data.likeCount) {
       const enhancedLikePatterns = [
-        // YouTube API 응답에서 찾을 수 있는 패턴들
+        // 최신 YouTube 구조 패턴들 (2024년 기준)
+        /"likeButtonViewModel":\s*{\s*"likeButtonViewModel":\s*{\s*"toggleButtonViewModel":\s*{\s*"toggleButtonViewModel":\s*{\s*"defaultButtonViewModel":\s*{\s*"buttonViewModel":\s*{\s*"title":\s*"([^"]+)"/gi,
+        /"segmentedLikeDislikeButtonViewModel":\s*{\s*"likeButtonViewModel"[\s\S]*?"title":\s*"([^"]+)"/gi,
+        // 접근성 라벨 패턴들
         /"toggledText":\s*{\s*"accessibility":\s*{\s*"accessibilityData":\s*{\s*"label":\s*"([^"]*좋아요[^"]*)"/gi,
         /"defaultText":\s*{\s*"accessibility":\s*{\s*"accessibilityData":\s*{\s*"label":\s*"([^"]*좋아요[^"]*)"/gi,
+        /"accessibilityData":\s*{\s*"label":\s*"([^"]*\d+[^"]*좋아요[^"]*)"/gi,
+        // 일반 title/label 패턴들
         /"title":\s*"([^"]*좋아요[^"]*)"/gi,
         /"ariaLabel":\s*"([^"]*좋아요[^"]*)"/gi,
         /"label":\s*"([^"]*\d+[^"]*좋아요[^"]*)"/gi,
-        // 영어 패턴
+        // 버튼 텍스트 패턴들
+        /"buttonText":\s*{\s*"simpleText":\s*"([^"]*\d+[^"]*)"/gi,
+        /"simpleText":\s*"([^"]*\d+[^"]*좋아요[^"]*)"/gi,
+        // 영어 패턴들
         /"label":\s*"([^"]*\d+[^"]*like[^"]*)"/gi,
         /"title":\s*"([^"]*\d+[^"]*like[^"]*)"/gi,
+        /"accessibilityData":\s*{\s*"label":\s*"([^"]*\d+[^"]*like[^"]*)"/gi,
       ];
 
       for (const pattern of enhancedLikePatterns) {

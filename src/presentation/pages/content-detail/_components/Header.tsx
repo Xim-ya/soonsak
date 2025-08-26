@@ -14,6 +14,7 @@ import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { StartRateView } from './StartRateView';
 import { useContentDetail } from '../_hooks/useContentDetail';
+import { useContentVideos } from '../_provider/ContentDetailProvider';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { AppSize } from '@/shared/utils/appSize';
@@ -48,12 +49,23 @@ const HeaderBackground = React.memo(() => {
     error: contentInfoError,
   } = useContentDetail(Number(id), type);
 
+  // 비디오 데이터 가져오기
+  const { videos, isLoading: isVideosLoading } = useContentVideos();
+
   const { toggleImages, opacityValues } = useImageTransition();
   const navigation = useNavigation<NavigationProp>();
 
-  // YouTube 데이터 가져오기
-  const defaultYouTubeUrl = 'https://www.youtube.com/watch?v=U5TPQoEveJY';
-  const { data: videoInfo, isLoading: youtubeLoading } = useYouTubeVideo(defaultYouTubeUrl);
+  // 첫 번째 primary 비디오 또는 첫 번째 비디오 선택
+  const primaryVideo = useMemo(() => {
+    if (!videos || videos.length === 0) return null;
+    return videos.find((video) => video.isPrimary) || videos[0];
+  }, [videos]);
+
+  // YouTube 데이터 가져오기 - 실제 비디오 ID 사용
+  const youtubeUrl = primaryVideo
+    ? `https://www.youtube.com/watch?v=${primaryVideo.id}`
+    : 'https://www.youtube.com/watch?v=U5TPQoEveJY';
+  const { data: videoInfo, isLoading: youtubeLoading } = useYouTubeVideo(youtubeUrl);
 
   // YouTube 이미지 페이드인 애니메이션
   const youtubeOpacity = useRef(new Animated.Value(0)).current;
@@ -96,13 +108,13 @@ const HeaderBackground = React.memo(() => {
 
   // 이벤트 핸들러들
   const handlePlayPress = useCallback(() => {
-    const title = contentTitle || '';
-    const videoId = videoInfo?.id || 'U5TPQoEveJY'; // 기본값 유지
+    const title = primaryVideo?.title || contentTitle || '';
+    const videoId = primaryVideo?.id || 'U5TPQoEveJY'; // 실제 비디오 ID 사용
     navigation.navigate(routePages.player, {
       videoId: videoId,
       title: title,
     });
-  }, [navigation, contentTitle, videoInfo?.id]);
+  }, [navigation, primaryVideo, contentTitle]);
 
   const handleThumbnailPress = useCallback(() => {
     toggleImages();
@@ -203,6 +215,9 @@ const ContentInfo = React.memo(() => {
     error: contentInfoError,
   } = useContentDetail(Number(id), type);
 
+  // 비디오 데이터 가져오기
+  const { videos, isLoading: isVideosLoading } = useContentVideos();
+
   const dotText = ' · ';
 
   // 연도 추출 (ContentDetailModel은 이미 releaseDate로 통합됨)
@@ -210,6 +225,12 @@ const ContentInfo = React.memo(() => {
 
   // 평점 추출
   const rating = contentInfo?.voteAverage ? contentInfo.voteAverage / 2 : 0;
+
+  // 첫 번째 primary 비디오 또는 첫 번째 비디오 선택
+  const primaryVideo = useMemo(() => {
+    if (!videos || videos.length === 0) return null;
+    return videos.find((video) => video.isPrimary) || videos[0];
+  }, [videos]);
 
   // route params에서 title과 type이 있으면 바로 표시 (스켈레톤 대신)
   return (
@@ -245,8 +266,14 @@ const ContentInfo = React.memo(() => {
       )}
       <Gap size={16} />
 
-      {/* 컨텐츠 타이틀 */}
-      <ContentTitle numberOfLines={1}>{'죽기 전에 꼭 봐야할 영화'}</ContentTitle>
+      {/* 비디오 타이틀 */}
+      {isVideosLoading ? (
+        <SkeletonView width={250} height={20} borderRadius={4} />
+      ) : (
+        <ContentTitle numberOfLines={1}>
+          {primaryVideo?.title || '비디오를 불러오는 중...'}
+        </ContentTitle>
+      )}
       <Gap size={8} />
 
       {/* 별점은 로딩 중이면 0, 데이터 있으면 표시 */}

@@ -9,7 +9,7 @@ import { channelScraper } from '../api/scrapers/channelScraper';
 /**
  * YouTube 채널 정보 조회 Hook
  *
- * @param channelId - 채널 ID 또는 핸들 (@01nam, @channelname 등)
+ * @param channelId - 채널 ID (UC로 시작) 또는 핸들 (@으로 시작)
  * @param options - React Query 옵션
  * @returns 채널 정보, 로딩 상태, 에러 상태
  *
@@ -17,8 +17,8 @@ import { channelScraper } from '../api/scrapers/channelScraper';
  * // 채널 핸들로 조회
  * const { data: channel, isLoading, error } = useYouTubeChannel('@01nam');
  *
- * // 채널 ID로 조회
- * const { data: channel } = useYouTubeChannel('UC1234567890');
+ * // 채널 ID로 조회 (UC로 시작하는 실제 YouTube 채널 ID)
+ * const { data: channel } = useYouTubeChannel('UCRT4hxfWfXEP7Iiv3ovI-0A');
  */
 export const useYouTubeChannel = (
   channelId?: string,
@@ -34,15 +34,12 @@ export const useYouTubeChannel = (
       try {
         console.log('🔍 채널 정보 조회 시작:', channelId);
 
-        // 채널 ID 정규화 (@이 없으면 추가)
-        const normalizedChannelId = channelId!.startsWith('@') ? channelId! : `@${channelId!}`;
-
-        // 채널 페이지 스크래핑
-        const scrapedData = await channelScraper.scrapeChannelPage(normalizedChannelId);
+        // 채널 페이지 스크래핑 (UC로 시작하면 실제 채널 ID, @로 시작하면 handle ID)
+        const scrapedData = await channelScraper.scrapeChannelPage(channelId!);
 
         // ScrapedChannelDto를 YouTubeChannelDto로 변환
         const channelData: YouTubeChannelDto = {
-          id: normalizedChannelId,
+          id: channelId!,
           name: scrapedData.name,
           description: scrapedData.description,
           subscriberCount: scrapedData.subscriberCount,

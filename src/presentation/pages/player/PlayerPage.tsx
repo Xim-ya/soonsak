@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/native';
-import { useRoute, RouteProp } from '@react-navigation/native';
-import { Dimensions, ActivityIndicator, Platform, Alert } from 'react-native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { Dimensions, ActivityIndicator, Platform, Alert, Linking } from 'react-native';
 import {
   YoutubeView,
   useYouTubePlayer,
@@ -23,6 +23,7 @@ type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.playe
  */
 export const PlayerPage = () => {
   const route = useRoute<PlayerPageRouteProp>();
+  const navigation = useNavigation();
   const { videoId, title } = route.params;
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1);
@@ -97,10 +98,64 @@ export const PlayerPage = () => {
     }
   });
 
+  // YouTube 앱 열기 함수
+  const openInYouTube = useCallback(async () => {
+    const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const youtubeAppUrl = `youtube://watch?v=${videoId}`;
+
+    try {
+      // YouTube 앱이 설치되어 있는지 확인하고 열기
+      const canOpenYouTubeApp = await Linking.canOpenURL(youtubeAppUrl);
+      if (canOpenYouTubeApp) {
+        await Linking.openURL(youtubeAppUrl);
+      } else {
+        // YouTube 앱이 없으면 브라우저에서 열기
+        await Linking.openURL(youtubeUrl);
+      }
+    } catch (linkingError) {
+      console.error('링크 열기 실패:', linkingError);
+      // 링크 열기도 실패한 경우 기본 오류 메시지
+      Alert.alert('오류', 'YouTube로 연결할 수 없습니다.');
+    }
+  }, [videoId]);
+
   // 에러 이벤트
   useYouTubeEvent(player, 'error', (error) => {
     console.error('플레이어 에러:', error);
-    Alert.alert('재생 오류', `에러 코드: ${error.code}\n${error.message}`);
+    
+    // EMBEDDED_RESTRICTED 오류인 경우 특별 처리
+    if (error.code === 150 && error.message === 'EMBEDDED_RESTRICTED') {
+      Alert.alert(
+        '재생 지원 제한',
+        '채널 소유자의 정책으로 YouTube 앱을 실행합니다.',
+        [
+          {
+            text: '취소',
+            style: 'cancel',
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: 'YouTube 열기',
+            onPress: async () => {
+              await openInYouTube();
+              navigation.goBack();
+            },
+          },
+        ]
+      );
+    } else {
+      // 기타 오류는 기존 처리 방식 + 뒤로 가기
+      Alert.alert(
+        '재생 오류', 
+        `에러 코드: ${error.code}\n${error.message}`,
+        [
+          {
+            text: '확인',
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    }
   });
 
   // 16:9 비율로 계산된 높이 (화면 너비에 맞춰)

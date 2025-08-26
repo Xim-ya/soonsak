@@ -7,20 +7,22 @@ import ThumbSvg from '@assets/icons/thumb.svg';
 import SmallDateSvg from '@assets/icons/small_date.svg';
 import Gap from '@/presentation/components/view/Gap';
 import { useYouTubeVideo } from '@/features/youtube';
+import { useContentVideos } from '../_provider/ContentDetailProvider';
 
-// Props 타입 정의
-interface VideoMetricsViewProps {
-  youtubeUrl?: string;
-  videoId?: string;
-}
+export const VideoMetricsView = () => {
+  const { videos } = useContentVideos();
 
-export const VideoMetricsView = ({ youtubeUrl, videoId }: VideoMetricsViewProps = {}) => {
-  // 기본 YouTube URL (사용자가 제공한 URL)
-  const defaultYouTubeUrl = 'https://www.youtube.com/watch?v=U5TPQoEveJY';
-  const targetUrl = youtubeUrl || videoId || defaultYouTubeUrl;
+  // primary 비디오의 YouTube ID 찾기
+  const primaryVideo = videos.find((video) => video.isPrimary) || videos[0];
+  const youtubeVideoId = primaryVideo?.id;
+
+  // YouTube 비디오 URL 생성
+  const youtubeUrl = youtubeVideoId
+    ? `https://www.youtube.com/watch?v=${youtubeVideoId}`
+    : undefined;
 
   // 새로운 YouTube Hook 사용
-  const { data: videoInfo, isLoading: loading } = useYouTubeVideo(targetUrl);
+  const { data: videoInfo, isLoading: loading } = useYouTubeVideo(youtubeUrl);
 
   const renderIcon = (iconName: string) => {
     switch (iconName) {
@@ -44,7 +46,7 @@ export const VideoMetricsView = ({ youtubeUrl, videoId }: VideoMetricsViewProps 
             <TitleText>{title}</TitleText>
           </TopSection>
           <Gap size={4} />
-          <DataText>{loading ? '-' : (data ?? '-')}</DataText>
+          <DataText>{loading || !youtubeVideoId ? '-' : (data ?? '-')}</DataText>
         </StackContainer>
       </ColumnContainer>
     );

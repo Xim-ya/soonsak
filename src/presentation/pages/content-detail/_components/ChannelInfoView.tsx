@@ -10,22 +10,26 @@ import { useQuery } from '@tanstack/react-query';
 import { formatter } from '@/shared/utils/formatter';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { useYouTubeChannel } from '@/features/youtube';
+import { useContentVideos } from '../_provider/ContentDetailProvider';
 
 /**
  *  채널 정보를 보여주는 뷰
  */
 function ChannelInfoView() {
-  const channelId = '@어퍼컷';
+  const { videos } = useContentVideos();
+  
+  // 첫 번째 비디오의 채널 ID를 사용 (모든 비디오가 같은 콘텐츠에 속하므로 같은 채널)
+  const channelId = videos.length > 0 ? videos[0]?.channelId : undefined;
   const { data: channel, isLoading, error } = useYouTubeChannel(channelId);
 
   function handlePress() {
-    if (isLoading || error) return;
+    if (isLoading || error || !channelId) return;
 
     console.log('handlePress');
   }
 
-  // 에러 시 빈 컴포넌트 반환 (섹션 제목도 숨김)
-  if (error) {
+  // 채널 ID가 없거나 에러 시 빈 컴포넌트 반환
+  if (!channelId || error) {
     return null;
   }
 
