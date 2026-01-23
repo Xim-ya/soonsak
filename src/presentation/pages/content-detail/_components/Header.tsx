@@ -8,6 +8,8 @@ import { DarkedLinearShadow, LinearAlign } from '../../../components/shadow/Dark
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import PlayButtonSvg from '@assets/icons/play_button.svg';
 import ContentTypeChip from '@/presentation/components/chip/ContentTypeChip';
+import DarkChip from '@/presentation/components/chip/DarkChip';
+import { videoTagConfigs } from '@/presentation/types/content/videoTag.enum';
 import Gap from '@/presentation/components/view/Gap';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 import colors from '@/shared/styles/colors';
@@ -235,8 +237,16 @@ const ContentInfo = React.memo(() => {
   // route params에서 title과 type이 있으면 바로 표시 (스켈레톤 대신)
   return (
     <ContentInfoContainer>
-      {/* 타입은 route params에서 바로 표시 */}
-      <ContentTypeChip contentType={type} />
+      {/* 콘텐츠 타입 및 결말 포함 칩 */}
+      <ChipRow>
+        <ContentTypeChip contentType={type} />
+        {primaryVideo?.includesEnding && (
+          <>
+            <Gap size={6} />
+            <DarkChip content={videoTagConfigs.includesEnding.label} />
+          </>
+        )}
+      </ChipRow>
       <Gap size={4} />
 
       {/* 제목은 route params에서 바로 표시 */}
@@ -346,6 +356,11 @@ const ContentInfoContainer = styled.View({
   paddingVertical: 20,
   paddingHorizontal: 16,
   pointerEvents: 'box-none' as const, // 스크롤 제스처 통과 허용
+});
+
+const ChipRow = styled.View({
+  flexDirection: 'row',
+  alignItems: 'center',
 });
 
 const ContentTitle = styled.Text({
