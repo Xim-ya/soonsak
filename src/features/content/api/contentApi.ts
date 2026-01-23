@@ -1,4 +1,4 @@
-import { superBaseClient } from '@/features/utils/clients/superBaseClient';
+import { supabaseClient } from '@/features/utils/clients/superBaseClient';
 import { mapWithField } from '@/features/utils/mapper/fieldMapper';
 import { ContentDto, VideoDto } from '../types';
 import { CONTENT_DATABASE } from '../../utils/constants/dbName';
@@ -9,7 +9,7 @@ export const contentApi = {
    * 최근 업로드된 콘텐츠 조회
    */
   getRecentUploadedContents: async (): Promise<ContentDto[]> => {
-    const { data, error } = await superBaseClient.content
+    const { data, error } = await supabaseClient
       .from(CONTENT_DATABASE.TABLES.CONTENTS)
       .select('*')
       .order(CONTENT_DATABASE.COLUMNS.UPLOADED_AT, { ascending: false });
@@ -28,7 +28,7 @@ export const contentApi = {
    * 특정 콘텐츠의 비디오 목록 조회
    */
   getVideosByContent: async (contentId: number, contentType: ContentType): Promise<VideoDto[]> => {
-    const { data, error } = await superBaseClient.content
+    const { data, error } = await supabaseClient
       .from('videos')
       .select('*')
       .eq('content_id', contentId)
