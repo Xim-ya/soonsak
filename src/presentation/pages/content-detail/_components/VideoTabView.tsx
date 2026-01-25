@@ -2,9 +2,9 @@ import { Tabs } from 'react-native-collapsible-tab-view';
 import React from 'react';
 import { useTabScrollListener } from '../_hooks/useTabScrollListener';
 import { VideoMetricsView } from './VideoMetricsView';
-
 import { OtherChannelVideoListView } from './OtherChannelVideoListView';
 import { ChannelInfoView } from './ChannelInfoView';
+import { RelatedContentsView } from './RelatedContentsView';
 
 // 메모이제이션된 탭 컴포넌트
 function VideoTabView({ onScrollChange }: { onScrollChange: (offset: number) => void }) {
@@ -20,6 +20,9 @@ function VideoTabView({ onScrollChange }: { onScrollChange: (offset: number) => 
 
       {/* 다른 채널 영상 리스트 */}
       <OtherChannelVideoListView />
+
+      {/* 관련 콘텐츠 섹션 */}
+      <RelatedContentsView />
     </Tabs.ScrollView>
   );
 }

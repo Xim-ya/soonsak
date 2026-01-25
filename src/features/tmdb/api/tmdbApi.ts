@@ -1,6 +1,7 @@
 import { MovieDto } from '../types/movieDto';
 import { TvSeriesDto } from '../types/tvDto';
 import { TVCreditsResponse, MovieCreditsResponse } from '../types/creditDto';
+import { TmdbPaginatedResponse, RelatedMovieItemDto, RelatedTvItemDto } from '../types/common';
 import { tmdbClient } from '@/features/utils/clients/tmbClient';
 
 export const tmdbApi = {
@@ -32,4 +33,36 @@ export const tmdbApi = {
    */
   getMovieCredits: (movieId: number) =>
     tmdbClient.get<MovieCreditsResponse>(`/movie/${movieId}/credits`),
+
+  /**
+   * 영화 추천 콘텐츠 조회
+   * @param movieId 영화 ID
+   * @returns 추천 영화 목록
+   */
+  getMovieRecommendations: (movieId: number) =>
+    tmdbClient.get<TmdbPaginatedResponse<RelatedMovieItemDto>>(`/movie/${movieId}/recommendations`),
+
+  /**
+   * 유사 영화 조회
+   * @param movieId 영화 ID
+   * @returns 유사 영화 목록
+   */
+  getSimilarMovies: (movieId: number) =>
+    tmdbClient.get<TmdbPaginatedResponse<RelatedMovieItemDto>>(`/movie/${movieId}/similar`),
+
+  /**
+   * TV 시리즈 추천 콘텐츠 조회
+   * @param seriesId TV 시리즈 ID
+   * @returns 추천 TV 시리즈 목록
+   */
+  getTvRecommendations: (seriesId: number) =>
+    tmdbClient.get<TmdbPaginatedResponse<RelatedTvItemDto>>(`/tv/${seriesId}/recommendations`),
+
+  /**
+   * 유사 TV 시리즈 조회
+   * @param seriesId TV 시리즈 ID
+   * @returns 유사 TV 시리즈 목록
+   */
+  getSimilarTvSeries: (seriesId: number) =>
+    tmdbClient.get<TmdbPaginatedResponse<RelatedTvItemDto>>(`/tv/${seriesId}/similar`),
 };

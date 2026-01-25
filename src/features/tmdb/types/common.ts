@@ -66,3 +66,55 @@ export interface TmdbErrorDto {
  * TMDB API 공통 응답 타입
  */
 export type TmdbApiResponse<T> = T | TmdbErrorDto;
+
+/**
+ * TMDB 관련 콘텐츠 아이템 DTO (영화용)
+ * recommendations, similar API에서 반환되는 아이템
+ */
+export interface RelatedMovieItemDto {
+  readonly id: number;
+  readonly title: string;
+  readonly originalTitle: string;
+  readonly overview: string;
+  readonly posterPath: string | null;
+  readonly backdropPath: string | null;
+  readonly releaseDate: string;
+  readonly voteAverage: number;
+  readonly voteCount: number;
+  readonly popularity: number;
+  readonly adult: boolean;
+  readonly genreIds: number[];
+  readonly originalLanguage: string;
+  readonly video: boolean;
+}
+
+/**
+ * TMDB 관련 콘텐츠 아이템 DTO (TV용)
+ * recommendations, similar API에서 반환되는 아이템
+ */
+export interface RelatedTvItemDto {
+  readonly id: number;
+  readonly name: string;
+  readonly originalName: string;
+  readonly overview: string;
+  readonly posterPath: string | null;
+  readonly backdropPath: string | null;
+  readonly firstAirDate: string;
+  readonly voteAverage: number;
+  readonly voteCount: number;
+  readonly popularity: number;
+  readonly adult: boolean;
+  readonly genreIds: number[];
+  readonly originalLanguage: string;
+  readonly originCountry: string[];
+}
+
+/**
+ * TMDB 페이지네이션 응답 DTO
+ */
+export interface TmdbPaginatedResponse<T> {
+  readonly page: number;
+  readonly results: T[];
+  readonly totalPages: number;
+  readonly totalResults: number;
+}

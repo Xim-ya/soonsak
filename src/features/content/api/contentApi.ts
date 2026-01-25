@@ -46,4 +46,30 @@ export const contentApi = {
 
     return videos ?? [];
   },
+
+  /**
+   * TMDB ID 목록으로 Supabase에 등록된 콘텐츠만 필터링하여 조회
+   * @param tmdbIds TMDB 콘텐츠 ID 목록
+   * @param contentType 콘텐츠 타입 (movie | tv)
+   * @returns ContentDto 배열
+   */
+  getRegisteredContentsByTmdbIds: async (
+    tmdbIds: number[],
+    contentType: ContentType,
+  ): Promise<ContentDto[]> => {
+    if (tmdbIds.length === 0) return [];
+
+    const { data, error } = await supabaseClient
+      .from(CONTENT_DATABASE.TABLES.CONTENTS)
+      .select('*')
+      .in('id', tmdbIds)
+      .eq('content_type', contentType);
+
+    if (error) {
+      console.error('등록된 콘텐츠 조회 실패:', error);
+      throw new Error(`Failed to fetch registered contents: ${error.message}`);
+    }
+
+    return mapWithField<ContentDto[]>(data ?? []);
+  },
 };
