@@ -39,6 +39,7 @@
     "axios": "^1.11.0",
     "base-64": "^1.0.0",
     "event-target-polyfill": "^0.0.4",
+    "event-target-shim": "^6.0.2",
     "expo": "^54.0.31",
     "expo-font": "~14.0.10",
     "expo-image-picker": "~17.0.10",
@@ -66,7 +67,8 @@
     "readable-stream": "^4.7.0",
     "text-encoding-polyfill": "^0.6.7",
     "util": "^0.12.5",
-    "web-streams-polyfill": "^4.1.0"
+    "web-streams-polyfill": "^4.1.0",
+    "youtubei.js": "^16.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

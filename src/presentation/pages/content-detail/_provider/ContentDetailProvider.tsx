@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, ReactNo
 import { VideoDto } from '@/features/content/types';
 import { contentApi } from '@/features/content/api/contentApi';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
+import { usePrefetchCommentToken } from '@/features/youtube';
 
 interface ContentDetailContextType {
   videos: VideoDto[];
@@ -9,6 +10,12 @@ interface ContentDetailContextType {
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
+  /** 댓글 토큰 (prefetch됨) */
+  commentToken: string | null;
+  /** 총 댓글 수 텍스트 */
+  commentTotalCountText: string | undefined;
+  /** 댓글 토큰 로딩 중 여부 */
+  isCommentTokenLoading: boolean;
 }
 
 const ContentDetailContext = createContext<ContentDetailContextType | undefined>(undefined);
@@ -67,12 +74,22 @@ export function ContentDetailProvider({
     return videos.find((video) => video.isPrimary) ?? videos[0] ?? null;
   }, [videos]);
 
+  // 댓글 토큰 prefetch (페이지 진입 시 미리 조회)
+  const {
+    token: commentToken,
+    totalCountText: commentTotalCountText,
+    isLoading: isCommentTokenLoading,
+  } = usePrefetchCommentToken(primaryVideo?.id);
+
   const contextValue: ContentDetailContextType = {
     videos,
     primaryVideo,
     isLoading,
     error,
     refetch,
+    commentToken,
+    commentTotalCountText,
+    isCommentTokenLoading,
   };
 
   return (

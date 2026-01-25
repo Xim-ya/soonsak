@@ -30,3 +30,4 @@ export {
 } from './hooks/useYouTubeVideo';
 export { useYouTubeMetrics, useFormattedMetrics } from './hooks/useYouTubeMetrics';
 export { useYouTubeChannel } from './hooks/useYouTubeChannel';
+export { useYouTubeComments, usePrefetchCommentToken } from './hooks/useYouTubeComments';

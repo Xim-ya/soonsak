@@ -1,3 +1,4 @@
 export * from './useYouTubeVideo';
 export * from './useYouTubeMetrics';
 export * from './useYouTubeChannel';
+export * from './useYouTubeComments';

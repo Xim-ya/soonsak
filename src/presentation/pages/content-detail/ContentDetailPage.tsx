@@ -75,7 +75,7 @@ export default function ContentDetailPage() {
             <Tabs.Tab name="영상" label="videoInfo">
               <ContentTabView onScrollChange={handleScrollChange} />
             </Tabs.Tab>
-            <Tabs.Tab name="원작" label="originalInfo ">
+            <Tabs.Tab name="댓글" label="comments">
               <OriginalTabView onScrollChange={handleScrollChange} />
             </Tabs.Tab>
           </Tabs.Container>

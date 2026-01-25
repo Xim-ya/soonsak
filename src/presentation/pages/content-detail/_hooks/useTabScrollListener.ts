@@ -23,7 +23,6 @@ const useTabScrollListener = (onScrollChange: (offset: number) => void) => {
     (offset: number) => {
       // 로그 출력 최적화 (10픽셀 이상 변경시만)
       if (Math.abs(offset - lastLoggedOffset.current) >= 10) {
-        console.log(`[ContentDetailPage] 스크롤 오프셋: ${offset.toFixed(2)}`);
         lastLoggedOffset.current = offset;
       }
 
