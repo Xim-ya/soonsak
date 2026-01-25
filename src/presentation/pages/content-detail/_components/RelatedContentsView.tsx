@@ -110,6 +110,7 @@ const posterHeight = posterWidth * (3 / 2);
 const Container = styled.View({
   backgroundColor: colors.black,
   paddingTop: 24,
+  paddingBottom: 40,
 });
 
 const SectionTitle = styled.Text({

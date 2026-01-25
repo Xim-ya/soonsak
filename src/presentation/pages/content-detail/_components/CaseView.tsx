@@ -7,7 +7,6 @@ import { RoundedAvatorView } from '@/presentation/components/image/RoundedAvatar
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { useCredits } from '../_hooks/useCredits';
 import { CreditPersonModel } from '../_types/creditModel.cd';
-import { ContentType } from '@/presentation/types/content/contentType.enum';
 import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 
@@ -128,6 +127,7 @@ function CaseView() {
 /* Styled Components */
 const Container = styled.View({
   flex: 1,
+  paddingTop: 24,
 });
 
 const TitleText = styled.Text({

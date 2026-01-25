@@ -99,6 +99,8 @@ const thumbnailHeight = thumbnailWidth * (122 / 196);
 
 const Container = styled.View({
   backgroundColor: colors.black,
+  paddingTop: 24,
+  paddingBottom: 40,
 });
 
 const SectionTitle = styled.Text({

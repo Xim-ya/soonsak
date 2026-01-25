@@ -2,7 +2,6 @@ import React from 'react';
 import styled from '@emotion/native';
 import { ExpandableTextView } from '@/presentation/components/text/ExpandableTextView';
 import textStyle from '@/shared/styles/textStyles';
-import colors from '@/shared/styles/colors';
 import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
 import { useContentDetail } from '@/features/tmdb/hooks/useContentDetail';
 
@@ -27,7 +26,9 @@ export const SummaryView = () => {
 /* Styled Components */
 const Container = styled.View({
   width: '100%',
+  paddingTop: 24,
   paddingHorizontal: 16,
+  paddingBottom: 40,
 });
 
 const Title = styled.Text({

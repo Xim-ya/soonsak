@@ -5,9 +5,6 @@ import textStyles from '@/shared/styles/textStyles';
 import styled from '@emotion/native';
 import RightArrowIcon from '@assets/icons/right_arrrow.svg';
 import { Pressable } from 'react-native';
-import ChannelModel from '../_types/channelModel.cd';
-import { useQuery } from '@tanstack/react-query';
-import { formatter } from '@/shared/utils/formatter';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { useYouTubeChannel } from '@/features/youtube';
 import { useContentVideos } from '../_provider/ContentDetailProvider';
@@ -63,8 +60,9 @@ function ChannelInfoView() {
 }
 
 const Container = styled.View({
-  padding: 16,
-  marginBottom: 40,
+  paddingTop: 24,
+  paddingHorizontal: 16,
+  paddingBottom: 40,
 });
 
 const SectionTitle = styled.Text({
