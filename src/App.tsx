@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
@@ -9,6 +9,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect } from 'react';
 import { AppSize } from '@/shared/utils/appSize';
+import colors from '@/shared/styles/colors';
+import { enableScreens } from 'react-native-screens';
+
+// react-native-screens 활성화 (iOS 배경색 문제 해결을 위해)
+enableScreens(true);
 
 // 개발 모드에서 YouTube API 테스트 비활성화 (성능 최적화)
 // if (__DEV__) {
@@ -26,6 +31,21 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// 네비게이션 테마 설정 (iOS 엣지 하얀색 배경 문제 해결)
+const navigationTheme = {
+  ...DefaultTheme,
+  dark: true,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.main,
+    background: colors.black,
+    card: colors.black,
+    text: colors.white,
+    border: colors.black,
+    notification: colors.main,
+  },
+};
 
 // AppSize 초기화를 위한 내부 컴포넌트
 function AppContent() {
@@ -45,7 +65,7 @@ function AppContent() {
   return (
     <>
       <StatusBar style="light" />
-      <NavigationContainer>
+      <NavigationContainer theme={navigationTheme}>
         <StackNavigator />
       </NavigationContainer>
     </>
@@ -67,7 +87,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black }}>
         <QueryClientProvider client={queryClient}>
           <AppContent />
         </QueryClientProvider>
