@@ -26,6 +26,7 @@ export const contentApi = {
 
   /**
    * 특정 콘텐츠의 비디오 목록 조회
+   * 정렬 순서: 1) includes_ending=true 우선, 2) runtime 긴 순서
    */
   getVideosByContent: async (contentId: number, contentType: ContentType): Promise<VideoDto[]> => {
     const { data, error } = await supabaseClient
@@ -33,7 +34,8 @@ export const contentApi = {
       .select('*')
       .eq('content_id', contentId)
       .eq('content_type', contentType)
-      .order('uploaded_at', { ascending: false });
+      .order('includes_ending', { ascending: false })
+      .order('runtime', { ascending: false, nullsFirst: false });
 
     if (error) {
       console.error('비디오 조회 실패:', error);

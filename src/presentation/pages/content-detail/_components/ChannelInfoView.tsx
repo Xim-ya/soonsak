@@ -16,10 +16,10 @@ import { useContentVideos } from '../_provider/ContentDetailProvider';
  *  채널 정보를 보여주는 뷰
  */
 function ChannelInfoView() {
-  const { videos } = useContentVideos();
-  
-  // 첫 번째 비디오의 채널 ID를 사용 (모든 비디오가 같은 콘텐츠에 속하므로 같은 채널)
-  const channelId = videos.length > 0 ? videos[0]?.channelId : undefined;
+  const { primaryVideo } = useContentVideos();
+
+  // 현재 선택된 대표 비디오의 채널 ID를 사용
+  const channelId = primaryVideo?.channelId;
   const { data: channel, isLoading, error } = useYouTubeChannel(channelId);
 
   function handlePress() {

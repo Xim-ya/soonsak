@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { VideoDto } from '@/features/content/types';
 import { contentApi } from '@/features/content/api/contentApi';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 
 interface ContentDetailContextType {
   videos: VideoDto[];
+  primaryVideo: VideoDto | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -20,18 +21,18 @@ interface ContentDetailProviderProps {
 
 /**
  * ContentDetailProvider - 콘텐츠 상세 화면에서 비디오 데이터를 관리하는 프로바이더
- * 
+ *
  * contentId와 contentType을 기반으로 videos 테이블에서 관련 영상 정보를 조회하고 관리합니다.
- * 
+ *
  * @example
  * <ContentDetailProvider contentId={123} contentType={ContentType.MOVIE}>
  *   <ContentDetailScreen />
  * </ContentDetailProvider>
  */
-export function ContentDetailProvider({ 
-  children, 
-  contentId, 
-  contentType 
+export function ContentDetailProvider({
+  children,
+  contentId,
+  contentType,
 }: ContentDetailProviderProps) {
   const [videos, setVideos] = useState<VideoDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,17 +59,24 @@ export function ContentDetailProvider({
     fetchVideos();
   }, [contentId, contentType]);
 
+  // 대표 비디오 선택 로직
+  // 1순위: isPrimary가 true인 비디오
+  // 2순위(폴백): 모든 비디오가 isPrimary=false인 경우 첫 번째 비디오 사용
+  const primaryVideo: VideoDto | null = useMemo(() => {
+    if (videos.length === 0) return null;
+    return videos.find((video) => video.isPrimary) ?? videos[0] ?? null;
+  }, [videos]);
+
   const contextValue: ContentDetailContextType = {
     videos,
+    primaryVideo,
     isLoading,
     error,
     refetch,
   };
 
   return (
-    <ContentDetailContext.Provider value={contextValue}>
-      {children}
-    </ContentDetailContext.Provider>
+    <ContentDetailContext.Provider value={contextValue}>{children}</ContentDetailContext.Provider>
   );
 }
 

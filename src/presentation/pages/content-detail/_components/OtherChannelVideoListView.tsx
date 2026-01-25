@@ -1,3 +1,4 @@
+import { useMemo, useCallback } from 'react';
 import { RoundedAvatorView } from '@/presentation/components/image/RoundedAvatarView';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import {
@@ -9,67 +10,72 @@ import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { AppSize } from '@/shared/utils/appSize';
 import styled from '@emotion/native';
-import { FlatList, View, Image } from 'react-native';
+import { FlatList, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useContentVideos } from '../_provider/ContentDetailProvider';
+import { VideoDto } from '@/features/content/types';
+import { useYouTubeChannel } from '@/features/youtube';
+import { RootStackParamList } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
+import PlayButtonSvg from '@assets/icons/play_button.svg';
 
-const MOCK_DATA: RelatedOtherChannelVideo[] = [
-  {
-    id: 'OASDFkasdf123',
-    title:
-      '[일본 여행 vlog] 도쿄 밤거리 산책 [일본 여행 vlog] 도쿄 밤거리 산책 [일본 여행 vlog] 도쿄 밤거리 산책',
-    thumnailUrl: 'https://i.ytimg.com/vi/R7QjeLrvOJ4/hq720.jpg',
-    channelName: '영남',
-    channelLogoImageUrl:
-      'https://media.themoviedb.org/t/p/w600_and_h900_bestv2/s6tflSD20MGz04ZR2R1lZvhmC4Y.jpg',
-  },
-  {
-    id: 'OASDFkasdf124',
-    title: '서울 야경 명소 TOP 10',
-    thumnailUrl: 'https://i.ytimg.com/vi/R7QjeLrvOJ4/hq720.jpg',
-    channelName: '여행가이드',
-    channelLogoImageUrl:
-      'https://yt3.ggpht.com/ytc/AIdro_kzHx_o1dOJpR0YRs4UqP0vKfYqF5yYLbZ5k5Ng=s48-c-k-c0x00ffffff-no-rj',
-  },
-  {
-    id: 'OASDFkasdf125',
-    title: '부산 맛집 투어 | 현지인 추천',
-    thumnailUrl: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
-    channelName: '먹방여행',
-    channelLogoImageUrl:
-      'https://yt3.ggpht.com/ytc/AIdro_kzHx_o1dOJpR0YRs4UqP0vKfYqF5yYLbZ5k5Ng=s48-c-k-c0x00ffffff-no-rj',
-  },
-];
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface RelatedOtherChannelVideo {
-  id: string;
-  title: string;
-  thumnailUrl: string; // 원 코드 키 유지
-  channelName: string;
-  channelLogoImageUrl: string;
-}
+// 비디오 아이템 컴포넌트 (훅 사용을 위해 별도 분리)
+function VideoItemView({ item }: { item: VideoDto }) {
+  const { data: channel } = useYouTubeChannel(item.channelId);
+  const navigation = useNavigation<NavigationProp>();
 
-function OtherChannelVideoListView() {
-  const ItemView = ({ item }: { item: RelatedOtherChannelVideo }) => {
-    return (
-      <VideoItemContainer>
+  const handlePlayPress = useCallback(() => {
+    navigation.navigate(routePages.player, {
+      videoId: item.id,
+      title: item.title,
+    });
+  }, [navigation, item.id, item.title]);
+
+  return (
+    <VideoItemContainer>
+      <ThumbnailTouchable onPress={handlePlayPress} activeOpacity={0.8}>
         <ThumbnailWrapper>
           <LoadableImageView
-            source={item.thumnailUrl}
+            source={item.thumbnailUrl || ''}
             width={thumbnailWidth}
             height={thumbnailHeight}
             borderRadius={4}
           />
           <DarkedLinearShadow height={thumbnailHeight} align={LinearAlign.bottomTop} />
+          {/* 재생 버튼 아이콘 */}
+          <PlayButtonContainer>
+            <PlayButtonSvg width={64} height={64} />
+          </PlayButtonContainer>
           <ChannelInfoWrapper>
-            <RoundedAvatorView source={item.channelLogoImageUrl} size={28} />
+            <RoundedAvatorView source={channel?.images.avatar || ''} size={28} />
             <Gap size={8} />
-            <ChannelName>{item.channelName}</ChannelName>
+            <ChannelName numberOfLines={1}>{channel?.name || ''}</ChannelName>
           </ChannelInfoWrapper>
         </ThumbnailWrapper>
-        <Gap size={6} />
-        <VideoTitle numberOfLines={2}>{item.title}</VideoTitle>
-      </VideoItemContainer>
-    );
-  };
+      </ThumbnailTouchable>
+      <Gap size={6} />
+      <VideoTitle numberOfLines={2}>{item.title}</VideoTitle>
+    </VideoItemContainer>
+  );
+}
+
+function OtherChannelVideoListView() {
+  const { videos, primaryVideo } = useContentVideos();
+
+  // primaryVideo를 제외한 나머지 비디오들
+  // 정렬은 DB에서 처리됨 (includes_ending DESC, runtime DESC)
+  const otherVideos = useMemo(() => {
+    if (!primaryVideo) return videos;
+    return videos.filter((video) => video.id !== primaryVideo.id);
+  }, [videos, primaryVideo]);
+
+  // 다른 비디오가 없으면 섹션 숨김
+  if (otherVideos.length === 0) {
+    return null;
+  }
 
   return (
     <Container>
@@ -77,8 +83,8 @@ function OtherChannelVideoListView() {
       <Gap size={10} />
       <VideoListView
         horizontal
-        data={MOCK_DATA}
-        renderItem={({ item }) => <ItemView item={item} />}
+        data={otherVideos}
+        renderItem={({ item }) => <VideoItemView item={item} />}
         keyExtractor={(item) => item.id}
         ItemSeparatorComponent={() => <Gap size={12} />}
         showsHorizontalScrollIndicator={false}
@@ -104,8 +110,13 @@ const VideoItemContainer = styled.View({
   width: thumbnailWidth,
 });
 
-const VideoListView = styled(FlatList<RelatedOtherChannelVideo>)({
+const VideoListView = styled(FlatList<VideoDto>)({
   paddingLeft: 16,
+});
+
+const ThumbnailTouchable = styled(TouchableOpacity)({
+  width: thumbnailWidth,
+  height: thumbnailHeight,
 });
 
 const ThumbnailWrapper = styled.View({
@@ -114,6 +125,16 @@ const ThumbnailWrapper = styled.View({
   borderRadius: 4,
   overflow: 'hidden',
   backgroundColor: 'black',
+});
+
+const PlayButtonContainer = styled.View({
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  width: 64,
+  height: 64,
+  transform: [{ translateX: -32 }, { translateY: -32 }],
+  zIndex: 10,
 });
 
 const VideoTitle = styled.Text({
@@ -133,6 +154,7 @@ const ChannelInfoWrapper = styled.View({
 const ChannelName = styled.Text({
   ...textStyles.alert1,
   color: colors.gray03,
+  flex: 1,
 });
 
 export { OtherChannelVideoListView };
