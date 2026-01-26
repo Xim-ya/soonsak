@@ -88,3 +88,12 @@ export const buildThumbnailUrl = (
 export const isYouTubeUrl = (url: string): boolean => {
   return extractVideoId(url) !== null;
 };
+
+/**
+ * YouTube 앱 딥링크 URL 생성
+ * @param videoId 비디오 ID
+ * @returns YouTube 앱 URL (youtube://watch?v=VIDEO_ID)
+ */
+export const buildYouTubeAppUrl = (videoId: string): string => {
+  return `youtube://watch?v=${videoId}`;
+};

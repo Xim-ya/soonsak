@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect, useRef } from 'react';
-import { TouchableHighlight, Image, TouchableOpacity, Animated } from 'react-native';
+import { TouchableHighlight, TouchableOpacity, Animated } from 'react-native';
 import styled from '@emotion/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,7 +11,6 @@ import ContentTypeChip from '@/presentation/components/chip/ContentTypeChip';
 import DarkChip from '@/presentation/components/chip/DarkChip';
 import { videoTagConfigs } from '@/presentation/types/content/videoTag.enum';
 import Gap from '@/presentation/components/view/Gap';
-import { ContentType } from '@/presentation/types/content/contentType.enum';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { StartRateView } from './StartRateView';
@@ -22,7 +21,7 @@ import { LoadableImageView } from '@/presentation/components/image/LoadableImage
 import { AppSize } from '@/shared/utils/appSize';
 import { useImageTransition } from '../_hooks/useImageTransition';
 import { routePages } from '@/shared/navigation/constant/routePages';
-import { useYouTubeVideo } from '@/features/youtube';
+import { useYouTubeVideo, buildYouTubeUrl } from '@/features/youtube';
 import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>; // Player 뷰
@@ -45,29 +44,17 @@ export const Header = React.memo(() => {
  */
 const HeaderBackground = React.memo(() => {
   const { id, type } = useContentDetailRoute();
-  const {
-    data: contentInfo,
-    isLoading: isContentInfoLoading,
-    error: contentInfoError,
-  } = useContentDetail(Number(id), type);
+  const { data: contentInfo } = useContentDetail(Number(id), type);
 
-  // 비디오 데이터 가져오기
-  const { videos, isLoading: isVideosLoading } = useContentVideos();
+  // 비디오 데이터 가져오기 (Provider에서 videoId 우선순위 적용된 primaryVideo 사용)
+  const { primaryVideo } = useContentVideos();
 
   const { toggleImages, opacityValues } = useImageTransition();
   const navigation = useNavigation<NavigationProp>();
 
-  // 첫 번째 primary 비디오 또는 첫 번째 비디오 선택
-  const primaryVideo = useMemo(() => {
-    if (!videos || videos.length === 0) return null;
-    return videos.find((video) => video.isPrimary) || videos[0];
-  }, [videos]);
-
-  // YouTube 데이터 가져오기 - 실제 비디오 ID 사용
-  const youtubeUrl = primaryVideo
-    ? `https://www.youtube.com/watch?v=${primaryVideo.id}`
-    : 'https://www.youtube.com/watch?v=U5TPQoEveJY';
-  const { data: videoInfo, isLoading: youtubeLoading } = useYouTubeVideo(youtubeUrl);
+  // YouTube 데이터 가져오기 - primaryVideo가 있을 때만 요청
+  const youtubeUrl = primaryVideo ? buildYouTubeUrl(primaryVideo.id) : null;
+  const { data: videoInfo, isLoading: youtubeLoading } = useYouTubeVideo(youtubeUrl ?? '');
 
   // YouTube 이미지 페이드인 애니메이션
   const youtubeOpacity = useRef(new Animated.Value(0)).current;
@@ -101,20 +88,15 @@ const HeaderBackground = React.memo(() => {
     [contentInfo?.backdropPath, videoInfo?.thumbnails?.high],
   );
 
-  // Movie/TV에 따른 제목 추출
-  const contentTitle = contentInfo
-    ? type === 'movie'
-      ? (contentInfo as any)?.title || ''
-      : (contentInfo as any)?.name || ''
-    : '';
+  // 콘텐츠 제목 (ContentDetailModel에서 이미 title로 통합됨)
+  const contentTitle = contentInfo?.title ?? '';
 
   // 이벤트 핸들러들
   const handlePlayPress = useCallback(() => {
-    const title = primaryVideo?.title || contentTitle || '';
-    const videoId = primaryVideo?.id || 'U5TPQoEveJY'; // 실제 비디오 ID 사용
+    if (!primaryVideo) return;
     navigation.navigate(routePages.player, {
-      videoId: videoId,
-      title: title,
+      videoId: primaryVideo.id,
+      title: primaryVideo.title || contentTitle || '',
     });
   }, [navigation, primaryVideo, contentTitle]);
 
@@ -217,8 +199,8 @@ const ContentInfo = React.memo(() => {
     error: contentInfoError,
   } = useContentDetail(Number(id), type);
 
-  // 비디오 데이터 가져오기
-  const { videos, isLoading: isVideosLoading } = useContentVideos();
+  // 비디오 데이터 가져오기 (Provider에서 videoId 우선순위 적용된 primaryVideo 사용)
+  const { primaryVideo, isLoading: isVideosLoading } = useContentVideos();
 
   const dotText = ' · ';
 
@@ -227,12 +209,6 @@ const ContentInfo = React.memo(() => {
 
   // 평점 추출
   const rating = contentInfo?.voteAverage ? contentInfo.voteAverage / 2 : 0;
-
-  // 첫 번째 primary 비디오 또는 첫 번째 비디오 선택
-  const primaryVideo = useMemo(() => {
-    if (!videos || videos.length === 0) return null;
-    return videos.find((video) => video.isPrimary) || videos[0];
-  }, [videos]);
 
   // route params에서 title과 type이 있으면 바로 표시 (스켈레톤 대신)
   return (
@@ -410,16 +386,6 @@ const PlayButton = styled(TouchableHighlight)({
 const DotText = styled.Text({
   ...textStyles.alert1,
   color: colors.white,
-});
-
-const TitleSkeleton = styled.View({
-  height: 37, // headline1 lineHeight
-  justifyContent: 'center',
-});
-
-const ContentTitleSkeleton = styled.View({
-  height: 20, // body3 lineHeight
-  justifyContent: 'center',
 });
 
 Header.displayName = 'Header';

@@ -34,8 +34,15 @@ export type RootStackParamList = {
     id: number; // 콘텐츠 ID
     title: string | null; // 콘텐츠 제목
     type: ContentType; // 콘텐츠 타입 (movie | series | unknown)
-  }; // 콘텐츠 상세 - id, title, type 파라미터 필수
+    videoId?: string; // 특정 비디오 ID (선택 - 없으면 primary 비디오 사용)
+  }; // 콘텐츠 상세 - id, title, type 필수, videoId 선택
   [routePages.player]: { videoId: string; title: string }; // 플레이어 - 비디오 ID, 제목 파라미터 필수
+  [routePages.channelDetail]: {
+    channelId: string; // YouTube 채널 ID (필수)
+    channelName?: string; // 채널 이름 (선택 - 없으면 API 조회)
+    channelLogoUrl?: string; // 채널 로고 URL (선택 - 없으면 API 조회)
+    subscriberCount?: number; // 구독자 수 (선택 - 없으면 API 조회)
+  }; // 채널 상세 - channelId만 필수, 나머지는 API로 조회 가능
 };
 
 /**

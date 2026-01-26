@@ -44,4 +44,13 @@ interface VideoDto {
   readonly updatedAt: ISOTimestamp;
 }
 
-export type { ISOTimestamp, ContentBaseDto, ContentDto, VideoDto };
+/**
+ * 비디오와 연결된 콘텐츠 정보를 포함하는 DTO
+ * 채널 상세 화면에서 포스터 이미지와 콘텐츠 제목을 표시할 때 사용
+ */
+interface VideoWithContentDto extends VideoDto {
+  readonly contentTitle: string;
+  readonly contentPosterPath: string;
+}
+
+export type { ISOTimestamp, ContentBaseDto, ContentDto, VideoDto, VideoWithContentDto };

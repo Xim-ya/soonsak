@@ -24,6 +24,7 @@ interface ContentDetailProviderProps {
   children: ReactNode;
   contentId: number;
   contentType: ContentType;
+  videoId?: string | undefined; // 특정 비디오 ID (채널 상세에서 전달받은 경우)
 }
 
 /**
@@ -40,6 +41,7 @@ export function ContentDetailProvider({
   children,
   contentId,
   contentType,
+  videoId,
 }: ContentDetailProviderProps) {
   const [videos, setVideos] = useState<VideoDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -67,12 +69,21 @@ export function ContentDetailProvider({
   }, [contentId, contentType]);
 
   // 대표 비디오 선택 로직
-  // 1순위: isPrimary가 true인 비디오
-  // 2순위(폴백): 모든 비디오가 isPrimary=false인 경우 첫 번째 비디오 사용
+  // 1순위: videoId가 전달된 경우 해당 비디오 사용 (채널 상세에서 특정 비디오 선택 시)
+  // 2순위: isPrimary가 true인 비디오
+  // 3순위(폴백): 모든 비디오가 isPrimary=false인 경우 첫 번째 비디오 사용
   const primaryVideo: VideoDto | null = useMemo(() => {
     if (videos.length === 0) return null;
+
+    // videoId가 전달된 경우 해당 비디오를 우선 선택
+    if (videoId) {
+      const targetVideo = videos.find((video) => video.id === videoId);
+      if (targetVideo) return targetVideo;
+    }
+
+    // videoId가 없거나 찾지 못한 경우 기존 로직 적용
     return videos.find((video) => video.isPrimary) ?? videos[0] ?? null;
-  }, [videos]);
+  }, [videos, videoId]);
 
   // 댓글 토큰 prefetch (페이지 진입 시 미리 조회)
   const {

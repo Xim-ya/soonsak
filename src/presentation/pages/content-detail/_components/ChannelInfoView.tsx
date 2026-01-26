@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { RoundedAvatorView } from '@/presentation/components/image/RoundedAvatarView';
 import Gap from '@/presentation/components/view/Gap';
 import colors from '@/shared/styles/colors';
@@ -8,22 +9,32 @@ import { Pressable } from 'react-native';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { useYouTubeChannel } from '@/features/youtube';
 import { useContentVideos } from '../_provider/ContentDetailProvider';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
 
 /**
  *  채널 정보를 보여주는 뷰
  */
 function ChannelInfoView() {
   const { primaryVideo } = useContentVideos();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // 현재 선택된 대표 비디오의 채널 ID를 사용
   const channelId = primaryVideo?.channelId;
   const { data: channel, isLoading, error } = useYouTubeChannel(channelId);
 
-  function handlePress() {
-    if (isLoading || error || !channelId) return;
+  const handlePress = useCallback(() => {
+    if (isLoading || error || !channelId || !channel) return;
 
-    console.log('handlePress');
-  }
+    navigation.navigate(routePages.channelDetail, {
+      channelId: channelId,
+      channelName: channel.name,
+      channelLogoUrl: channel.images.avatar,
+      subscriberCount: channel.subscriberCount,
+    });
+  }, [isLoading, error, channelId, channel, navigation]);
 
   // 채널 ID가 없거나 에러 시 빈 컴포넌트 반환
   if (!channelId || error) {

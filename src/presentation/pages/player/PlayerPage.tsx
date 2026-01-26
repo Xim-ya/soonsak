@@ -1,18 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { Dimensions, ActivityIndicator, Platform, Alert, Linking } from 'react-native';
-import {
-  YoutubeView,
-  useYouTubePlayer,
-  useYouTubeEvent,
-  useYoutubeOEmbed,
-} from 'react-native-youtube-bridge';
+import { YoutubeView, useYouTubePlayer, useYouTubeEvent } from 'react-native-youtube-bridge';
 import colors from '@/shared/styles/colors';
 import { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
+import { buildYouTubeUrl, buildYouTubeAppUrl, isEmbeddedRestrictedError } from '@/features/youtube';
 
 type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.player>;
 
@@ -100,8 +96,8 @@ export const PlayerPage = () => {
 
   // YouTube 앱 열기 함수
   const openInYouTube = useCallback(async () => {
-    const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const youtubeAppUrl = `youtube://watch?v=${videoId}`;
+    const youtubeUrl = buildYouTubeUrl(videoId);
+    const youtubeAppUrl = buildYouTubeAppUrl(videoId);
 
     try {
       // YouTube 앱이 설치되어 있는지 확인하고 열기
@@ -122,39 +118,31 @@ export const PlayerPage = () => {
   // 에러 이벤트
   useYouTubeEvent(player, 'error', (error) => {
     console.error('플레이어 에러:', error);
-    
+
     // EMBEDDED_RESTRICTED 오류인 경우 특별 처리
-    if (error.code === 150 && error.message === 'EMBEDDED_RESTRICTED') {
-      Alert.alert(
-        '재생 지원 제한',
-        '채널 소유자의 정책으로 YouTube 앱을 실행합니다.',
-        [
-          {
-            text: '취소',
-            style: 'cancel',
-            onPress: () => navigation.goBack(),
+    if (isEmbeddedRestrictedError(error)) {
+      Alert.alert('재생 지원 제한', '채널 소유자의 정책으로 YouTube 앱을 실행합니다.', [
+        {
+          text: '취소',
+          style: 'cancel',
+          onPress: () => navigation.goBack(),
+        },
+        {
+          text: 'YouTube 열기',
+          onPress: async () => {
+            await openInYouTube();
+            navigation.goBack();
           },
-          {
-            text: 'YouTube 열기',
-            onPress: async () => {
-              await openInYouTube();
-              navigation.goBack();
-            },
-          },
-        ]
-      );
+        },
+      ]);
     } else {
       // 기타 오류는 기존 처리 방식 + 뒤로 가기
-      Alert.alert(
-        '재생 오류', 
-        `에러 코드: ${error.code}\n${error.message}`,
-        [
-          {
-            text: '확인',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      Alert.alert('재생 오류', `에러 코드: ${error.code}\n${error.message}`, [
+        {
+          text: '확인',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
     }
   });
 

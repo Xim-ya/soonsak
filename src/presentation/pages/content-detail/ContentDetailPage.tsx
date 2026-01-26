@@ -1,13 +1,11 @@
 import React from 'react';
-import { Tabs, MaterialTabBar } from 'react-native-collapsible-tab-view';
-import { useSafeAreaInsets, EdgeInsets } from 'react-native-safe-area-context';
+import { Tabs } from 'react-native-collapsible-tab-view';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from '@emotion/native';
 import { useRoute } from '@react-navigation/native';
 import { BasePage } from '../../components/page';
-import { BackButtonAppBar } from '../../components/app-bar';
 import { Header } from './_components';
 import colors from '@/shared/styles/colors';
-import textStyles from '@/shared/styles/textStyles';
 import { DarkedLinearShadow, LinearAlign } from '../../components/shadow/DarkedLinearShadow';
 import { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import Animated from 'react-native-reanimated';
@@ -23,7 +21,7 @@ import { ContentType } from '@/presentation/types/content/contentType.enum';
 
 export default function ContentDetailPage() {
   const route = useRoute<ScreenRouteProp<typeof routePages.contentDetail>>();
-  const { id, title, type } = route.params;
+  const { id, type, videoId } = route.params;
   const insets = useSafeAreaInsets();
   const appBarOpacity = useSharedValue(0);
 
@@ -43,7 +41,11 @@ export default function ContentDetailPage() {
   );
 
   return (
-    <ContentDetailProvider contentId={Number(id)} contentType={type as ContentType}>
+    <ContentDetailProvider
+      contentId={Number(id)}
+      contentType={type as ContentType}
+      videoId={videoId}
+    >
       <BasePage
         useSafeArea={false}
         touchableWithoutFeedback={false}
