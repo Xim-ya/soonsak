@@ -1,8 +1,8 @@
-import { View, Text, SafeAreaView } from 'react-native';
 import styled from '@emotion/native';
 import colors from '../../../shared/styles/colors';
 import { Header } from './_components/Header';
 import RecentContentView from './_components/RecentContentView';
+import { TopTenContentListView } from './_components/TopTenContentListView';
 import { ScrollView } from 'react-native-gesture-handler';
 
 export default function HomeScreen() {
@@ -11,6 +11,7 @@ export default function HomeScreen() {
       <ScrollView>
         <Header />
         <RecentContentView />
+        <TopTenContentListView />
       </ScrollView>
     </Container>
   );

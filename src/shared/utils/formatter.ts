@@ -2,6 +2,23 @@ const formatter = {
   TMDB_IMAGE_BASE_URL: 'https://image.tmdb.org/t/p/',
 
   /**
+   * 숫자를 영어 서수로 변환 (1 -> 1st, 2 -> 2nd, 3 -> 3rd, 4 -> 4th, etc.)
+   * @param num 변환할 숫자
+   * @returns 서수 문자열
+   */
+  toOrdinal(num: number): string {
+    const suffixes = ['th', 'st', 'nd', 'rd'];
+    const value = num % 100;
+
+    if (value >= 11 && value <= 13) {
+      return `${num}th`;
+    }
+
+    const suffix = suffixes[value % 10] ?? 'th';
+    return `${num}${suffix}`;
+  },
+
+  /**
    * TMDB 이미지 URL을 생성하는 유틸리티 함수
    * @param imgId 이미지 파일명
    * @param size 이미지 사이즈 (예: 'w500', 'original' 등), 기본값은 'original'
@@ -77,7 +94,7 @@ const formatter = {
       } else {
         return `${Math.floor(diffInSeconds / 31536000)}년 전`;
       }
-    } catch (error) {
+    } catch {
       return '-';
     }
   },
@@ -154,7 +171,7 @@ const formatter = {
    */
   getVideoIdFromYoutubeUrl(url: string): string | null | undefined {
     const regex =
-      /.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/i;
+      /.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|&v(?:i)?=))([^#&?]*).*/i;
     const match = url.match(regex);
     return match ? match[1] : null;
   },

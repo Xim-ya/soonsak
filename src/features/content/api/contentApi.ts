@@ -1,7 +1,7 @@
 import { supabaseClient } from '@/features/utils/clients/superBaseClient';
 import { mapWithField } from '@/features/utils/mapper/fieldMapper';
 import { ContentDto, VideoDto, VideoWithContentDto } from '../types';
-import { CONTENT_DATABASE } from '../../utils/constants/dbName';
+import { CONTENT_DATABASE } from '../../utils/constants/dbConfig';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 
 export const contentApi = {
@@ -58,7 +58,7 @@ export const contentApi = {
   searchContentsKorean: async (query: string, limit: number = 50): Promise<ContentDto[]> => {
     if (!query.trim()) return [];
 
-    const { data, error } = await supabaseClient.rpc('search_contents_korean', {
+    const { data, error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.SEARCH_CONTENTS_KOREAN, {
       search_query: query,
       result_limit: limit,
     });
@@ -73,6 +73,7 @@ export const contentApi = {
 
   /**
    * TMDB ID 목록으로 Supabase에 등록된 콘텐츠만 필터링하여 조회
+   * includes_ending = true인 영상이 있는 콘텐츠만 반환
    * @param tmdbIds TMDB 콘텐츠 ID 목록
    * @param contentType 콘텐츠 타입 (movie | tv)
    * @returns ContentDto 배열
@@ -83,11 +84,13 @@ export const contentApi = {
   ): Promise<ContentDto[]> => {
     if (tmdbIds.length === 0) return [];
 
-    const { data, error } = await supabaseClient
-      .from(CONTENT_DATABASE.TABLES.CONTENTS)
-      .select('*')
-      .in('id', tmdbIds)
-      .eq('content_type', contentType);
+    const { data, error } = await supabaseClient.rpc(
+      CONTENT_DATABASE.RPC.GET_REGISTERED_CONTENTS_WITH_ENDING,
+      {
+        p_ids: tmdbIds,
+        p_content_type: contentType,
+      },
+    );
 
     if (error) {
       console.error('등록된 콘텐츠 조회 실패:', error);
@@ -98,7 +101,58 @@ export const contentApi = {
   },
 
   /**
-   * 특정 채널의 콘텐츠 목록 조회 (DB 레벨 페이지네이션)
+   * 콘텐츠 조회수 증가 (상세 페이지 진입 시)
+   */
+  incrementViewCount: async (contentId: number, contentType: ContentType): Promise<void> => {
+    const { error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.INCREMENT_VIEW_COUNT, {
+      p_content_id: contentId,
+      p_content_type: contentType,
+    });
+
+    if (error) {
+      console.error('조회수 증가 실패:', error);
+      // 조회수 증가 실패는 사용자 경험에 영향을 주지 않으므로 throw하지 않음
+    }
+  },
+
+  /**
+   * 콘텐츠 재생수 증가 (영상 재생 시)
+   */
+  incrementPlayCount: async (contentId: number, contentType: ContentType): Promise<void> => {
+    const { error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.INCREMENT_PLAY_COUNT, {
+      p_content_id: contentId,
+      p_content_type: contentType,
+    });
+
+    if (error) {
+      console.error('재생수 증가 실패:', error);
+      // 재생수 증가 실패는 사용자 경험에 영향을 주지 않으므로 throw하지 않음
+    }
+  },
+
+  /**
+   * 실시간 Top 콘텐츠 조회 (점수 기반)
+   * 가중치: play_count × 2 + view_count × 1
+   * @param limit 조회할 콘텐츠 수
+   * @returns ContentDto 배열
+   */
+  getTopContentsByEngagement: async (limit: number = 20): Promise<ContentDto[]> => {
+    const { data, error } = await supabaseClient.rpc(
+      CONTENT_DATABASE.RPC.GET_TOP_CONTENTS_BY_SCORE,
+      {
+        p_limit: limit,
+      },
+    );
+
+    if (error) {
+      console.error('인기 콘텐츠 조회 실패:', error);
+      throw new Error(`Failed to fetch top contents: ${error.message}`);
+    }
+
+    return mapWithField<ContentDto[]>(data ?? []);
+  },
+
+  /**
    * RPC 함수를 사용하여 content_id 기준 중복 제거 및 페이징 처리
    * 우선순위: is_primary > includes_ending > runtime
    * @param channelId YouTube 채널 ID
@@ -110,11 +164,14 @@ export const contentApi = {
     page: number = 0,
     pageSize: number = 20,
   ): Promise<{ videos: VideoWithContentDto[]; hasMore: boolean; totalCount: number }> => {
-    const { data, error } = await supabaseClient.rpc('get_distinct_contents_by_channel', {
-      p_channel_id: channelId,
-      p_page: page,
-      p_page_size: pageSize,
-    });
+    const { data, error } = await supabaseClient.rpc(
+      CONTENT_DATABASE.RPC.GET_DISTINCT_CONTENTS_BY_CHANNEL,
+      {
+        p_channel_id: channelId,
+        p_page: page,
+        p_page_size: pageSize,
+      },
+    );
 
     if (error) {
       console.error('채널 콘텐츠 조회 실패:', error);

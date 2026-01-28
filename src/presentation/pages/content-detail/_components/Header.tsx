@@ -97,8 +97,10 @@ const HeaderBackground = React.memo(() => {
     navigation.navigate(routePages.player, {
       videoId: primaryVideo.id,
       title: primaryVideo.title || contentTitle || '',
+      contentId: Number(id),
+      contentType: type,
     });
-  }, [navigation, primaryVideo, contentTitle]);
+  }, [navigation, primaryVideo, contentTitle, id, type]);
 
   const handleThumbnailPress = useCallback(() => {
     toggleImages();
