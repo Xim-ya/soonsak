@@ -21,10 +21,10 @@ export const channelScraper = {
    */
   async scrapeChannelPage(channelId: string): Promise<ScrapedChannelDto> {
     // channelId 타입에 따라 URL 형식 결정
-    const url = channelId.startsWith('UC') 
-      ? `https://www.youtube.com/channel/${channelId}`  // 실제 채널 ID
-      : `https://www.youtube.com/${channelId}`;         // handle ID (@channelname)
-    
+    const url = channelId.startsWith('UC')
+      ? `https://www.youtube.com/channel/${channelId}` // 실제 채널 ID
+      : `https://www.youtube.com/${channelId}`; // handle ID (@channelname)
+
     console.log('🔍 YouTube 채널 페이지 스크래핑 시작:', channelId, '→', url);
 
     try {
