@@ -94,7 +94,7 @@ const formatter = {
       } else {
         return `${Math.floor(diffInSeconds / 31536000)}년 전`;
       }
-    } catch (error) {
+    } catch {
       return '-';
     }
   },
@@ -171,7 +171,7 @@ const formatter = {
    */
   getVideoIdFromYoutubeUrl(url: string): string | null | undefined {
     const regex =
-      /.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/i;
+      /.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|&v(?:i)?=))([^#&?]*).*/i;
     const match = url.match(regex);
     return match ? match[1] : null;
   },

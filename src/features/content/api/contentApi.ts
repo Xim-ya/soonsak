@@ -1,7 +1,7 @@
 import { supabaseClient } from '@/features/utils/clients/superBaseClient';
 import { mapWithField } from '@/features/utils/mapper/fieldMapper';
 import { ContentDto, VideoDto, VideoWithContentDto } from '../types';
-import { CONTENT_DATABASE } from '../../utils/constants/dbName';
+import { CONTENT_DATABASE } from '../../utils/constants/dbConfig';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 
 export const contentApi = {
@@ -58,7 +58,7 @@ export const contentApi = {
   searchContentsKorean: async (query: string, limit: number = 50): Promise<ContentDto[]> => {
     if (!query.trim()) return [];
 
-    const { data, error } = await supabaseClient.rpc('search_contents_korean', {
+    const { data, error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.SEARCH_CONTENTS_KOREAN, {
       search_query: query,
       result_limit: limit,
     });
@@ -84,10 +84,13 @@ export const contentApi = {
   ): Promise<ContentDto[]> => {
     if (tmdbIds.length === 0) return [];
 
-    const { data, error } = await supabaseClient.rpc('get_registered_contents_with_ending', {
-      p_ids: tmdbIds,
-      p_content_type: contentType,
-    });
+    const { data, error } = await supabaseClient.rpc(
+      CONTENT_DATABASE.RPC.GET_REGISTERED_CONTENTS_WITH_ENDING,
+      {
+        p_ids: tmdbIds,
+        p_content_type: contentType,
+      },
+    );
 
     if (error) {
       console.error('등록된 콘텐츠 조회 실패:', error);
@@ -134,9 +137,12 @@ export const contentApi = {
    * @returns ContentDto 배열
    */
   getTopContentsByEngagement: async (limit: number = 20): Promise<ContentDto[]> => {
-    const { data, error } = await supabaseClient.rpc('get_top_contents_by_score', {
-      p_limit: limit,
-    });
+    const { data, error } = await supabaseClient.rpc(
+      CONTENT_DATABASE.RPC.GET_TOP_CONTENTS_BY_SCORE,
+      {
+        p_limit: limit,
+      },
+    );
 
     if (error) {
       console.error('인기 콘텐츠 조회 실패:', error);
@@ -158,11 +164,14 @@ export const contentApi = {
     page: number = 0,
     pageSize: number = 20,
   ): Promise<{ videos: VideoWithContentDto[]; hasMore: boolean; totalCount: number }> => {
-    const { data, error } = await supabaseClient.rpc('get_distinct_contents_by_channel', {
-      p_channel_id: channelId,
-      p_page: page,
-      p_page_size: pageSize,
-    });
+    const { data, error } = await supabaseClient.rpc(
+      CONTENT_DATABASE.RPC.GET_DISTINCT_CONTENTS_BY_CHANNEL,
+      {
+        p_channel_id: channelId,
+        p_page: page,
+        p_page_size: pageSize,
+      },
+    );
 
     if (error) {
       console.error('채널 콘텐츠 조회 실패:', error);
