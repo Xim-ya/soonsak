@@ -21,13 +21,22 @@ const noResultsIconSvg = `
 </svg>
 `;
 
+// 에러 아이콘 SVG
+const errorIconSvg = `
+<svg width="${ICON_SIZE}" height="${ICON_SIZE}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 9V13M12 17H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0377 2.66667 10.2679 4L3.33975 16C2.56995 17.3333 3.53223 19 5.07183 19Z" stroke="${colors.gray03}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`;
+
 interface EmptyStateConfig {
   icon: string;
   title: string;
   description: string;
 }
 
-const emptyStateConfigs: Record<'initial' | 'noResults', EmptyStateConfig> = {
+type EmptyStateType = 'initial' | 'noResults' | 'error';
+
+const emptyStateConfigs: Record<EmptyStateType, EmptyStateConfig> = {
   initial: {
     icon: searchIconSvg,
     title: '콘텐츠 검색',
@@ -38,10 +47,15 @@ const emptyStateConfigs: Record<'initial' | 'noResults', EmptyStateConfig> = {
     title: '검색 결과가 없습니다',
     description: '등록된 콘텐츠 중 일치하는 결과가 없습니다',
   },
+  error: {
+    icon: errorIconSvg,
+    title: '검색 중 오류가 발생했습니다',
+    description: '잠시 후 다시 시도해주세요',
+  },
 };
 
 interface SearchEmptyStateProps {
-  type: 'initial' | 'noResults';
+  type: EmptyStateType;
 }
 
 /**

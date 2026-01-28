@@ -16,7 +16,7 @@ const keyExtractor = (item: SearchResultModel): string => `${item.contentType}-$
  * SearchResultList - 검색 결과 리스트 컴포넌트
  */
 function SearchResultList() {
-  const { results, isLoading, isEmpty, debouncedSearchText } = useSearchContext();
+  const { results, isLoading, isEmpty, error, debouncedSearchText } = useSearchContext();
 
   // 리스트 아이템 렌더링 (FlatList에 전달되므로 useCallback 필요)
   const renderItem = useCallback(
@@ -36,6 +36,11 @@ function SearchResultList() {
         <ActivityIndicator size="large" color={colors.main} />
       </LoadingContainer>
     );
+  }
+
+  // 에러 발생
+  if (error) {
+    return <SearchEmptyState type="error" />;
   }
 
   // 결과 없음
