@@ -24,8 +24,8 @@ function SearchResultList() {
     [],
   );
 
-  // 검색어가 없는 초기 상태
-  if (!debouncedSearchText) {
+  // 검색어가 없는 초기 상태 (공백만 입력한 경우 포함)
+  if (!debouncedSearchText.trim()) {
     return <SearchEmptyState type="initial" />;
   }
 
