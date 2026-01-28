@@ -2,6 +2,23 @@ const formatter = {
   TMDB_IMAGE_BASE_URL: 'https://image.tmdb.org/t/p/',
 
   /**
+   * 숫자를 영어 서수로 변환 (1 -> 1st, 2 -> 2nd, 3 -> 3rd, 4 -> 4th, etc.)
+   * @param num 변환할 숫자
+   * @returns 서수 문자열
+   */
+  toOrdinal(num: number): string {
+    const suffixes = ['th', 'st', 'nd', 'rd'];
+    const value = num % 100;
+
+    if (value >= 11 && value <= 13) {
+      return `${num}th`;
+    }
+
+    const suffix = suffixes[value % 10] ?? 'th';
+    return `${num}${suffix}`;
+  },
+
+  /**
    * TMDB 이미지 URL을 생성하는 유틸리티 함수
    * @param imgId 이미지 파일명
    * @param size 이미지 사이즈 (예: 'w500', 'original' 등), 기본값은 'original'

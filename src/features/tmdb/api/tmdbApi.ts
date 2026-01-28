@@ -1,7 +1,12 @@
 import { MovieDto } from '../types/movieDto';
 import { TvSeriesDto } from '../types/tvDto';
 import { TVCreditsResponse, MovieCreditsResponse } from '../types/creditDto';
-import { TmdbPaginatedResponse, RelatedMovieItemDto, RelatedTvItemDto } from '../types/common';
+import {
+  TmdbPaginatedResponse,
+  RelatedMovieItemDto,
+  RelatedTvItemDto,
+  TrendingItemDto,
+} from '../types/common';
 import { tmdbClient } from '@/features/utils/clients/tmbClient';
 
 export const tmdbApi = {
@@ -65,4 +70,11 @@ export const tmdbApi = {
    */
   getSimilarTvSeries: (seriesId: number) =>
     tmdbClient.get<TmdbPaginatedResponse<RelatedTvItemDto>>(`/tv/${seriesId}/similar`),
+
+  /**
+   * TMDB 주간 트렌딩 콘텐츠 조회 (movie + tv 통합)
+   * @returns 최근 1주일간 인기 콘텐츠 목록
+   */
+  getTrendingWeekly: () =>
+    tmdbClient.get<TmdbPaginatedResponse<TrendingItemDto>>('/trending/all/week'),
 };

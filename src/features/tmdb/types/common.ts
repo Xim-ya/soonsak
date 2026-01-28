@@ -118,3 +118,28 @@ export interface TmdbPaginatedResponse<T> {
   readonly totalPages: number;
   readonly totalResults: number;
 }
+
+/**
+ * TMDB Trending API 응답 아이템 DTO
+ * /trending/all/week 또는 /trending/all/day에서 반환되는 아이템
+ * movie와 tv 타입 모두 포함할 수 있음
+ */
+export interface TrendingItemDto {
+  readonly id: number;
+  readonly mediaType: 'movie' | 'tv';
+  readonly title?: string; // movie의 경우
+  readonly name?: string; // tv의 경우
+  readonly originalTitle?: string;
+  readonly originalName?: string;
+  readonly overview: string;
+  readonly posterPath: string | null;
+  readonly backdropPath: string | null;
+  readonly releaseDate?: string; // movie의 경우
+  readonly firstAirDate?: string; // tv의 경우
+  readonly voteAverage: number;
+  readonly voteCount: number;
+  readonly popularity: number;
+  readonly adult: boolean;
+  readonly genreIds: number[];
+  readonly originalLanguage: string;
+}

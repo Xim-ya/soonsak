@@ -25,6 +25,7 @@ interface ContentDto extends ContentBaseDto {
   readonly uploadedAt: ISOTimestamp;
   readonly releaseDate?: string;
   readonly genreIds?: number[];
+  readonly backdropPath?: string;
 }
 
 /**
