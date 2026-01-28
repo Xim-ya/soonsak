@@ -48,6 +48,30 @@ export const contentApi = {
   },
 
   /**
+   * 한글 초성 검색 지원 콘텐츠 검색
+   * - 공백 무시: "그 을" → "그을린 사랑" 매칭
+   * - 초성 검색: "ㄱㅇㄹ ㅅㄹ" → "그을린 사랑" 매칭
+   * @param query 검색어
+   * @param limit 결과 제한 (기본값: 50)
+   * @returns 검색 결과 ContentDto 배열
+   */
+  searchContentsKorean: async (query: string, limit: number = 50): Promise<ContentDto[]> => {
+    if (!query.trim()) return [];
+
+    const { data, error } = await supabaseClient.rpc('search_contents_korean', {
+      search_query: query,
+      result_limit: limit,
+    });
+
+    if (error) {
+      console.error('한글 검색 실패:', error);
+      throw new Error(`Failed to search contents: ${error.message}`);
+    }
+
+    return mapWithField<ContentDto[]>(data ?? []);
+  },
+
+  /**
    * TMDB ID 목록으로 Supabase에 등록된 콘텐츠만 필터링하여 조회
    * @param tmdbIds TMDB 콘텐츠 ID 목록
    * @param contentType 콘텐츠 타입 (movie | tv)

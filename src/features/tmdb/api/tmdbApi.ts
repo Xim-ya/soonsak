@@ -2,6 +2,7 @@ import { MovieDto } from '../types/movieDto';
 import { TvSeriesDto } from '../types/tvDto';
 import { TVCreditsResponse, MovieCreditsResponse } from '../types/creditDto';
 import { TmdbPaginatedResponse, RelatedMovieItemDto, RelatedTvItemDto } from '../types/common';
+import { SearchMultiResponseDto } from '../types/searchDto';
 import { tmdbClient } from '@/features/utils/clients/tmbClient';
 
 export const tmdbApi = {
@@ -65,4 +66,15 @@ export const tmdbApi = {
    */
   getSimilarTvSeries: (seriesId: number) =>
     tmdbClient.get<TmdbPaginatedResponse<RelatedTvItemDto>>(`/tv/${seriesId}/similar`),
+
+  /**
+   * 멀티 검색 (영화 + TV + 인물)
+   * @param query 검색어
+   * @param page 페이지 번호 (기본값: 1)
+   * @returns 검색 결과 목록
+   */
+  searchMulti: (query: string, page: number = 1) =>
+    tmdbClient.get<SearchMultiResponseDto>('/search/multi', {
+      params: { query, page, include_adult: false },
+    }),
 };
