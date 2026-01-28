@@ -21,11 +21,14 @@ export const channelScraper = {
    */
   async scrapeChannelPage(channelId: string): Promise<ScrapedChannelDto> {
     // channelId 타입에 따라 URL 형식 결정
-    const url = channelId.startsWith('UC')
+    const baseUrl = channelId.startsWith('UC')
       ? `https://www.youtube.com/channel/${channelId}` // 실제 채널 ID
       : `https://www.youtube.com/${channelId}`; // handle ID (@channelname)
 
-    console.log('🔍 YouTube 채널 페이지 스크래핑 시작:', channelId, '→', url);
+    // 동의 우회 파라미터 추가 (Android에서 Cookie 헤더가 무시되는 문제 해결)
+    const url = `${baseUrl}?hl=ko&persist_hl=1&gl=KR`;
+
+    console.log('🔍 채널 스크래핑 시작:', channelId);
 
     try {
       const response = await fetch(url, {
@@ -36,7 +39,8 @@ export const channelScraper = {
           Accept:
             'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
           'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-          'Accept-Encoding': 'gzip, deflate, br',
+          // Android fetch가 gzip/br 자동 해제를 지원하지 않으므로 압축 비활성화
+          'Accept-Encoding': 'identity',
           'Cache-Control': 'no-cache',
           Pragma: 'no-cache',
           'Sec-Fetch-Dest': 'document',
@@ -67,7 +71,6 @@ export const channelScraper = {
       }
 
       const html = await response.text();
-      console.log('📄 HTML 수신 완료:', html.length, '문자');
 
       return await this.extractChannelDataFromHtml(html);
     } catch (error) {
@@ -112,16 +115,6 @@ export const channelScraper = {
     // 동영상 수 추출 (추가 정보)
     this.extractVideoCount(html, data);
 
-    console.log('✅ 채널 스크래핑 완료:', {
-      name: data.name,
-      subscriberCount: data.subscriberCount,
-      subscriberText: data.subscriberText,
-      avatarUrl: data.avatarUrl ? '✓' : '✗',
-      bannerUrl: data.bannerUrl ? '✓' : '✗',
-      description: data.description.substring(0, 50) + '...',
-      videoCount: data.videoCount,
-    });
-
     return data;
   },
 
@@ -129,8 +122,6 @@ export const channelScraper = {
    * 채널명 추출
    */
   extractChannelName(html: string, data: ScrapedChannelDto): void {
-    console.log('🔍 채널명 추출 시작');
-
     // 최신 YouTube 구조에 맞는 채널명 패턴들 (우선순위 순)
     const namePatterns = [
       // 2024년 YouTube 구조: ytd-channel-name의 yt-formatted-string
@@ -156,21 +147,16 @@ export const channelScraper = {
         const name = match[1].trim();
         if (name && name !== 'YouTube') {
           data.name = name;
-          console.log('✅ 채널명 추출 성공:', data.name);
           return;
         }
       }
     }
-
-    console.log('❌ 채널명을 찾을 수 없습니다');
   },
 
   /**
    * 구독자 수 추출
    */
   extractSubscriberCount(html: string, data: ScrapedChannelDto): void {
-    console.log('🔍 구독자 수 추출 시작');
-
     // 최신 YouTube 구조에 맞는 구독자 수 패턴들
     const subscriberPatterns = [
       // 2024년 최신 구조: ytd-c4-tabbed-header-renderer 내부
@@ -191,12 +177,10 @@ export const channelScraper = {
       /aria-label="[^"]*구독자[^"]*?([0-9,.]+[만천억KMB]?)[^"]*명[^"]*"/i,
     ];
 
-    for (let i = 0; i < subscriberPatterns.length; i++) {
-      const pattern = subscriberPatterns[i]!;
+    for (const pattern of subscriberPatterns) {
       const match = html.match(pattern);
       if (match?.[1]) {
         const subscriberText = match[1].trim();
-        console.log(`🔍 패턴 ${i + 1} 매치:`, subscriberText);
         const subscriberData = this.parseSubscriberCount(subscriberText);
 
         if (subscriberData.count > 0) {
@@ -204,32 +188,19 @@ export const channelScraper = {
           if (subscriberData.text) {
             data.subscriberText = subscriberData.text;
           }
-          console.log(
-            '✅ 구독자 수 추출 성공:',
-            data.subscriberText || data.subscriberCount,
-            `(패턴 ${i + 1})`,
-          );
           return;
-        } else {
-          console.log(`❌ 패턴 ${i + 1} 파싱 실패:`, subscriberText);
         }
       }
     }
-
-    console.log('❌ 구독자 수를 찾을 수 없습니다');
   },
 
   /**
    * 채널 이미지들 추출 (아바타, 배너)
    */
   extractChannelImages(html: string, data: ScrapedChannelDto): void {
-    console.log('🔍 채널 이미지 추출 시작');
-
-    // 가장 직접적인 패턴들 (정규식 단순화)
+    // 아바타 이미지 패턴들
     const avatarPatterns = [
-      // 1. =s160으로 끝나는 아바타 이미지
       /yt3\.googleusercontent\.com\/[^"]*=s160[^"]*/g,
-      // 2. 모든 =s 크기 파라미터
       /yt3\.googleusercontent\.com\/[^"]*=s\d+[^"]*/g,
     ];
 
@@ -237,16 +208,13 @@ export const channelScraper = {
       const matches = html.match(pattern);
       if (matches && matches.length > 0) {
         data.avatarUrl = 'https://' + matches[0];
-        console.log('✅ 아바타 이미지 추출 성공');
         break;
       }
     }
 
-    // 배너 이미지 패턴들 (직접적인 방법)
+    // 배너 이미지 패턴들
     const bannerPatterns = [
-      // 1. =w2560으로 끝나는 배너 이미지
       /yt3\.googleusercontent\.com\/[^"]*=w2560[^"]*/g,
-      // 2. 모든 =w 너비 파라미터
       /yt3\.googleusercontent\.com\/[^"]*=w\d+[^"]*/g,
     ];
 
@@ -254,7 +222,6 @@ export const channelScraper = {
       const matches = html.match(pattern);
       if (matches && matches.length > 0) {
         data.bannerUrl = 'https://' + matches[0];
-        console.log('✅ 배너 이미지 추출 성공');
         break;
       }
     }
@@ -264,8 +231,6 @@ export const channelScraper = {
    * 채널 설명 추출
    */
   extractChannelDescription(html: string, data: ScrapedChannelDto): void {
-    console.log('🔍 채널 설명 추출 시작');
-
     // 설명 패턴들
     const descriptionPatterns = [
       // 메인 설명 (truncated-text 내부)
@@ -285,27 +250,20 @@ export const channelScraper = {
         const description = match[1].trim();
         if (description && description.length > 5) {
           data.description = this.cleanDescription(description);
-          console.log('✅ 채널 설명 추출 성공:', data.description.substring(0, 50) + '...');
           return;
         }
       }
     }
-
-    console.log('❌ 채널 설명을 찾을 수 없습니다');
   },
 
   /**
    * 동영상 수 추출 (추가 정보)
    */
   extractVideoCount(html: string, data: ScrapedChannelDto): void {
-    console.log('🔍 동영상 수 추출 시작');
-
     // 동영상 수 패턴들
     const videoCountPatterns = [
-      // 한국어 패턴
       /동영상\s*([0-9,]+)개/i,
       /videos?\s*([0-9,]+)/i,
-      // JSON 데이터에서 추출
       /"videoCountText":\s*"([^"]+)"/i,
       /(\d+(?:[,\d]*)?)\s*(?:개|videos?)/i,
     ];
@@ -317,13 +275,10 @@ export const channelScraper = {
         const count = parseInt(videoCountText.replace(/,/g, ''));
         if (count > 0) {
           data.videoCount = count;
-          console.log('✅ 동영상 수 추출 성공:', data.videoCount);
           return;
         }
       }
     }
-
-    console.log('❌ 동영상 수를 찾을 수 없습니다');
   },
 
   /**
