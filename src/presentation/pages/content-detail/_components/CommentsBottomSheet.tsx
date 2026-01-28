@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useEffect, useCallback } from 'react';
+import React, { useMemo, useEffect, useCallback } from 'react';
 import { Modal, FlatList } from 'react-native';
 import styled from '@emotion/native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -11,8 +11,6 @@ import Animated, {
   interpolate,
   Extrapolation,
 } from 'react-native-reanimated';
-import { RoundedAvatorView } from '@/presentation/components/image/RoundedAvatarView';
-import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import Gap from '@/presentation/components/view/Gap';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
@@ -20,6 +18,8 @@ import { AppSize } from '@/shared/utils/appSize';
 import { useYouTubeComments } from '@/features/youtube';
 import { useContentVideos } from '../_provider/ContentDetailProvider';
 import { CommentModel } from '../_types/commentModel.cd';
+import { CommentItemView } from './CommentItemView';
+import { CommentSkeletonView } from './CommentSkeletonView';
 import CloseIcon from '@assets/icons/back_arrow.svg';
 
 interface CommentsBottomSheetProps {
@@ -29,62 +29,10 @@ interface CommentsBottomSheetProps {
   readonly onClose: () => void;
 }
 
-interface CommentItemProps {
-  readonly comment: CommentModel;
-}
-
-/**
- * 개별 댓글 아이템 컴포넌트
- */
-const CommentItem = memo(function CommentItem({ comment }: CommentItemProps) {
-  return (
-    <CommentItemContainer>
-      <AvatarContainer>
-        <RoundedAvatorView source={comment.authorProfileImageUrl} size={36} />
-      </AvatarContainer>
-      <ContentContainer>
-        <HeaderRow>
-          <AuthorName numberOfLines={1}>{comment.authorName}</AuthorName>
-          <PublishedTime>{comment.publishedTimeText}</PublishedTime>
-          {comment.isPinned && <PinnedBadge>고정</PinnedBadge>}
-        </HeaderRow>
-        <Gap size={4} />
-        <CommentText>{comment.content}</CommentText>
-        <Gap size={8} />
-        <MetricsRow>
-          {comment.likeCountText && <LikeCount>👍 {comment.likeCountText}</LikeCount>}
-          {comment.isHearted && <HeartedBadge>❤️</HeartedBadge>}
-          {comment.replyCount > 0 && <ReplyCount>답글 {comment.replyCount}개</ReplyCount>}
-        </MetricsRow>
-      </ContentContainer>
-    </CommentItemContainer>
-  );
-});
-
 /**
  * 댓글 아이템 구분선
  */
 const ItemSeparator = (): React.ReactElement => <Gap size={16} />;
-
-/**
- * 댓글 스켈레톤 아이템
- */
-function CommentSkeleton(): React.ReactElement {
-  return (
-    <CommentItemContainer>
-      <AvatarContainer>
-        <SkeletonView width={36} height={36} borderRadius={18} />
-      </AvatarContainer>
-      <ContentContainer>
-        <SkeletonView width={100} height={14} borderRadius={4} />
-        <Gap size={8} />
-        <SkeletonView width={280} height={14} borderRadius={4} />
-        <Gap size={4} />
-        <SkeletonView width={220} height={14} borderRadius={4} />
-      </ContentContainer>
-    </CommentItemContainer>
-  );
-}
 
 /**
  * 로딩 스켈레톤 리스트
@@ -92,13 +40,13 @@ function CommentSkeleton(): React.ReactElement {
 function LoadingSkeleton(): React.ReactElement {
   return (
     <>
-      <CommentSkeleton />
+      <CommentSkeletonView />
       <Gap size={16} />
-      <CommentSkeleton />
+      <CommentSkeletonView />
       <Gap size={16} />
-      <CommentSkeleton />
+      <CommentSkeletonView />
       <Gap size={16} />
-      <CommentSkeleton />
+      <CommentSkeletonView />
     </>
   );
 }
@@ -253,7 +201,7 @@ function CommentsBottomSheet({ visible, onClose }: CommentsBottomSheetProps): Re
           ) : (
             <FlatList
               data={comments}
-              renderItem={({ item }) => <CommentItem comment={item} />}
+              renderItem={({ item }) => <CommentItemView comment={item} />}
               keyExtractor={(item) => item.id}
               ItemSeparatorComponent={ItemSeparator}
               contentContainerStyle={{
@@ -362,67 +310,6 @@ const EmptyContainer = styled.View({
 const EmptyText = styled.Text({
   ...textStyles.body2,
   color: colors.gray02,
-});
-
-const CommentItemContainer = styled.View({
-  flexDirection: 'row',
-});
-
-const AvatarContainer = styled.View({
-  marginRight: 12,
-});
-
-const ContentContainer = styled.View({
-  flex: 1,
-});
-
-const HeaderRow = styled.View({
-  flexDirection: 'row',
-  alignItems: 'center',
-});
-
-const AuthorName = styled.Text({
-  ...textStyles.alert1,
-  color: colors.white,
-  flex: 1,
-});
-
-const PublishedTime = styled.Text({
-  ...textStyles.alert2,
-  color: colors.gray02,
-  marginLeft: 8,
-});
-
-const CommentText = styled.Text({
-  ...textStyles.body3,
-  color: colors.white,
-  lineHeight: 20,
-});
-
-const MetricsRow = styled.View({
-  flexDirection: 'row',
-  alignItems: 'center',
-});
-
-const LikeCount = styled.Text({
-  ...textStyles.alert2,
-  color: colors.gray02,
-});
-
-const ReplyCount = styled.Text({
-  ...textStyles.alert2,
-  color: colors.gray02,
-  marginLeft: 12,
-});
-
-const PinnedBadge = styled.Text({
-  ...textStyles.alert2,
-  color: colors.gray02,
-  marginLeft: 8,
-});
-
-const HeartedBadge = styled.Text({
-  marginLeft: 8,
 });
 
 export { CommentsBottomSheet };

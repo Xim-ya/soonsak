@@ -1,12 +1,12 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import styled from '@emotion/native';
-import { RoundedAvatorView } from '@/presentation/components/image/RoundedAvatarView';
-import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import Gap from '@/presentation/components/view/Gap';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { useFeaturedComment } from '../_hooks/useFeaturedComment';
+import { CommentItemView } from './CommentItemView';
+import { CommentSkeletonView } from './CommentSkeletonView';
 import RightArrowIcon from '@assets/icons/right_arrrow.svg';
 
 interface FeaturedCommentViewProps {
@@ -42,31 +42,17 @@ function FeaturedCommentView({
       <Gap size={16} />
 
       {isLoading ? (
-        <LoadingSkeleton />
+        <CommentSkeletonView />
       ) : (
         featuredComment && (
           <>
             <TouchableOpacity onPress={onPressShowAll} activeOpacity={0.8}>
-              <CommentContainer>
-                <AvatarContainer>
-                  <RoundedAvatorView source={featuredComment.authorProfileImageUrl} size={36} />
-                </AvatarContainer>
-                <ContentContainer>
-                  <HeaderRow>
-                    <AuthorName numberOfLines={1}>{featuredComment.authorName}</AuthorName>
-                    <PublishedTime>{featuredComment.publishedTimeText}</PublishedTime>
-                  </HeaderRow>
-                  <Gap size={4} />
-                  <CommentText numberOfLines={3}>{featuredComment.content}</CommentText>
-                  <Gap size={8} />
-                  <MetricsRow>
-                    {featuredComment.likeCountText && (
-                      <LikeCount>👍 {featuredComment.likeCountText}</LikeCount>
-                    )}
-                    {featuredComment.isHearted && <HeartedBadge>❤️</HeartedBadge>}
-                  </MetricsRow>
-                </ContentContainer>
-              </CommentContainer>
+              <CommentItemView
+                comment={featuredComment}
+                maxLines={3}
+                showReplyCount={false}
+                showPinnedBadge={false}
+              />
             </TouchableOpacity>
 
             <Gap size={12} />
@@ -79,26 +65,6 @@ function FeaturedCommentView({
         )
       )}
     </Container>
-  );
-}
-
-/**
- * 로딩 스켈레톤
- */
-function LoadingSkeleton(): React.ReactElement {
-  return (
-    <SkeletonContainer>
-      <AvatarContainer>
-        <SkeletonView width={36} height={36} borderRadius={18} />
-      </AvatarContainer>
-      <ContentContainer>
-        <SkeletonView width={100} height={14} borderRadius={4} />
-        <Gap size={8} />
-        <SkeletonView width={280} height={14} borderRadius={4} />
-        <Gap size={4} />
-        <SkeletonView width={220} height={14} borderRadius={4} />
-      </ContentContainer>
-    </SkeletonContainer>
   );
 }
 
@@ -123,59 +89,6 @@ const SectionTitle = styled.Text({
 const CommentCount = styled.Text({
   ...textStyles.body3,
   color: colors.gray02,
-  marginLeft: 8,
-});
-
-const CommentContainer = styled.View({
-  flexDirection: 'row',
-});
-
-const SkeletonContainer = styled.View({
-  flexDirection: 'row',
-});
-
-const AvatarContainer = styled.View({
-  marginRight: 12,
-});
-
-const ContentContainer = styled.View({
-  flex: 1,
-});
-
-const HeaderRow = styled.View({
-  flexDirection: 'row',
-  alignItems: 'center',
-});
-
-const AuthorName = styled.Text({
-  ...textStyles.alert1,
-  color: colors.white,
-  flex: 1,
-});
-
-const PublishedTime = styled.Text({
-  ...textStyles.alert2,
-  color: colors.gray02,
-  marginLeft: 8,
-});
-
-const CommentText = styled.Text({
-  ...textStyles.body3,
-  color: colors.white,
-  lineHeight: 20,
-});
-
-const MetricsRow = styled.View({
-  flexDirection: 'row',
-  alignItems: 'center',
-});
-
-const LikeCount = styled.Text({
-  ...textStyles.alert2,
-  color: colors.gray02,
-});
-
-const HeartedBadge = styled.Text({
   marginLeft: 8,
 });
 
