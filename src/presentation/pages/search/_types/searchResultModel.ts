@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-namespace */
 import { ContentDto } from '@/features/content/types';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 
@@ -15,26 +14,24 @@ export interface SearchResultModel {
   readonly releaseYear: string | null;
 }
 
-export namespace SearchResultModel {
-  /**
-   * ContentDto를 SearchResultModel로 변환
-   */
-  export function fromDto(dto: ContentDto): SearchResultModel {
-    const releaseYear = dto.releaseDate ? new Date(dto.releaseDate).getFullYear().toString() : null;
+/**
+ * ContentDto를 SearchResultModel로 변환
+ */
+function fromContentDto(dto: ContentDto): SearchResultModel {
+  const releaseYear = dto.releaseDate ? new Date(dto.releaseDate).getFullYear().toString() : null;
 
-    return {
-      id: dto.id,
-      title: dto.title,
-      posterPath: dto.posterPath,
-      contentType: dto.contentType,
-      releaseYear,
-    };
-  }
+  return {
+    id: dto.id,
+    title: dto.title,
+    posterPath: dto.posterPath,
+    contentType: dto.contentType,
+    releaseYear,
+  };
+}
 
-  /**
-   * ContentDto 배열을 SearchResultModel 배열로 변환
-   */
-  export function fromDtoList(dtoList: ContentDto[]): SearchResultModel[] {
-    return dtoList.map(fromDto);
-  }
+/**
+ * ContentDto 배열을 SearchResultModel 배열로 변환
+ */
+export function fromContentDtoList(dtoList: ContentDto[]): SearchResultModel[] {
+  return dtoList.map(fromContentDto);
 }

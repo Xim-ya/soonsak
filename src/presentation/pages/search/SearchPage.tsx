@@ -1,4 +1,3 @@
-import React from 'react';
 import styled from '@emotion/native';
 import Gap from '@/presentation/components/view/Gap';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { contentApi } from '@/features/content/api/contentApi';
-import { SearchResultModel } from '../_types/searchResultModel';
+import { SearchResultModel, fromContentDtoList } from '../_types/searchResultModel';
 
 /** 캐시 유지 시간 (5분) */
 const STALE_TIME_MS = 1000 * 60 * 5;
@@ -26,10 +26,10 @@ export function useSearch(query: string) {
   const isEnabled = trimmedQuery.length > 0;
 
   const { data, isLoading, isFetching, error, refetch } = useQuery<SearchResultModel[], Error>({
-    queryKey: ['search', 'korean', trimmedQuery],
+    queryKey: ['search', trimmedQuery],
     queryFn: async (): Promise<SearchResultModel[]> => {
       const contents = await contentApi.searchContentsKorean(trimmedQuery);
-      return SearchResultModel.fromDtoList(contents);
+      return fromContentDtoList(contents);
     },
     enabled: isEnabled,
     staleTime: STALE_TIME_MS,

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { FlatList, ActivityIndicator, Keyboard } from 'react-native';
 import styled from '@emotion/native';
 import colors from '@/shared/styles/colors';
@@ -18,16 +18,11 @@ const keyExtractor = (item: SearchResultModel): string => `${item.contentType}-$
 function SearchResultList() {
   const { results, isLoading, isEmpty, debouncedSearchText } = useSearchContext();
 
-  // 리스트 아이템 렌더링
+  // 리스트 아이템 렌더링 (FlatList에 전달되므로 useCallback 필요)
   const renderItem = useCallback(
     ({ item }: { item: SearchResultModel }) => <SearchResultItem item={item} />,
     [],
   );
-
-  // 스크롤 시 키보드 숨김
-  const handleScrollBeginDrag = useCallback(() => {
-    Keyboard.dismiss();
-  }, []);
 
   // 검색어가 없는 초기 상태
   if (!debouncedSearchText) {
@@ -53,7 +48,7 @@ function SearchResultList() {
       data={results}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      onScrollBeginDrag={handleScrollBeginDrag}
+      onScrollBeginDrag={Keyboard.dismiss}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       removeClippedSubviews={true}
