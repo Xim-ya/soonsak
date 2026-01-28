@@ -1,6 +1,11 @@
 /**
  * YouTube 채널 스크래퍼
  * 채널 페이지 HTML에서 채널 정보 추출
+ *
+ * TODO: 안정성 개선 필요
+ * - 현재 HTML 스크래핑 방식은 YouTube 구조 변경에 취약함
+ * - YouTube Data API v3 도입 검토 (공식 API, 일일 할당량 10,000 units)
+ * - 또는 하이브리드 방식 (스크래핑 실패 시 API 폴백)
  */
 
 import { ScrapedChannelDto, YouTubeApiError, YouTubeErrorCode } from '../../types';
