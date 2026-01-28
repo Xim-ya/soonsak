@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import styled from '@emotion/native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { Dimensions, ActivityIndicator, Platform, Alert, Linking } from 'react-native';
@@ -9,6 +9,7 @@ import { routePages } from '@/shared/navigation/constant/routePages';
 import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
 import { buildYouTubeUrl, buildYouTubeAppUrl, isEmbeddedRestrictedError } from '@/features/youtube';
+import { contentApi } from '@/features/content/api/contentApi';
 
 type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.player>;
 
@@ -20,9 +21,10 @@ type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.playe
 export const PlayerPage = () => {
   const route = useRoute<PlayerPageRouteProp>();
   const navigation = useNavigation();
-  const { videoId, title } = route.params;
+  const { videoId, title, contentId, contentType } = route.params;
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1);
+  const hasIncrementedPlayCount = useRef(false);
 
   // 초기 화면 크기만 사용 (YouTube 플레이어가 자체적으로 전체화면 처리)
   const screenWidth = Dimensions.get('window').width;
@@ -39,6 +41,12 @@ export const PlayerPage = () => {
   useYouTubeEvent(player, 'ready', (playerInfo) => {
     console.log('플레이어 준비 완료:', playerInfo);
     setIsPlayerReady(true);
+
+    // 재생수 증가 (1회만 실행)
+    if (!hasIncrementedPlayCount.current) {
+      hasIncrementedPlayCount.current = true;
+      contentApi.incrementPlayCount(contentId, contentType);
+    }
 
     // iOS에서 음소거 상태로 자동 재생 후 음소거 해제
     if (Platform.OS === 'ios') {

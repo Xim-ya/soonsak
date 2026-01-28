@@ -28,11 +28,15 @@ function VideoItemView({ item }: { item: VideoDto }) {
   const navigation = useNavigation<NavigationProp>();
 
   const handlePlayPress = useCallback(() => {
+    if (!item.contentType) return;
+
     navigation.navigate(routePages.player, {
       videoId: item.id,
       title: item.title,
+      contentId: item.contentId,
+      contentType: item.contentType,
     });
-  }, [navigation, item.id, item.title]);
+  }, [navigation, item.id, item.title, item.contentId, item.contentType]);
 
   return (
     <VideoItemContainer>

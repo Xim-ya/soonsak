@@ -98,6 +98,36 @@ export const contentApi = {
   },
 
   /**
+   * 콘텐츠 조회수 증가 (상세 페이지 진입 시)
+   */
+  incrementViewCount: async (contentId: number, contentType: ContentType): Promise<void> => {
+    const { error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.INCREMENT_VIEW_COUNT, {
+      p_content_id: contentId,
+      p_content_type: contentType,
+    });
+
+    if (error) {
+      console.error('조회수 증가 실패:', error);
+      // 조회수 증가 실패는 사용자 경험에 영향을 주지 않으므로 throw하지 않음
+    }
+  },
+
+  /**
+   * 콘텐츠 재생수 증가 (영상 재생 시)
+   */
+  incrementPlayCount: async (contentId: number, contentType: ContentType): Promise<void> => {
+    const { error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.INCREMENT_PLAY_COUNT, {
+      p_content_id: contentId,
+      p_content_type: contentType,
+    });
+
+    if (error) {
+      console.error('재생수 증가 실패:', error);
+      // 재생수 증가 실패는 사용자 경험에 영향을 주지 않으므로 throw하지 않음
+    }
+  },
+
+  /**
    * 특정 채널의 콘텐츠 목록 조회 (DB 레벨 페이지네이션)
    * RPC 함수를 사용하여 content_id 기준 중복 제거 및 페이징 처리
    * 우선순위: is_primary > includes_ending > runtime

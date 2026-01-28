@@ -36,7 +36,12 @@ export type RootStackParamList = {
     type: ContentType; // 콘텐츠 타입 (movie | series | unknown)
     videoId?: string; // 특정 비디오 ID (선택 - 없으면 primary 비디오 사용)
   }; // 콘텐츠 상세 - id, title, type 필수, videoId 선택
-  [routePages.player]: { videoId: string; title: string }; // 플레이어 - 비디오 ID, 제목 파라미터 필수
+  [routePages.player]: {
+    videoId: string;
+    title: string;
+    contentId: number; // 재생수 증가용
+    contentType: ContentType; // 재생수 증가용
+  }; // 플레이어 - 비디오 ID, 제목, 콘텐츠 정보 필수
   [routePages.channelDetail]: {
     channelId: string; // YouTube 채널 ID (필수)
     channelName?: string; // 채널 이름 (선택 - 없으면 API 조회)

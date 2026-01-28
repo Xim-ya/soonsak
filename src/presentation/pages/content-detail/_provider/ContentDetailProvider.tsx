@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useRef, ReactNode } from 'react';
 import { VideoDto } from '@/features/content/types';
 import { contentApi } from '@/features/content/api/contentApi';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
@@ -66,6 +66,15 @@ export function ContentDetailProvider({
 
   useEffect(() => {
     fetchVideos();
+  }, [contentId, contentType]);
+
+  // 조회수 증가 (페이지 진입 시 1회만 실행)
+  const hasIncrementedViewCount = useRef(false);
+  useEffect(() => {
+    if (!hasIncrementedViewCount.current) {
+      hasIncrementedViewCount.current = true;
+      contentApi.incrementViewCount(contentId, contentType);
+    }
   }, [contentId, contentType]);
 
   // 대표 비디오 선택 로직

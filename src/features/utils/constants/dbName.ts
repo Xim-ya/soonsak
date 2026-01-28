@@ -9,8 +9,8 @@ export const CONTENT_DATABASE = {
     POSTER_PATH: 'poster_path',
     UPLOADED_AT: 'uploaded_at',
   },
-  // QUERIES: {
-  //     SELECT_ALL: '*',
-  //     SELECT_BASIC: 'id, title, content_type, poster_path',
-  // }
+  RPC: {
+    INCREMENT_VIEW_COUNT: 'increment_content_view_count',
+    INCREMENT_PLAY_COUNT: 'increment_content_play_count',
+  },
 } as const;
