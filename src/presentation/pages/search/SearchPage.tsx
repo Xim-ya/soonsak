@@ -1,31 +1,11 @@
 import React from 'react';
 import styled from '@emotion/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import colors from '@/shared/styles/colors';
 import Gap from '@/presentation/components/view/Gap';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
+import { BasePage } from '@/presentation/components/page';
 import { SearchProvider } from './_provider/SearchProvider';
 import { SearchBar } from './_components/SearchBar';
 import { SearchResultList } from './_components/SearchResultList';
-
-/**
- * SearchPageContent - 검색 화면 내부 컴포넌트
- *
- * SearchProvider 내부에서 사용되어야 합니다.
- */
-function SearchPageContent() {
-  const insets = useSafeAreaInsets();
-
-  return (
-    <Container topInset={insets.top}>
-      <BackButtonAppBar />
-      <Gap size={8} />
-      <SearchBar />
-      <Gap size={16} />
-      <SearchResultList />
-    </Container>
-  );
-}
 
 /**
  * SearchPage - 검색 화면 메인 컴포넌트
@@ -39,14 +19,20 @@ function SearchPageContent() {
 export default function SearchPage() {
   return (
     <SearchProvider>
-      <SearchPageContent />
+      <BasePage>
+        <Container>
+          <BackButtonAppBar />
+          <Gap size={8} />
+          <SearchBar />
+          <Gap size={16} />
+          <SearchResultList />
+        </Container>
+      </BasePage>
     </SearchProvider>
   );
 }
 
 /* Styled Components */
-const Container = styled.View<{ topInset: number }>(({ topInset }) => ({
+const Container = styled.View({
   flex: 1,
-  backgroundColor: colors.black,
-  paddingTop: topInset,
-}));
+});
