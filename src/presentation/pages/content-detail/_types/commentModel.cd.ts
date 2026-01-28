@@ -99,8 +99,10 @@ export namespace FeaturedCommentModel {
       return { comment: null, totalCountText };
     }
 
-    // 채널 주인이 아닌 댓글만 필터링
-    const nonOwnerComments = comments.filter((comment) => comment.author.channelId !== channelId);
+    // 채널 주인이 아닌 댓글만 필터링 (channelId가 있을 때만 필터링 적용)
+    const nonOwnerComments = channelId
+      ? comments.filter((comment) => comment.author.channelId !== channelId)
+      : comments;
 
     // 좋아요 순으로 정렬하여 가장 많은 것 선택
     let topComment = firstComment;
