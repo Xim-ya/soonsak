@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { tmdbApi } from '@/features/tmdb/api/tmdbApi';
 import { contentApi } from '@/features/content/api/contentApi';
-import { ContentType } from '@/presentation/types/content/contentType.enum';
 import { TopTenContentModel } from '../_types/topTenContentModel.home';
 
 const TOP_TEN_LIMIT = 10;
 const QUERY_KEY = 'realtimeTopTen';
+const STALE_TIME_MS = 5 * 60 * 1000;
 
 /**
  * 실시간 Top 10 콘텐츠를 조회하는 훅
@@ -32,10 +32,10 @@ export function useRealtimeTopTen() {
       // 3. Supabase에 등록된 콘텐츠 필터링 (movie, tv 각각)
       const [registeredMovies, registeredTvs] = await Promise.all([
         movieIds.length > 0
-          ? contentApi.getRegisteredContentsByTmdbIds(movieIds, 'movie' as ContentType)
+          ? contentApi.getRegisteredContentsByTmdbIds(movieIds, 'movie')
           : Promise.resolve([]),
         tvIds.length > 0
-          ? contentApi.getRegisteredContentsByTmdbIds(tvIds, 'tv' as ContentType)
+          ? contentApi.getRegisteredContentsByTmdbIds(tvIds, 'tv')
           : Promise.resolve([]),
       ]);
 
@@ -87,6 +87,6 @@ export function useRealtimeTopTen() {
 
       return [...tmdbTopContents, ...additionalContents];
     },
-    staleTime: 5 * 60 * 1000, // 5분 캐시
+    staleTime: STALE_TIME_MS,
   });
 }
