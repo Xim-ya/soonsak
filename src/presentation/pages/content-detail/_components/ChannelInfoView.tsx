@@ -59,7 +59,9 @@ function ChannelInfoView() {
             ) : (
               <>
                 <Name>{channel?.name}</Name>
-                <SubscriberCount>{channel?.subscriberText}명</SubscriberCount>
+                {channel?.subscriberText && (
+                  <SubscriberCount>{channel.subscriberText}명</SubscriberCount>
+                )}
               </>
             )}
           </ColumnWrapper>

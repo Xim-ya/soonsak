@@ -1,6 +1,11 @@
 /**
  * YouTube 페이지 스크래퍼
  * 페이지 HTML에서 추가 메타데이터 추출
+ *
+ * TODO: 안정성 개선 필요
+ * - 현재 HTML 스크래핑 방식은 YouTube 구조 변경에 취약함
+ * - YouTube Data API v3 도입 검토 (공식 API, 일일 할당량 10,000 units)
+ * - 또는 하이브리드 방식 (스크래핑 실패 시 API 폴백)
  */
 
 import { ScrapedVideoDto, YouTubeApiError, YouTubeErrorCode } from '../../types';
@@ -27,8 +32,8 @@ export const pageScraper = {
    * YouTube 페이지에서 전체 데이터 스크래핑
    */
   async scrapeVideoPage(videoId: string): Promise<ScrapedVideoDto> {
-    const url = `https://www.youtube.com/watch?v=${videoId}`;
-    console.log('🔍 YouTube 페이지 스크래핑 시작:', videoId);
+    // 동의 우회 파라미터 추가 (Android에서 Cookie 헤더가 무시되는 문제 해결)
+    const url = `https://www.youtube.com/watch?v=${videoId}&hl=ko&persist_hl=1&gl=KR`;
 
     try {
       const response = await fetch(url, {
@@ -39,7 +44,8 @@ export const pageScraper = {
           Accept:
             'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
           'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-          'Accept-Encoding': 'gzip, deflate, br',
+          // Android fetch가 gzip/br 자동 해제를 지원하지 않으므로 압축 비활성화
+          'Accept-Encoding': 'identity',
           'Cache-Control': 'no-cache',
           Pragma: 'no-cache',
           'Sec-Fetch-Dest': 'document',
@@ -64,7 +70,6 @@ export const pageScraper = {
       }
 
       const html = await response.text();
-      console.log('📄 HTML 수신 완료:', html.length, '문자');
 
       return await this.extractDataFromHtml(html);
     } catch (error) {
@@ -134,14 +139,6 @@ export const pageScraper = {
 
     // 메타데이터에서 추가 정보 추출 (조회수/길이 백업)
     this.extractMetadata(html, data);
-
-    console.log('✅ 스크래핑 완료:', {
-      viewCount: data.viewCount,
-      likeCount: data.likeCount,
-      likeText: data.likeText,
-      uploadDate: data.uploadDate,
-      duration: data.duration,
-    });
 
     return data;
   },

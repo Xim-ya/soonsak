@@ -69,7 +69,10 @@ export default function ChannelDetailPage() {
         {isChannelLoading ? (
           <SkeletonView width={80} height={16} borderRadius={4} />
         ) : (
-          <SubscriberText>구독자 {formattedSubscriberCount}명</SubscriberText>
+          formattedSubscriberCount &&
+          formattedSubscriberCount !== '0' && (
+            <SubscriberText>구독자 {formattedSubscriberCount}명</SubscriberText>
+          )
         )}
         <ContentCountWrapper>
           <ContentCountText>{totalCount}개의 콘텐츠</ContentCountText>
