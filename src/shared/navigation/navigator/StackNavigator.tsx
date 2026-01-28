@@ -3,6 +3,7 @@ import TabNavigator from './TabNavigator';
 import ContentDetailPage from '../../../presentation/pages/content-detail/ContentDetailPage';
 import { PlayerPage } from '../../../presentation/pages/player/PlayerPage';
 import ChannelDetailPage from '../../../presentation/pages/channel-detail/ChannelDetailPage';
+import SearchPage from '../../../presentation/pages/search/SearchPage';
 import { RootStackParamList } from '../types';
 import { routePages } from '../constant/routePages';
 import colors from '@/shared/styles/colors';
@@ -35,6 +36,11 @@ export default function StackNavigator() {
       <Stack.Screen
         name={routePages.channelDetail}
         component={ChannelDetailPage}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={routePages.search}
+        component={SearchPage}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

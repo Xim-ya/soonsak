@@ -43,6 +43,7 @@ export type RootStackParamList = {
     channelLogoUrl?: string; // 채널 로고 URL (선택 - 없으면 API 조회)
     subscriberCount?: number; // 구독자 수 (선택 - 없으면 API 조회)
   }; // 채널 상세 - channelId만 필수, 나머지는 API로 조회 가능
+  [routePages.search]: undefined; // 검색 - 파라미터 없음
 };
 
 /**
