@@ -1,16 +1,12 @@
-import { ContentType } from '@/presentation/types/content/contentType.enum';
 import { ContentWithVideoDto } from '@/features/content/types';
+import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
 
 /**
  * 러닝타임이 긴 콘텐츠 모델
  * 홈 화면의 러닝타임 섹션에서 사용
  */
-export interface LongRuntimeContentModel {
-  readonly id: number;
-  readonly contentType: ContentType;
-  readonly title: string;
+export interface LongRuntimeContentModel extends BaseContentModel {
   readonly backdropPath: string | undefined;
-  readonly posterPath: string;
   readonly runtime: number;
   readonly formattedRuntime: string;
 }
@@ -23,27 +19,27 @@ export namespace LongRuntimeContentModel {
   export function fromDto(dto: ContentWithVideoDto): LongRuntimeContentModel {
     return {
       id: dto.id,
-      contentType: dto.contentType,
+      type: dto.contentType,
       title: dto.title,
-      backdropPath: dto.backdropPath,
       posterPath: dto.posterPath,
+      backdropPath: dto.backdropPath,
       runtime: dto.runtime,
       formattedRuntime: formatRuntime(dto.runtime),
     };
   }
 
   /**
-   * 분 단위 런타임을 포맷팅된 문자열로 변환
-   * @example 52 -> "52:00", 229 -> "3:49:00"
+   * 분 단위 런타임을 한글 포맷으로 변환
+   * @example 52 -> "52분", 229 -> "3시간 49분"
    */
   export const formatRuntime = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
 
     if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:00`;
+      return mins > 0 ? `${hours}시간 ${mins}분` : `${hours}시간`;
     }
-    return `${mins}:00`;
+    return `${mins}분`;
   };
 
   /**

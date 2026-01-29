@@ -31,9 +31,9 @@ const TopTenItem = React.memo(({ item }: { item: TopTenContentModel }) => {
     navigation.navigate(routePages.contentDetail, {
       id: item.id,
       title: item.title,
-      type: item.contentType,
+      type: item.type,
     });
-  }, [navigation, item.id, item.title, item.contentType]);
+  }, [navigation, item.id, item.title, item.type]);
 
   const imageUrl = useMemo(
     () =>
