@@ -6,25 +6,25 @@ import { LinearGradient } from 'expo-linear-gradient';
 import styled from '@emotion/native';
 import Gap from '@/presentation/components/view/Gap';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
+import DarkChip from '@/presentation/components/chip/DarkChip';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
-import { useRealtimeTopTen } from '../_hooks/useRealtimeTopTen';
-import { TopTenContentModel } from '../_types/topTenContentModel.home';
+import { useLongRuntimeContents } from '../_hooks/useLongRuntimeContents';
+import { LongRuntimeContentModel } from '../_types/longRuntimeContentModel.home';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ITEM_WIDTH = 220;
 const ITEM_HEIGHT = 140;
-const CONTAINER_HEIGHT = 168;
 const ITEM_SEPARATOR_WIDTH = 12;
 
 /**
- * Top 10 아이템 컴포넌트
+ * 러닝타임 긴 콘텐츠 아이템 컴포넌트
  */
-const TopTenItem = React.memo(({ item }: { item: TopTenContentModel }) => {
+const LongRuntimeItem = React.memo(({ item }: { item: LongRuntimeContentModel }) => {
   const navigation = useNavigation<NavigationProp>();
 
   const handlePress = useCallback(() => {
@@ -44,41 +44,35 @@ const TopTenItem = React.memo(({ item }: { item: TopTenContentModel }) => {
   );
 
   return (
-    <ItemContainer>
-      <ItemTouchable onPress={handlePress} activeOpacity={0.8}>
-        <ImageWrapper>
-          <LoadableImageView
-            source={imageUrl}
-            width={ITEM_WIDTH}
-            height={ITEM_HEIGHT}
-            borderRadius={4}
-          />
-          <GradientOverlay
-            colors={['transparent', 'rgba(0, 0, 0, 0.8)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          />
-          <TitleText numberOfLines={1}>{item.title}</TitleText>
-        </ImageWrapper>
-      </ItemTouchable>
-      <RankBadge>
-        <RankText>{formatter.toOrdinal(item.rank)}</RankText>
-      </RankBadge>
-    </ItemContainer>
+    <ItemTouchable onPress={handlePress} activeOpacity={0.8}>
+      <ImageWrapper>
+        <LoadableImageView
+          source={imageUrl}
+          width={ITEM_WIDTH}
+          height={ITEM_HEIGHT}
+          borderRadius={4}
+        />
+        <GradientOverlay
+          colors={['transparent', 'rgba(0, 0, 0, 0.8)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
+        <RuntimeChipWrapper>
+          <DarkChip content={item.formattedRuntime} />
+        </RuntimeChipWrapper>
+        <TitleText numberOfLines={1}>{item.title}</TitleText>
+      </ImageWrapper>
+    </ItemTouchable>
   );
 });
 
 /**
  * Skeleton 아이템 컴포넌트
  */
-const TopTenSkeletonItem = React.memo(() => (
-  <ItemContainer>
-    <SkeletonBox />
-  </ItemContainer>
-));
+const LongRuntimeSkeletonItem = React.memo(() => <SkeletonBox />);
 
 /**
- * 아이템 간격 컴포넌트 (성능 최적화를 위해 외부 정의)
+ * 아이템 간격 컴포넌트
  */
 const ItemSeparator = React.memo(() => <Gap size={ITEM_SEPARATOR_WIDTH} />);
 
@@ -91,44 +85,40 @@ const getItemLayout = (_: unknown, index: number) => ({
   index,
 });
 
-/** FlatList contentContainerStyle (외부 정의로 리렌더링 방지) */
 const listContentStyle = { paddingLeft: 16, paddingRight: 16 };
 
-/** Skeleton 데이터 (외부 정의로 리렌더링 방지) */
 const SKELETON_DATA: null[] = Array.from({ length: 5 }, () => null);
 
 /**
- * 실시간 Top 10 콘텐츠 슬라이더
- * Flutter Plotz의 _TopTenContentSlider UI를 참고하여 구현
+ * 러닝타임이 긴 콘텐츠 슬라이더
+ * TopTenContentListView 패턴 기반
  */
-function TopTenContentListView() {
-  const { data: topTenContents, isLoading, isError } = useRealtimeTopTen();
+function LongRuntimeContentListView() {
+  const { data: contents, isLoading, isError } = useLongRuntimeContents();
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<TopTenContentModel | null>) =>
-      !item ? <TopTenSkeletonItem /> : <TopTenItem item={item} />,
+    ({ item }: ListRenderItemInfo<LongRuntimeContentModel | null>) =>
+      !item ? <LongRuntimeSkeletonItem /> : <LongRuntimeItem item={item} />,
     [],
   );
 
-  const keyExtractor = useCallback((_: unknown, index: number) => `top-ten-${index}`, []);
+  const keyExtractor = useCallback((_: unknown, index: number) => `long-runtime-${index}`, []);
 
-  // 에러 상태는 섹션을 숨김
   if (isError) {
     return null;
   }
 
-  // 데이터가 없으면 섹션을 숨김
-  if (!isLoading && (!topTenContents || topTenContents.length === 0)) {
+  if (!isLoading && (!contents || contents.length === 0)) {
     return null;
   }
 
   return (
     <Container>
-      <SectionTitle>지금 뜨고있는 인기 콘텐츠</SectionTitle>
+      <SectionTitle>러닝타임이 긴 콘텐츠</SectionTitle>
       <Gap size={7} />
       <FlatList
         horizontal
-        data={isLoading ? SKELETON_DATA : topTenContents}
+        data={isLoading ? SKELETON_DATA : contents}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         ItemSeparatorComponent={ItemSeparator}
@@ -155,12 +145,6 @@ const SectionTitle = styled.Text({
   paddingHorizontal: 16,
 });
 
-const ItemContainer = styled.View({
-  width: ITEM_WIDTH,
-  height: CONTAINER_HEIGHT,
-  position: 'relative',
-});
-
 const ItemTouchable = styled(TouchableOpacity)({
   width: ITEM_WIDTH,
   height: ITEM_HEIGHT,
@@ -182,6 +166,12 @@ const GradientOverlay = styled(LinearGradient)({
   height: 49,
 });
 
+const RuntimeChipWrapper = styled.View({
+  position: 'absolute',
+  left: 8,
+  bottom: 8,
+});
+
 const TitleText = styled.Text({
   ...textStyles.title3,
   color: colors.white,
@@ -192,17 +182,6 @@ const TitleText = styled.Text({
   textAlign: 'right',
 });
 
-const RankBadge = styled.View({
-  position: 'absolute',
-  left: -4,
-  bottom: 13.5,
-});
-
-const RankText = styled.Text({
-  ...textStyles.web2,
-  color: colors.white,
-});
-
 const SkeletonBox = styled.View({
   width: ITEM_WIDTH,
   height: ITEM_HEIGHT,
@@ -210,4 +189,4 @@ const SkeletonBox = styled.View({
   backgroundColor: colors.gray05,
 });
 
-export { TopTenContentListView };
+export { LongRuntimeContentListView };

@@ -1,6 +1,6 @@
 import { supabaseClient } from '@/features/utils/clients/superBaseClient';
 import { mapWithField } from '@/features/utils/mapper/fieldMapper';
-import { ContentDto, VideoDto, VideoWithContentDto } from '../types';
+import { ContentDto, ContentWithVideoDto, VideoDto, VideoWithContentDto } from '../types';
 import { CONTENT_DATABASE } from '../../utils/constants/dbConfig';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 
@@ -251,5 +251,22 @@ export const contentApi = {
     }
 
     return mapWithField<ContentDto[]>(data ?? []);
+  },
+
+  /**
+   * 러닝타임이 긴 콘텐츠 조회
+   * isPrimary 비디오 중 런타임이 긴 12개를 engagement ratio 기반으로 정렬
+   */
+  getLongRuntimeContents: async (): Promise<ContentWithVideoDto[]> => {
+    const { data, error } = await supabaseClient.rpc(
+      CONTENT_DATABASE.RPC.GET_LONG_RUNTIME_CONTENTS,
+    );
+
+    if (error) {
+      console.error('러닝타임 긴 콘텐츠 조회 실패:', error);
+      throw new Error(`Failed to fetch long runtime contents: ${error.message}`);
+    }
+
+    return mapWithField<ContentWithVideoDto[]>(data ?? []);
   },
 };

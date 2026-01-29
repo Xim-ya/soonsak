@@ -1,16 +1,12 @@
-import { ContentType } from '@/presentation/types/content/contentType.enum';
 import { TrendingItemDto } from '@/features/tmdb/types/common';
 import { ContentDto } from '@/features/content/types';
+import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
 
 /**
  * 실시간 Top 10 콘텐츠 아이템 모델
  */
-export interface TopTenContentModel {
+export interface TopTenContentModel extends BaseContentModel {
   readonly rank: number;
-  readonly id: number;
-  readonly title: string;
-  readonly contentType: ContentType;
-  readonly posterPath: string;
   readonly backdropPath: string | undefined;
   readonly source: 'tmdb' | 'engagement';
 }
@@ -27,7 +23,7 @@ export namespace TopTenContentModel {
       rank,
       id: item.id,
       title: item.title ?? item.name ?? '제목 없음',
-      contentType: item.mediaType === 'movie' ? 'movie' : 'tv',
+      type: item.mediaType === 'movie' ? 'movie' : 'tv',
       posterPath: item.posterPath ?? '',
       backdropPath: item.backdropPath ?? undefined,
       source: 'tmdb',
@@ -44,7 +40,7 @@ export namespace TopTenContentModel {
       rank,
       id: content.id,
       title: content.title,
-      contentType: content.contentType,
+      type: content.contentType,
       posterPath: content.posterPath,
       backdropPath: content.backdropPath,
       source: 'engagement',
