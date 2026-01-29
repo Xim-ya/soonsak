@@ -220,4 +220,36 @@ export const contentApi = {
 
     return { videos, hasMore, totalCount };
   },
+
+  /**
+   * 장르 기반 콘텐츠 조회
+   * 특정 장르에 해당하고 includes_ending = true인 영상이 있는 콘텐츠만 반환
+   * @param genreIds 장르 ID 배열
+   * @param contentType 콘텐츠 타입 (movie | tv)
+   * @param excludeIds 제외할 콘텐츠 ID 배열
+   * @param limit 최대 조회 수 (기본값: 18)
+   * @returns ContentDto 배열
+   */
+  getContentsByGenre: async (
+    genreIds: number[],
+    contentType: ContentType,
+    excludeIds: number[],
+    limit: number = 18,
+  ): Promise<ContentDto[]> => {
+    if (genreIds.length === 0) return [];
+
+    const { data, error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.GET_CONTENTS_BY_GENRE, {
+      p_genre_ids: genreIds,
+      p_content_type: contentType,
+      p_exclude_ids: excludeIds,
+      p_limit: limit,
+    });
+
+    if (error) {
+      console.error('장르 기반 콘텐츠 조회 실패:', error);
+      throw new Error(`Failed to fetch contents by genre: ${error.message}`);
+    }
+
+    return mapWithField<ContentDto[]>(data ?? []);
+  },
 };

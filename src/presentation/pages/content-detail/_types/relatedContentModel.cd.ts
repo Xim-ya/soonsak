@@ -12,25 +12,32 @@ export interface RelatedContentModel {
   readonly title: string;
   readonly posterPath: string;
   readonly contentType: ContentType;
+  /** TMDB 추천 콘텐츠 여부 (true: TMDB 추천, false: 장르 기반) */
+  readonly isRecommended: boolean;
 }
 
 export namespace RelatedContentModel {
   /**
    * ContentDto를 RelatedContentModel로 변환
+   * @param dto - ContentDto
+   * @param isRecommended - TMDB 추천 콘텐츠 여부
    */
-  export function fromDto(dto: ContentDto): RelatedContentModel {
+  export function fromDto(dto: ContentDto, isRecommended: boolean): RelatedContentModel {
     return {
       id: dto.id,
       title: dto.title,
       posterPath: dto.posterPath,
       contentType: dto.contentType,
+      isRecommended,
     };
   }
 
   /**
    * ContentDto 배열을 RelatedContentModel 배열로 변환
+   * @param dtoList - ContentDto 배열
+   * @param isRecommended - TMDB 추천 콘텐츠 여부
    */
-  export function fromDtoList(dtoList: ContentDto[]): RelatedContentModel[] {
-    return dtoList.map(fromDto);
+  export function fromDtoList(dtoList: ContentDto[], isRecommended: boolean): RelatedContentModel[] {
+    return dtoList.map((dto) => fromDto(dto, isRecommended));
   }
 }

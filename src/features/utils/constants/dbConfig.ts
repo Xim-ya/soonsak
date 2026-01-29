@@ -16,5 +16,6 @@ export const CONTENT_DATABASE = {
     GET_TOP_CONTENTS_BY_SCORE: 'get_top_contents_by_score',
     SEARCH_CONTENTS_KOREAN: 'search_contents_korean',
     GET_DISTINCT_CONTENTS_BY_CHANNEL: 'get_distinct_contents_by_channel',
+    GET_CONTENTS_BY_GENRE: 'get_contents_by_genre',
   },
 } as const;

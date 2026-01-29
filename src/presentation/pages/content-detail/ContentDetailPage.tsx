@@ -1,4 +1,3 @@
-import React from 'react';
 import { Tabs } from 'react-native-collapsible-tab-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from '@emotion/native';
@@ -12,7 +11,7 @@ import Animated from 'react-native-reanimated';
 import { useCallback } from 'react';
 import { TabBar } from './_components/TabBar';
 import { ContentTabView } from './_components/VideoTabView';
-import { OriginalTabView } from './_components/OriginContentTabView';
+import { RelatedContentTabView } from './_components/OriginContentTabView';
 import { AnimatedAppBAr } from './_components/AnimatedAppBar';
 import { ScreenRouteProp } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
@@ -77,8 +76,8 @@ export default function ContentDetailPage() {
             <Tabs.Tab name="영상" label="videoInfo">
               <ContentTabView onScrollChange={handleScrollChange} />
             </Tabs.Tab>
-            <Tabs.Tab name="댓글" label="comments">
-              <OriginalTabView onScrollChange={handleScrollChange} />
+            <Tabs.Tab name="관련 콘텐츠" label="relatedContent">
+              <RelatedContentTabView onScrollChange={handleScrollChange} />
             </Tabs.Tab>
           </Tabs.Container>
         </TabsContainer>
