@@ -6,7 +6,6 @@ import { SummaryView } from './SummaryView';
 import CaseView from './CaseView';
 import { OtherChannelVideoListView } from './OtherChannelVideoListView';
 import { ChannelInfoView } from './ChannelInfoView';
-import { RelatedContentsView } from './RelatedContentsView';
 import { FeaturedCommentView } from './FeaturedCommentView';
 import { CommentsBottomSheet } from './CommentsBottomSheet';
 
@@ -37,9 +36,6 @@ function VideoTabView({ onScrollChange }: { onScrollChange: (offset: number) => 
 
         {/* 다른 채널 영상 리스트 */}
         <OtherChannelVideoListView />
-
-        {/* 관련 콘텐츠 섹션 */}
-        <RelatedContentsView />
 
         {/* 대표 감상평 섹션 */}
         <FeaturedCommentView onPressShowAll={handleShowComments} />

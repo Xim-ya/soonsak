@@ -98,7 +98,7 @@ const Container = styled.View<{
   borderRadius,
   overflow: 'hidden',
   position: 'relative',
-  backgroundColor: colors.gray04,
+  backgroundColor: colors.gray05,
 }));
 
 // 로딩 중 placeholder
@@ -112,7 +112,7 @@ const PlaceholderView = styled.View<{
   left: 0,
   width,
   height,
-  backgroundColor: colors.gray04,
+  backgroundColor: colors.gray05,
   borderRadius,
 }));
 
