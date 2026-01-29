@@ -70,8 +70,8 @@ export function useEnhancedRelatedContents({
         return [];
       }
 
-      // 1. TMDB에서 추천 콘텐츠 ID 조회
-      const tmdbIds = await fetchTmdbRecommendationIds(contentId, contentType);
+      // 1. TMDB에서 추천 콘텐츠 ID 조회 (중복 제거)
+      const tmdbIds = [...new Set(await fetchTmdbRecommendationIds(contentId, contentType))];
 
       // 2. Supabase에서 등록된 콘텐츠만 필터링
       let tmdbContents: RelatedContentModel[] = [];
@@ -109,7 +109,10 @@ export function useEnhancedRelatedContents({
         tmdbContents = [...tmdbContents, ...genreContents];
       }
 
-      return tmdbContents.slice(0, MAX_RELATED_CONTENTS);
+      // 4. 최종 중복 제거 (id 기준)
+      const uniqueContents = Array.from(new Map(tmdbContents.map((c) => [c.id, c])).values());
+
+      return uniqueContents.slice(0, MAX_RELATED_CONTENTS);
     },
     enabled: isSupported && hasGenres,
     retry: false,
