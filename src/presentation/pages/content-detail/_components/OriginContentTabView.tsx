@@ -62,7 +62,11 @@ function RelatedContentTabView({ onScrollChange }: { onScrollChange: (offset: nu
             <Row key={rowIndex}>
               {Array.from({ length: 3 }).map((_, colIndex) => (
                 <SkeletonItemContainer key={colIndex}>
-                  <SkeletonView width={GRID_ITEM_WIDTH} height={GRID_POSTER_HEIGHT} borderRadius={4} />
+                  <SkeletonView
+                    width={GRID_ITEM_WIDTH}
+                    height={GRID_POSTER_HEIGHT}
+                    borderRadius={4}
+                  />
                 </SkeletonItemContainer>
               ))}
             </Row>
