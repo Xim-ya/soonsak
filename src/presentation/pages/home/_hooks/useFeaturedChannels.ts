@@ -3,16 +3,16 @@ import { useQuery } from '@tanstack/react-query';
 import { channelApi } from '@/features/channel';
 import { CHANNEL_DATABASE } from '@/features/utils/constants/dbConfig';
 import {
-  ReviewerChannelModel,
-  UseReviewerChannelsResult,
-} from '../_types/reviewerChannelModel.home';
+  FeaturedChannelModel,
+  UseFeaturedChannelsResult,
+} from '../_types/featuredChannelModel.home';
 
-const QUERY_KEY = 'reviewerChannels';
+const QUERY_KEY = 'featuredChannels';
 const STALE_TIME_MS = 10 * 60 * 1000;
 const GC_TIME_MS = 30 * 60 * 1000;
 
 /**
- * 리뷰어 채널 목록 조회 훅
+ * 대표 채널 목록 조회 훅
  *
  * 동작:
  * - Supabase RPC로 랜덤 활성 채널 목록 조회 (최대 12개)
@@ -20,7 +20,7 @@ const GC_TIME_MS = 30 * 60 * 1000;
  *
  * Flutter: HomeViewModel._fetchChannelList() 참고
  */
-export function useReviewerChannels(): UseReviewerChannelsResult {
+export function useFeaturedChannels(): UseFeaturedChannelsResult {
   const { data, isLoading, isError } = useQuery({
     queryKey: [QUERY_KEY, 'list'],
     queryFn: () => channelApi.getRandomActiveChannels(CHANNEL_DATABASE.LIMITS.DEFAULT_RANDOM),
@@ -28,8 +28,8 @@ export function useReviewerChannels(): UseReviewerChannelsResult {
     gcTime: GC_TIME_MS,
   });
 
-  // ChannelDto → ReviewerChannelModel 변환
-  const channels = useMemo((): ReviewerChannelModel[] => {
+  // ChannelDto → FeaturedChannelModel 변환
+  const channels = useMemo((): FeaturedChannelModel[] => {
     if (!data) return [];
 
     return data
