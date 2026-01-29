@@ -31,7 +31,7 @@ function ChannelInfoView() {
     navigation.navigate(routePages.channelDetail, {
       channelId: channelId,
       channelName: channel.name,
-      channelLogoUrl: channel.images.avatar,
+      channelLogoUrl: channel.images?.avatar,
       subscriberCount: channel.subscriberCount,
     });
   }, [isLoading, error, channelId, channel, navigation]);
@@ -48,7 +48,7 @@ function ChannelInfoView() {
 
       <Pressable onPress={handlePress}>
         <InfoWrapper>
-          <RoundedAvatorView source={channel?.images.avatar || ''} size={64} />
+          <RoundedAvatorView source={channel?.images?.avatar || ''} size={64} />
           <ColumnWrapper>
             {isLoading ? (
               <>

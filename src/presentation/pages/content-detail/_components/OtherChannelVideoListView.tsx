@@ -54,7 +54,7 @@ function VideoItemView({ item }: { item: VideoDto }) {
             <PlayButtonSvg width={64} height={64} />
           </PlayButtonContainer>
           <ChannelInfoWrapper>
-            <RoundedAvatorView source={channel?.images.avatar || ''} size={28} />
+            <RoundedAvatorView source={channel?.images?.avatar || ''} size={28} />
             <Gap size={8} />
             <ChannelName numberOfLines={1}>{channel?.name || ''}</ChannelName>
           </ChannelInfoWrapper>

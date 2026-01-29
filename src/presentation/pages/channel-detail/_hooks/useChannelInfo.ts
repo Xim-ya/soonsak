@@ -30,7 +30,7 @@ export function useChannelInfo({
 
   // route params 우선, 없으면 API 데이터 사용
   const displayName = channelName ?? channelData?.name ?? '';
-  const displayLogoUrl = channelLogoUrl ?? channelData?.images.avatar ?? '';
+  const displayLogoUrl = channelLogoUrl ?? channelData?.images?.avatar ?? '';
   const displaySubscriberCount = subscriberCount ?? channelData?.subscriberCount ?? 0;
 
   const formattedSubscriberCount = formatter.formatNumberWithUnit(displaySubscriberCount);

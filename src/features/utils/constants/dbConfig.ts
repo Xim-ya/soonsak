@@ -18,3 +18,21 @@ export const CONTENT_DATABASE = {
     GET_DISTINCT_CONTENTS_BY_CHANNEL: 'get_distinct_contents_by_channel',
   },
 } as const;
+
+export const CHANNEL_DATABASE = {
+  TABLES: {
+    CHANNELS: 'channels',
+  },
+  COLUMNS: {
+    ID: 'id',
+    NAME: 'name',
+    IS_ACTIVE: 'is_active',
+  },
+  RPC: {
+    GET_RANDOM_ACTIVE_CHANNELS: 'get_random_active_channels',
+  },
+  LIMITS: {
+    MAX_CHANNELS: 20,
+    DEFAULT_RANDOM: 12,
+  },
+} as const;
