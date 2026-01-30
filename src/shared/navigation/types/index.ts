@@ -60,6 +60,7 @@ export type RootStackParamList = {
 export type TabParamList = {
   Home: undefined; // 홈 탭
   Explore: undefined; // 탐색 탭
+  Soonsak: undefined; // 순삭하기 탭
 };
 
 /**
