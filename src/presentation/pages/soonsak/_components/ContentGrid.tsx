@@ -34,7 +34,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { AppSize } from '@/shared/utils/appSize';
 import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
-import { useSoonsakGrid, ZIGZAG_OFFSET } from '../_hooks/useSoonsakGrid';
+import { useSoonsakGrid, ZIGZAG_OFFSET, calcZigzagOffset } from '../_hooks/useSoonsakGrid';
 import { ContentCard } from './ContentCard';
 
 // EmptyCell 스타일 (MemoizedCellWrapper에서 사용)
@@ -76,9 +76,7 @@ const MemoizedCellWrapper = memo(
     isDimmed,
     onPress,
   }: MemoizedCellWrapperProps) {
-    const globalIndex = row * columns + col;
-    const isEvenIndex = globalIndex % 2 === 0;
-    const yOffset = isEvenIndex ? zigzagOffset : 0;
+    const yOffset = calcZigzagOffset(row, col, columns, zigzagOffset);
 
     const left = col * cellWidth;
     const top = row * cellHeight;
@@ -230,13 +228,15 @@ const ContentGrid = forwardRef<ContentGridRef, ContentGridProps>(function Conten
   const focusOnRandomContent = useCallback(() => {
     const target = getRandomContent();
     if (!target) {
-      console.log('[ContentGrid] 포커스할 콘텐츠가 없습니다');
+      if (__DEV__) console.log('[ContentGrid] 포커스할 콘텐츠가 없습니다');
       return;
     }
 
-    console.log(
-      `[ContentGrid] 포커스 시작: ${target.content.title} (${target.position.row}, ${target.position.col})`,
-    );
+    if (__DEV__) {
+      console.log(
+        `[ContentGrid] 포커스 시작: ${target.content.title} (${target.position.row}, ${target.position.col})`,
+      );
+    }
 
     // 이전 포커스 타이머 정리
     if (focusTimerRef.current) {
@@ -283,7 +283,7 @@ const ContentGrid = forwardRef<ContentGridRef, ContentGridProps>(function Conten
     const totalScanDuration = SCAN_DURATIONS.reduce((a, b) => a + b, 0);
 
     // 셀 위치 키로 포커스 (즉시 트리거)
-    const cellKey = `${target.position.row}-${target.position.col}`;
+    const cellKey = `${target.position.row}|${target.position.col}`;
     setFocusedCellKey(cellKey);
 
     // 빠르게 포커스 해제
@@ -355,24 +355,25 @@ const ContentGrid = forwardRef<ContentGridRef, ContentGridProps>(function Conten
     <GestureDetector gesture={panGesture}>
       <Container>
         <AnimatedGrid style={animatedStyle}>
-          {cells.map((cell) => (
-            <MemoizedCellWrapper
-              key={`${cell.position.row}-${cell.position.col}`}
-              row={cell.position.row}
-              col={cell.position.col}
-              cellWidth={cellWidth}
-              cellHeight={cellHeight}
-              columns={columns}
-              zigzagOffset={zigzagOffset}
-              content={cell.content}
-              hasMoreContents={hasMoreContents}
-              isFocused={`${cell.position.row}-${cell.position.col}` === focusedCellKey}
-              isDimmed={
-                isFocusMode && `${cell.position.row}-${cell.position.col}` !== focusedCellKey
-              }
-              onPress={handleContentPress}
-            />
-          ))}
+          {cells.map((cell) => {
+            const cellKey = `${cell.position.row}|${cell.position.col}`;
+            return (
+              <MemoizedCellWrapper
+                key={cellKey}
+                row={cell.position.row}
+                col={cell.position.col}
+                cellWidth={cellWidth}
+                cellHeight={cellHeight}
+                columns={columns}
+                zigzagOffset={zigzagOffset}
+                content={cell.content}
+                hasMoreContents={hasMoreContents}
+                isFocused={cellKey === focusedCellKey}
+                isDimmed={isFocusMode && cellKey !== focusedCellKey}
+                onPress={handleContentPress}
+              />
+            );
+          })}
         </AnimatedGrid>
       </Container>
     </GestureDetector>

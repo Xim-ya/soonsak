@@ -22,6 +22,7 @@ import textStyles from '@/shared/styles/textStyles';
 import { AppSize } from '@/shared/utils/appSize';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
+import { contentTypeConfigs } from '@/presentation/types/content/contentType.enum';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 
 interface ContentCardProps {
@@ -75,7 +76,7 @@ function ContentCardComponent({ content, onPress, isFocused = false }: ContentCa
       <ContentInfo padding={padding}>
         {/* 콘텐츠 타입 칩 */}
         <TypeChip>
-          <TypeChipText>{content.type === 'movie' ? '영화' : 'TV'}</TypeChipText>
+          <TypeChipText>{contentTypeConfigs[content.type].label}</TypeChipText>
         </TypeChip>
 
         {/* 제목 */}

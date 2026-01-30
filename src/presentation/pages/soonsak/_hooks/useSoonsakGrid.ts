@@ -19,17 +19,34 @@ const BUFFER_CELLS = 2; // 뷰포트 밖 버퍼 셀 수
 const BATCH_SIZE = 20; // 한 번에 로드할 콘텐츠 수
 export const ZIGZAG_OFFSET = 192; // 지그재그 오프셋 (짝수 인덱스 셀에 적용)
 
+/** 짝수 인덱스 셀의 지그재그 Y 오프셋 계산 */
+export function calcZigzagOffset(
+  row: number,
+  col: number,
+  columns: number,
+  zigzagValue: number,
+): number {
+  const globalIndex = row * columns + col;
+  return globalIndex % 2 === 0 ? zigzagValue : 0;
+}
+
 interface CellPosition {
   row: number;
   col: number;
 }
 
-// position 객체 캐시 (리렌더링 시 동일 참조 유지)
+// position 객체 캐시 (리렌더링 시 동일 참조 유지, 최대 500개)
+const POSITION_CACHE_LIMIT = 500;
 const positionCache = new Map<string, CellPosition>();
 const getPosition = (row: number, col: number): CellPosition => {
-  const key = `${row}-${col}`;
+  const key = `${row}|${col}`;
   let position = positionCache.get(key);
   if (!position) {
+    if (positionCache.size >= POSITION_CACHE_LIMIT) {
+      // 가장 오래된 항목 제거 (Map은 삽입 순서 보장)
+      const firstKey = positionCache.keys().next().value;
+      if (firstKey !== undefined) positionCache.delete(firstKey);
+    }
     position = { row, col };
     positionCache.set(key, position);
   }
@@ -163,7 +180,7 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
     initialContents.forEach((content, index) => {
       const position = positions[index];
       if (position) {
-        const key = `${position.row}-${position.col}`;
+        const key = `${position.row}|${position.col}`;
         newMap.set(key, content);
         loadedIdsRef.current.add(content.id);
       }
@@ -173,17 +190,19 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
     contentMapRef.current = newMap;
     setContentMap(newMap);
     setIsInitialLoadDone(true);
-    console.log(
-      `[SoonsakGrid] 초기 로드 완료, 콘텐츠 수: ${initialContents.length}, 배치 범위: (${positions[0]?.row},${positions[0]?.col}) ~ (${positions[initialContents.length - 1]?.row},${positions[initialContents.length - 1]?.col})`,
-    );
-    console.log(
-      `[SoonsakGrid] 현재 뷰포트: row(${visibleRange.startRow}~${visibleRange.endRow}), col(${visibleRange.startCol}~${visibleRange.endCol})`,
-    );
+    if (__DEV__) {
+      console.log(
+        `[SoonsakGrid] 초기 로드 완료, 콘텐츠 수: ${initialContents.length}, 배치 범위: (${positions[0]?.row},${positions[0]?.col}) ~ (${positions[initialContents.length - 1]?.row},${positions[initialContents.length - 1]?.col})`,
+      );
+      console.log(
+        `[SoonsakGrid] 현재 뷰포트: row(${visibleRange.startRow}~${visibleRange.endRow}), col(${visibleRange.startCol}~${visibleRange.endCol})`,
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialContents]);
 
   // 셀 키 생성
-  const getCellKey = useCallback((row: number, col: number) => `${row}-${col}`, []);
+  const getCellKey = useCallback((row: number, col: number) => `${row}|${col}`, []);
 
   // 뷰포트 업데이트 (드래그 위치 기반, 음수 좌표 지원)
   const updateViewport = useCallback(
@@ -205,79 +224,54 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
         ) {
           return prev;
         }
-        console.log(
-          `[SoonsakGrid] 뷰포트 변경: row(${startRow}~${endRow}), col(${startCol}~${endCol})`,
-        );
+        if (__DEV__) {
+          console.log(
+            `[SoonsakGrid] 뷰포트 변경: row(${startRow}~${endRow}), col(${startCol}~${endCol})`,
+          );
+        }
         return { startRow, endRow, startCol, endCol };
       });
     },
     [cellWidth, cellHeight, visibleCols, visibleRows],
   );
 
-  // 뷰포트 변경 시 새 영역에 빈 셀이 있으면 로드
-  useEffect(() => {
-    // 초기 로드 완료 전이거나 로딩 중이면 스킵
-    if (!isInitialLoadDone || isLoading || !hasMoreContents) return;
+  // 새 뷰포트 영역의 빈 셀 수 계산
+  const countNewEmptyCells = useCallback(
+    (current: VisibleRange, prev: VisibleRange): number => {
+      const currentContentMap = contentMapRef.current;
+      let count = 0;
 
-    const prev = prevViewportRef.current;
+      for (let row = current.startRow; row <= current.endRow; row++) {
+        for (let col = current.startCol; col <= current.endCol; col++) {
+          const key = getCellKey(row, col);
+          if (!currentContentMap.has(key)) {
+            const wasInPrevViewport =
+              row >= prev.startRow &&
+              row <= prev.endRow &&
+              col >= prev.startCol &&
+              col <= prev.endCol;
 
-    // 첫 번째 뷰포트 변경이면 저장만 하고 리턴
-    if (!prev) {
-      prevViewportRef.current = visibleRange;
-      return;
-    }
-
-    // 뷰포트가 실제로 변경되었는지 확인
-    const hasChanged =
-      prev.startRow !== visibleRange.startRow ||
-      prev.endRow !== visibleRange.endRow ||
-      prev.startCol !== visibleRange.startCol ||
-      prev.endCol !== visibleRange.endCol;
-
-    if (!hasChanged) return;
-
-    // 새로 보이는 영역에 빈 셀 개수 확인 (ref로 최신 값 접근)
-    const currentContentMap = contentMapRef.current;
-    const MIN_EMPTY_CELLS_TO_LOAD = 10; // 빈 셀이 10개 이상일 때만 로드
-    let newEmptyCellCount = 0;
-
-    for (let row = visibleRange.startRow; row <= visibleRange.endRow; row++) {
-      for (let col = visibleRange.startCol; col <= visibleRange.endCol; col++) {
-        const key = getCellKey(row, col);
-        if (!currentContentMap.has(key)) {
-          // 이전 뷰포트에 없었던 영역인지 확인
-          const wasInPrevViewport =
-            row >= prev.startRow &&
-            row <= prev.endRow &&
-            col >= prev.startCol &&
-            col <= prev.endCol;
-
-          if (!wasInPrevViewport) {
-            newEmptyCellCount++;
+            if (!wasInPrevViewport) {
+              count++;
+            }
           }
         }
       }
-    }
+      return count;
+    },
+    [getCellKey],
+  );
 
-    prevViewportRef.current = visibleRange;
-
-    if (newEmptyCellCount < MIN_EMPTY_CELLS_TO_LOAD) return;
-
-    // 새 영역에 빈 셀이 충분히 있으면 로드
-    const loadNewContents = async () => {
+  // 빈 셀에 새 콘텐츠를 로드하여 배치
+  const loadAndPlaceContents = useCallback(
+    async (range: VisibleRange) => {
       setIsLoading(true);
-      console.log(`[SoonsakGrid] 빈 셀 ${newEmptyCellCount}개 감지, 콘텐츠 로드 시작`);
 
       try {
         const excludeIds = Array.from(loadedIdsRef.current);
         const newContents = await contentApi.getRandomContents(excludeIds, BATCH_SIZE);
 
-        console.log('[SoonsakGrid] 새로 로드된 콘텐츠 수:', newContents.length);
-
         if (newContents.length === 0) {
-          console.log(
-            `[SoonsakGrid] 더 이상 로드할 콘텐츠 없음, 총 로드된 콘텐츠: ${loadedIdsRef.current.size}개`,
-          );
           setHasMoreContents(false);
           return;
         }
@@ -286,16 +280,16 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
 
         setContentMap((prevMap) => {
           const newMap = new Map(prevMap);
-
           let contentIndex = 0;
+
           for (
-            let row = visibleRange.startRow;
-            row <= visibleRange.endRow && contentIndex < models.length;
+            let row = range.startRow;
+            row <= range.endRow && contentIndex < models.length;
             row++
           ) {
             for (
-              let col = visibleRange.startCol;
-              col <= visibleRange.endCol && contentIndex < models.length;
+              let col = range.startCol;
+              col <= range.endCol && contentIndex < models.length;
               col++
             ) {
               const key = getCellKey(row, col);
@@ -308,7 +302,6 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
             }
           }
 
-          // ref도 즉시 업데이트 (getRandomContent에서 사용)
           contentMapRef.current = newMap;
           return newMap;
         });
@@ -317,11 +310,44 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
       } finally {
         setIsLoading(false);
       }
-    };
+    },
+    [getCellKey],
+  );
 
-    loadNewContents();
+  // 뷰포트 변경 시 빈 셀이 충분하면 콘텐츠 로드
+  useEffect(() => {
+    if (!isInitialLoadDone || isLoading || !hasMoreContents) return;
+
+    const prev = prevViewportRef.current;
+    if (!prev) {
+      prevViewportRef.current = visibleRange;
+      return;
+    }
+
+    const hasChanged =
+      prev.startRow !== visibleRange.startRow ||
+      prev.endRow !== visibleRange.endRow ||
+      prev.startCol !== visibleRange.startCol ||
+      prev.endCol !== visibleRange.endCol;
+
+    if (!hasChanged) return;
+
+    const newEmptyCellCount = countNewEmptyCells(visibleRange, prev);
+    prevViewportRef.current = visibleRange;
+
+    const MIN_EMPTY_CELLS_TO_LOAD = 10;
+    if (newEmptyCellCount < MIN_EMPTY_CELLS_TO_LOAD) return;
+
+    loadAndPlaceContents(visibleRange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleRange, isInitialLoadDone, isLoading, hasMoreContents, getCellKey]);
+  }, [
+    visibleRange,
+    isInitialLoadDone,
+    isLoading,
+    hasMoreContents,
+    countNewEmptyCells,
+    loadAndPlaceContents,
+  ]);
 
   // 현재 뷰포트에 보이는 셀 목록 생성
   const cells = useMemo(() => {
@@ -345,7 +371,8 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
   // 랜덤 콘텐츠 선택 (포커스 기능용)
   const getRandomContent = useCallback((): ContentWithPosition | null => {
     const entries = Array.from(contentMapRef.current.entries());
-    console.log(`[SoonsakGrid] getRandomContent 호출, 콘텐츠 맵 크기: ${entries.length}`);
+    if (__DEV__)
+      console.log(`[SoonsakGrid] getRandomContent 호출, 콘텐츠 맵 크기: ${entries.length}`);
     if (entries.length === 0) return null;
 
     const randomIndex = Math.floor(Math.random() * entries.length);
@@ -353,17 +380,13 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
     if (!entry) return null;
 
     const [key, content] = entry;
-    // 음수 좌표 대응: "-1-2", "1--2", "-1--2" 등
-    const match = key.match(/^(-?\d+)-(-?\d+)$/);
-    if (!match || !match[1] || !match[2]) return null;
+    const parts = key.split('|');
+    if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
 
-    const row = parseInt(match[1], 10);
-    const col = parseInt(match[2], 10);
+    const row = parseInt(parts[0], 10);
+    const col = parseInt(parts[1], 10);
 
-    // 지그재그 오프셋 계산 (짝수 인덱스 셀은 아래로 밀림)
-    const globalIndex = row * columns + col;
-    const isEvenIndex = globalIndex % 2 === 0;
-    const zigzag = isEvenIndex ? AppSize.ratioHeight(ZIGZAG_OFFSET) : 0;
+    const zigzag = calcZigzagOffset(row, col, columns, AppSize.ratioHeight(ZIGZAG_OFFSET));
 
     // 해당 셀을 화면 중앙에 배치하기 위한 translate 값 계산
     // 실제 셀 Y 위치: row * cellHeight + translateY + zigzag
