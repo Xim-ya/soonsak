@@ -1,0 +1,399 @@
+/**
+ * ContentGrid - 무한 가상화 드래그 그리드
+ *
+ * 화면에 보이는 영역만 렌더링하고, 드래그 시 새로운 콘텐츠를 로드합니다.
+ * 지그재그 레이아웃으로 시각적 흥미를 더합니다.
+ * 랜덤 콘텐츠 포커스 기능으로 화려한 인터랙션을 제공합니다.
+ *
+ * @example
+ * <ContentGrid
+ *   ref={gridRef}
+ *   onContentPress={handleContentPress}
+ * />
+ */
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  memo,
+  forwardRef,
+  useImperativeHandle,
+  useState,
+} from 'react';
+import styled from '@emotion/native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withSequence,
+  runOnJS,
+  Easing,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { AppSize } from '@/shared/utils/appSize';
+import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
+import { useSoonsakGrid, ZIGZAG_OFFSET } from '../_hooks/useSoonsakGrid';
+import { ContentCard } from './ContentCard';
+
+// EmptyCell 스타일 (MemoizedCellWrapper에서 사용)
+const EmptyCell = styled.View<{ cellWidth: number; cellHeight: number }>(
+  ({ cellWidth, cellHeight }) => ({
+    width: cellWidth * 0.8,
+    height: cellHeight * 0.9,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  }),
+);
+
+// 메모이제이션된 셀 래퍼
+interface MemoizedCellWrapperProps {
+  row: number;
+  col: number;
+  cellWidth: number;
+  cellHeight: number;
+  columns: number;
+  zigzagOffset: number;
+  content: BaseContentModel | null;
+  hasMoreContents: boolean;
+  isFocused: boolean;
+  isDimmed: boolean;
+  onPress: (content: BaseContentModel) => void;
+}
+
+const MemoizedCellWrapper = memo(
+  function MemoizedCellWrapper({
+    row,
+    col,
+    cellWidth,
+    cellHeight,
+    columns,
+    zigzagOffset,
+    content,
+    hasMoreContents,
+    isFocused,
+    isDimmed,
+    onPress,
+  }: MemoizedCellWrapperProps) {
+    const globalIndex = row * columns + col;
+    const isEvenIndex = globalIndex % 2 === 0;
+    const yOffset = isEvenIndex ? zigzagOffset : 0;
+
+    const left = col * cellWidth;
+    const top = row * cellHeight;
+
+    // 포커스 애니메이션 값
+    const scale = useSharedValue(1);
+    const dimOpacity = useSharedValue(1);
+
+    // 포커스 상태 변경 시 애니메이션
+    useEffect(() => {
+      if (isFocused) {
+        // 포커스된 카드: 빠른 확대
+        scale.value = withSpring(1.08, { damping: 12, stiffness: 200 });
+      } else {
+        scale.value = withSpring(1, { damping: 20, stiffness: 300 });
+      }
+
+      if (isDimmed) {
+        dimOpacity.value = withTiming(0.25, {
+          duration: 200,
+          easing: Easing.out(Easing.ease),
+        });
+      } else {
+        dimOpacity.value = withTiming(1, {
+          duration: 250,
+          easing: Easing.inOut(Easing.ease),
+        });
+      }
+    }, [isFocused, isDimmed, scale, dimOpacity]);
+
+    // 애니메이션 스타일
+    const animatedWrapperStyle = useAnimatedStyle(() => ({
+      position: 'absolute' as const,
+      alignItems: 'center' as const,
+      left,
+      top,
+      width: cellWidth,
+      transform: [{ translateY: yOffset }, { scale: scale.value }],
+      opacity: dimOpacity.value,
+      zIndex: isFocused ? 100 : 0,
+    }));
+
+    const handlePress = useCallback(() => {
+      if (content) {
+        onPress(content);
+      }
+    }, [content, onPress]);
+
+    return (
+      <Animated.View style={animatedWrapperStyle}>
+        {content ? (
+          <ContentCard content={content} onPress={handlePress} isFocused={isFocused} />
+        ) : hasMoreContents ? (
+          <EmptyCell cellWidth={cellWidth} cellHeight={cellHeight} />
+        ) : null}
+      </Animated.View>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.row === nextProps.row &&
+      prevProps.col === nextProps.col &&
+      prevProps.cellWidth === nextProps.cellWidth &&
+      prevProps.cellHeight === nextProps.cellHeight &&
+      prevProps.zigzagOffset === nextProps.zigzagOffset &&
+      prevProps.hasMoreContents === nextProps.hasMoreContents &&
+      prevProps.isFocused === nextProps.isFocused &&
+      prevProps.isDimmed === nextProps.isDimmed &&
+      prevProps.content?.id === nextProps.content?.id
+    );
+  },
+);
+
+interface ContentGridProps {
+  onContentPress?: (content: BaseContentModel) => void;
+}
+
+// ContentGrid에서 외부로 노출하는 메서드
+export interface ContentGridRef {
+  focusOnRandomContent: () => void;
+}
+
+// 레이아웃 상수
+const DRAG_MULTIPLIER = 1.5;
+
+// 스프링 애니메이션 설정
+const SPRING_CONFIG = {
+  damping: 20,
+  stiffness: 90,
+  mass: 1,
+};
+
+// 포커스 애니메이션 설정
+// 탐색 단계: 빠르게 스캔하는 느낌
+const SCAN_STEPS = 3;
+const SCAN_DURATIONS = [180, 220, 280]; // 점점 느려짐
+// 착지 단계: 오버슈트가 살짝 있는 탄성 스프링
+const LANDING_SPRING_CONFIG = {
+  damping: 14,
+  stiffness: 100,
+  mass: 0.8,
+};
+
+const ContentGrid = forwardRef<ContentGridRef, ContentGridProps>(function ContentGrid(
+  { onContentPress },
+  ref,
+) {
+  const {
+    cells,
+    isLoading,
+    columns,
+    hasMoreContents,
+    cellWidth,
+    cellHeight,
+    initialTranslateX,
+    initialTranslateY,
+    updateViewport,
+    getRandomContent,
+  } = useSoonsakGrid();
+
+  const zigzagOffset = AppSize.ratioHeight(ZIGZAG_OFFSET);
+
+  // 드래그 위치 (useSoonsakGrid에서 계산된 초기값 사용)
+  const translateX = useSharedValue(initialTranslateX);
+  const translateY = useSharedValue(initialTranslateY);
+
+  // 드래그 시작 위치
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+
+  // 포커스 상태 (셀 위치 기반으로 매칭 - content ID보다 확실함)
+  const [focusedCellKey, setFocusedCellKey] = useState<string | null>(null);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Pan gesture worklet에서 접근할 수 있도록 shared value로 동기화
+  const isFocusModeShared = useSharedValue(false);
+  useEffect(() => {
+    isFocusModeShared.value = isFocusMode;
+  }, [isFocusMode, isFocusModeShared]);
+
+  // 초기 뷰포트 설정
+  useEffect(() => {
+    updateViewport(translateX.value, translateY.value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 랜덤 콘텐츠로 포커스하는 애니메이션 시퀀스
+  const focusOnRandomContent = useCallback(() => {
+    const target = getRandomContent();
+    if (!target) {
+      console.log('[ContentGrid] 포커스할 콘텐츠가 없습니다');
+      return;
+    }
+
+    console.log(
+      `[ContentGrid] 포커스 시작: ${target.content.title} (${target.position.row}, ${target.position.col})`,
+    );
+
+    // 이전 포커스 타이머 정리
+    if (focusTimerRef.current) {
+      clearTimeout(focusTimerRef.current);
+      focusTimerRef.current = null;
+    }
+
+    // 포커스 모드 활성화
+    setIsFocusMode(true);
+
+    // 뷰포트를 먼저 목적지로 업데이트 (셀이 미리 렌더링되도록)
+    updateViewport(target.translateX, target.translateY);
+
+    // 현재 위치 저장
+    const currentX = translateX.value;
+    const currentY = translateY.value;
+    const dx = target.translateX - currentX;
+    const dy = target.translateY - currentY;
+
+    // 스캔 경유지 생성: 타겟 방향으로 흔들리며 접근
+    const scanEasing = Easing.bezier(0.25, 0.1, 0.25, 1);
+    const scanTimings = SCAN_DURATIONS.map((duration, i) => {
+      const t = (i + 1) / SCAN_STEPS;
+      const wobble = (1 - t) * cellWidth * 1.5;
+      const angle = ((i % 2 === 0 ? 1 : -1) * Math.PI) / 4 + Math.random() * 0.5;
+      return {
+        x: currentX + dx * t * 0.7 + Math.cos(angle) * wobble,
+        y: currentY + dy * t * 0.7 + Math.sin(angle) * wobble,
+        duration,
+      };
+    });
+
+    // withSequence: 스캔 경유지들 → 최종 착지
+    translateX.value = withSequence(
+      ...scanTimings.map((s) => withTiming(s.x, { duration: s.duration, easing: scanEasing })),
+      withSpring(target.translateX, LANDING_SPRING_CONFIG),
+    );
+    translateY.value = withSequence(
+      ...scanTimings.map((s) => withTiming(s.y, { duration: s.duration, easing: scanEasing })),
+      withSpring(target.translateY, LANDING_SPRING_CONFIG),
+    );
+
+    // 총 스캔 시간
+    const totalScanDuration = SCAN_DURATIONS.reduce((a, b) => a + b, 0);
+
+    // 셀 위치 키로 포커스 (즉시 트리거)
+    const cellKey = `${target.position.row}-${target.position.col}`;
+    setFocusedCellKey(cellKey);
+
+    // 빠르게 포커스 해제
+    focusTimerRef.current = setTimeout(() => {
+      setFocusedCellKey(null);
+      setIsFocusMode(false);
+      focusTimerRef.current = null;
+    }, totalScanDuration + 1200);
+  }, [getRandomContent, translateX, translateY, cellWidth, updateViewport]);
+
+  // ref로 메서드 노출
+  useImperativeHandle(
+    ref,
+    () => ({
+      focusOnRandomContent,
+    }),
+    [focusOnRandomContent],
+  );
+
+  // 콘텐츠 클릭 핸들러
+  const handleContentPress = useCallback(
+    (content: BaseContentModel) => {
+      onContentPress?.(content);
+    },
+    [onContentPress],
+  );
+
+  // 팬 제스처 (항상 활성 상태, 포커스 모드는 콜백에서 shared value로 체크)
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      'worklet';
+      if (isFocusModeShared.value) return;
+      startX.value = translateX.value;
+      startY.value = translateY.value;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      if (isFocusModeShared.value) return;
+      translateX.value = startX.value + event.translationX * DRAG_MULTIPLIER;
+      translateY.value = startY.value + event.translationY * DRAG_MULTIPLIER;
+    })
+    .onEnd((event) => {
+      'worklet';
+      if (isFocusModeShared.value) return;
+      const velocityX = event.velocityX * 0.1;
+      const velocityY = event.velocityY * 0.1;
+
+      const finalX = translateX.value + velocityX;
+      const finalY = translateY.value + velocityY;
+
+      translateX.value = withSpring(finalX, SPRING_CONFIG);
+      translateY.value = withSpring(finalY, SPRING_CONFIG);
+
+      // 제스처 종료 시 뷰포트 업데이트 (UI → JS 스레드)
+      runOnJS(updateViewport)(finalX, finalY);
+    });
+
+  // 그리드 애니메이션 스타일
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }, { translateY: translateY.value }],
+  }));
+
+  // 로딩 중이고 셀이 없으면 로딩 표시
+  if (isLoading && cells.length === 0) {
+    return <LoadingContainer />;
+  }
+
+  return (
+    <GestureDetector gesture={panGesture}>
+      <Container>
+        <AnimatedGrid style={animatedStyle}>
+          {cells.map((cell) => (
+            <MemoizedCellWrapper
+              key={`${cell.position.row}-${cell.position.col}`}
+              row={cell.position.row}
+              col={cell.position.col}
+              cellWidth={cellWidth}
+              cellHeight={cellHeight}
+              columns={columns}
+              zigzagOffset={zigzagOffset}
+              content={cell.content}
+              hasMoreContents={hasMoreContents}
+              isFocused={`${cell.position.row}-${cell.position.col}` === focusedCellKey}
+              isDimmed={
+                isFocusMode && `${cell.position.row}-${cell.position.col}` !== focusedCellKey
+              }
+              onPress={handleContentPress}
+            />
+          ))}
+        </AnimatedGrid>
+      </Container>
+    </GestureDetector>
+  );
+});
+
+/* Styled Components */
+const Container = styled.View({
+  flex: 1,
+  overflow: 'visible',
+});
+
+const AnimatedGrid = styled(Animated.View)({
+  position: 'relative',
+});
+
+const LoadingContainer = styled.View({
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+});
+
+export { ContentGrid };
+export type { ContentGridProps };

@@ -269,4 +269,70 @@ export const contentApi = {
 
     return mapWithField<ContentWithVideoDto[]>(data ?? []);
   },
+
+  /**
+   * 랜덤 콘텐츠 조회 (순삭 그리드용)
+   * 이미 로드된 ID를 제외하고 랜덤하게 콘텐츠를 가져옴
+   * @param excludeIds 제외할 콘텐츠 ID 배열
+   * @param limit 조회할 콘텐츠 수 (기본값: 20)
+   */
+  getRandomContents: async (excludeIds: number[] = [], limit: number = 20): Promise<ContentDto[]> => {
+    // 전체 콘텐츠 수 조회
+    const { count, error: countError } = await supabaseClient
+      .from(CONTENT_DATABASE.TABLES.CONTENTS)
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('콘텐츠 수 조회 실패:', countError);
+      throw new Error(`Failed to count contents: ${countError.message}`);
+    }
+
+    const totalCount = count ?? 0;
+    if (totalCount === 0) return [];
+
+    // 랜덤 offset 계산 (제외 ID 수를 고려)
+    const availableCount = Math.max(0, totalCount - excludeIds.length);
+    if (availableCount === 0) return [];
+
+    const maxOffset = Math.max(0, availableCount - limit);
+    const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
+
+    // 제외 ID를 필터링하고 랜덤 offset으로 조회
+    let query = supabaseClient
+      .from(CONTENT_DATABASE.TABLES.CONTENTS)
+      .select('*')
+      .range(randomOffset, randomOffset + limit - 1);
+
+    // 제외할 ID가 있으면 필터 적용
+    if (excludeIds.length > 0) {
+      query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('랜덤 콘텐츠 조회 실패:', error);
+      throw new Error(`Failed to fetch random contents: ${error.message}`);
+    }
+
+    // 결과를 섞어서 더 랜덤하게
+    const contents = mapWithField<ContentDto[]>(data ?? []);
+    return contents.sort(() => Math.random() - 0.5);
+  },
+
+  /**
+   * 전체 콘텐츠 수 조회
+   */
+  getTotalContentCount: async (): Promise<number> => {
+    const { count, error } = await supabaseClient
+      .from(CONTENT_DATABASE.TABLES.CONTENTS)
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('콘텐츠 수 조회 실패:', error);
+      throw new Error(`Failed to count contents: ${error.message}`);
+    }
+
+    return count ?? 0;
+  },
 };

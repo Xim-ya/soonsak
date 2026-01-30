@@ -20,7 +20,7 @@ export namespace BaseContentModel {
       id: dto.id,
       title: dto.title ?? '제목 없음',
       type: contentType as ContentType,
-      posterPath: dto.posterPath ?? '없데',
+      posterPath: dto.posterPath ?? '',
     };
   }
 }
