@@ -1,6 +1,7 @@
 export const CONTENT_DATABASE = {
   TABLES: {
     CONTENTS: 'contents',
+    CONTENT_COLLECTIONS: 'content_collections',
   },
   COLUMNS: {
     ID: 'id',

@@ -1,6 +1,14 @@
 import { supabaseClient } from '@/features/utils/clients/superBaseClient';
 import { mapWithField } from '@/features/utils/mapper/fieldMapper';
-import { ContentDto, ContentWithVideoDto, VideoDto, VideoWithContentDto } from '../types';
+import {
+  ContentDto,
+  ContentWithVideoDto,
+  VideoDto,
+  VideoWithContentDto,
+  ContentCollectionDto,
+  ContentCollectionWithContentsDto,
+  ContentIdItem,
+} from '../types';
 import { CONTENT_DATABASE } from '../../utils/constants/dbConfig';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 
@@ -268,5 +276,114 @@ export const contentApi = {
     }
 
     return mapWithField<ContentWithVideoDto[]>(data ?? []);
+  },
+
+  /**
+   * 활성화된 콘텐츠 컬렉션 목록 조회
+   * display_order 기준 정렬
+   */
+  getActiveContentCollections: async (): Promise<ContentCollectionDto[]> => {
+    const { data, error } = await supabaseClient
+      .from(CONTENT_DATABASE.TABLES.CONTENT_COLLECTIONS)
+      .select('id, title, subtitle, theme_keywords, content_ids, display_order, is_active')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('콘텐츠 컬렉션 조회 실패:', error);
+      throw new Error(`Failed to fetch content collections: ${error.message}`);
+    }
+
+    return mapWithField<ContentCollectionDto[]>(data ?? []);
+  },
+
+  /**
+   * 컬렉션에 포함된 콘텐츠 상세 정보 조회
+   * content_ids 배열을 기반으로 contents 테이블에서 조회
+   * @param contentIds 컬렉션의 콘텐츠 ID 목록
+   * @returns 콘텐츠 상세 정보 배열 (중복 제거됨)
+   */
+  getContentsByCollectionIds: async (contentIds: ContentIdItem[]): Promise<ContentDto[]> => {
+    if (contentIds.length === 0) return [];
+
+    // 중복 제거: id와 type 조합으로 유니크 키 생성
+    const uniqueMap = new Map<string, ContentIdItem>();
+    contentIds.forEach((item) => {
+      const key = `${item.id}-${item.type}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, item);
+      }
+    });
+    const uniqueIds = Array.from(uniqueMap.values());
+
+    // movie와 tv를 분리하여 조회
+    const movieIds = uniqueIds.filter((item) => item.type === 'movie').map((item) => item.id);
+    const tvIds = uniqueIds.filter((item) => item.type === 'tv').map((item) => item.id);
+
+    const fetchMovies = async (): Promise<ContentDto[]> => {
+      if (movieIds.length === 0) return [];
+      const { data, error } = await supabaseClient
+        .from(CONTENT_DATABASE.TABLES.CONTENTS)
+        .select('*')
+        .in('id', movieIds)
+        .eq('content_type', 'movie');
+      if (error) throw error;
+      return mapWithField<ContentDto[]>(data ?? []);
+    };
+
+    const fetchTv = async (): Promise<ContentDto[]> => {
+      if (tvIds.length === 0) return [];
+      const { data, error } = await supabaseClient
+        .from(CONTENT_DATABASE.TABLES.CONTENTS)
+        .select('*')
+        .in('id', tvIds)
+        .eq('content_type', 'tv');
+      if (error) throw error;
+      return mapWithField<ContentDto[]>(data ?? []);
+    };
+
+    const [movies, tvShows] = await Promise.all([fetchMovies(), fetchTv()]);
+    return [...movies, ...tvShows];
+  },
+
+  /**
+   * 컬렉션과 연결된 콘텐츠 상세 정보를 포함하여 조회
+   * 단일 컬렉션에 대해 콘텐츠 정보를 함께 반환
+   */
+  getCollectionWithContents: async (
+    collection: ContentCollectionDto,
+  ): Promise<ContentCollectionWithContentsDto> => {
+    const contents = await contentApi.getContentsByCollectionIds(collection.contentIds);
+
+    // contentIds 순서 유지하면서 중복 제거된 콘텐츠 반환
+    const contentMap = new Map<string, ContentDto>();
+    contents.forEach((content) => {
+      const key = `${content.id}-${content.contentType}`;
+      contentMap.set(key, content);
+    });
+
+    const orderedContents: ContentDto[] = [];
+    const seenKeys = new Set<string>();
+
+    collection.contentIds.forEach((item) => {
+      const key = `${item.id}-${item.type}`;
+      if (!seenKeys.has(key)) {
+        const content = contentMap.get(key);
+        if (content) {
+          orderedContents.push(content);
+          seenKeys.add(key);
+        }
+      }
+    });
+
+    return {
+      id: collection.id,
+      title: collection.title,
+      subtitle: collection.subtitle,
+      themeKeywords: collection.themeKeywords,
+      displayOrder: collection.displayOrder,
+      isActive: collection.isActive,
+      contents: orderedContents,
+    } as ContentCollectionWithContentsDto;
   },
 };
