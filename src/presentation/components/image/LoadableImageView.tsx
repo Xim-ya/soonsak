@@ -14,9 +14,15 @@
  * />
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import styled from '@emotion/native';
-import { Animated, ViewStyle } from 'react-native';
+import { ViewStyle } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 
@@ -28,7 +34,7 @@ interface LoadableImageViewProps {
   style?: ViewStyle;
 }
 
-function LoadableImageView({
+function LoadableImageViewComponent({
   source,
   width,
   height,
@@ -37,24 +43,45 @@ function LoadableImageView({
 }: LoadableImageViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [fadeAnim] = useState(new Animated.Value(0));
 
-  const handleImageLoad = () => {
+  // Reanimated shared value (UI 스레드에서 애니메이션)
+  const opacity = useSharedValue(0);
+
+  const handleImageLoad = useCallback(() => {
     setIsLoading(false);
     setHasError(false);
 
-    // 부드러운 fade-in 애니메이션
-    Animated.timing(fadeAnim, {
-      toValue: 1,
+    // Reanimated 애니메이션 (UI 스레드에서 실행)
+    opacity.value = withTiming(1, {
       duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
+      easing: Easing.out(Easing.ease),
+    });
+  }, [opacity]);
 
-  const handleImageError = () => {
+  const handleImageError = useCallback(() => {
     setIsLoading(false);
     setHasError(true);
-  };
+  }, []);
+
+  // 애니메이션 스타일 (UI 스레드)
+  const animatedImageStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  // 이미지 스타일 메모이제이션
+  const imageStyle = useMemo(
+    () => ({
+      width,
+      height,
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+    }),
+    [width, height],
+  );
+
+  // source 객체 메모이제이션
+  const imageSource = useMemo(() => ({ uri: source }), [source]);
 
   return (
     <Container width={width} height={height} borderRadius={borderRadius} style={style}>
@@ -70,17 +97,13 @@ function LoadableImageView({
         </ErrorContainer>
       )}
 
-      {/* 실제 이미지 - 로딩 완료 후 애니메이션과 함께 나타남 */}
+      {/* 실제 이미지 - Reanimated 애니메이션 */}
       {!hasError && (
-        <AnimatedImage
-          source={{ uri: source }}
-          width={width}
-          height={height}
+        <Animated.Image
+          source={imageSource}
+          style={[imageStyle, animatedImageStyle]}
           onLoad={handleImageLoad}
           onError={handleImageError}
-          style={{
-            opacity: fadeAnim,
-          }}
         />
       )}
     </Container>
@@ -141,16 +164,14 @@ const ErrorIcon = styled.Text<{ width: number; height: number }>(({ width, heigh
   fontWeight: 'bold',
 }));
 
-// 애니메이션이 적용된 이미지
-const AnimatedImage = styled(Animated.Image)<{
-  width: number;
-  height: number;
-}>(({ width, height }) => ({
-  width,
-  height,
-  position: 'absolute',
-  top: 0,
-  left: 0,
-}));
+// memo로 감싸서 source가 같으면 리렌더링 방지
+const LoadableImageView = memo(LoadableImageViewComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.source === nextProps.source &&
+    prevProps.width === nextProps.width &&
+    prevProps.height === nextProps.height &&
+    prevProps.borderRadius === nextProps.borderRadius
+  );
+});
 
 export { LoadableImageView };

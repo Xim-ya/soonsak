@@ -8,17 +8,38 @@ import { ContentType, KnownContentType } from '@/presentation/types/content/cont
 type ISOTimestamp = string;
 
 /**
+ * 감독/출연진 정보 타입
+ */
+interface PersonDto {
+  readonly id: number;
+  readonly name: string;
+  readonly profilePath?: string;
+}
+
+/**
  * 'contents' 테이블 컬럼과 1대1 대응이 되는 데이터 클래스
  */
 interface ContentDto {
   readonly id: number;
-  readonly title: string;
-  readonly posterPath: string;
   readonly contentType: ContentType;
-  readonly uploadedAt?: ISOTimestamp;
+  readonly title: string;
+  readonly posterPath?: string;
   readonly releaseDate?: string;
   readonly genreIds?: number[];
+  readonly uploadedAt?: ISOTimestamp;
+  readonly titleChosung?: string;
+  readonly titleNormalized?: string;
+  readonly viewCount?: number;
+  readonly playCount?: number;
+  readonly tagline?: string;
   readonly backdropPath?: string;
+  readonly originalLanguage?: string;
+  readonly overview?: string;
+  readonly voteAverage?: number;
+  readonly popularity?: number;
+  readonly originCountry?: string[];
+  readonly directors?: PersonDto[];
+  readonly mainCast?: PersonDto[];
 }
 
 /**
