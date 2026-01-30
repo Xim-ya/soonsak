@@ -1,6 +1,14 @@
 import { supabaseClient } from '@/features/utils/clients/superBaseClient';
 import { mapWithField } from '@/features/utils/mapper/fieldMapper';
-import { ContentDto, ContentWithVideoDto, VideoDto, VideoWithContentDto } from '../types';
+import {
+  ContentDto,
+  ContentWithVideoDto,
+  VideoDto,
+  VideoWithContentDto,
+  ContentCollectionDto,
+  ContentCollectionWithContentsDto,
+  ContentIdItem,
+} from '../types';
 import { CONTENT_DATABASE } from '../../utils/constants/dbConfig';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 
@@ -276,7 +284,10 @@ export const contentApi = {
    * @param excludeIds 제외할 콘텐츠 ID 배열
    * @param limit 조회할 콘텐츠 수 (기본값: 20)
    */
-  getRandomContents: async (excludeIds: number[] = [], limit: number = 20): Promise<ContentDto[]> => {
+  getRandomContents: async (
+    excludeIds: number[] = [],
+    limit: number = 20,
+  ): Promise<ContentDto[]> => {
     // 전체 콘텐츠 수 조회
     const { count, error: countError } = await supabaseClient
       .from(CONTENT_DATABASE.TABLES.CONTENTS)
@@ -334,5 +345,112 @@ export const contentApi = {
     }
 
     return count ?? 0;
+  },
+
+  /**
+   * 활성화된 콘텐츠 컬렉션 목록 조회
+   * display_order 기준 정렬
+   */
+  getActiveContentCollections: async (): Promise<ContentCollectionDto[]> => {
+    const { data, error } = await supabaseClient
+      .from(CONTENT_DATABASE.TABLES.CONTENT_COLLECTIONS)
+      .select('id, title, subtitle, theme_keywords, content_ids, display_order, is_active')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('콘텐츠 컬렉션 조회 실패:', error);
+      throw new Error(`Failed to fetch content collections: ${error.message}`);
+    }
+
+    return mapWithField<ContentCollectionDto[]>(data ?? []);
+  },
+
+  /**
+   * 타입별 콘텐츠 일괄 조회
+   * @param ids 조회할 콘텐츠 ID 목록
+   * @param contentType 콘텐츠 타입
+   */
+  getContentsByTypeAndIds: async (
+    ids: number[],
+    contentType: ContentType,
+  ): Promise<ContentDto[]> => {
+    if (ids.length === 0) return [];
+
+    const { data, error } = await supabaseClient
+      .from(CONTENT_DATABASE.TABLES.CONTENTS)
+      .select('*')
+      .in('id', ids)
+      .eq('content_type', contentType);
+
+    if (error) {
+      console.error(`콘텐츠 조회 실패 (${contentType}):`, error);
+      throw new Error(`Failed to fetch ${contentType} contents: ${error.message}`);
+    }
+
+    return mapWithField<ContentDto[]>(data ?? []);
+  },
+
+  /**
+   * 컬렉션에 포함된 콘텐츠 상세 정보 조회
+   * content_ids 배열을 기반으로 contents 테이블에서 movie/tv 병렬 조회
+   * @param contentIds 컬렉션의 콘텐츠 ID 목록
+   * @returns 콘텐츠 상세 정보 배열
+   */
+  getContentsByCollectionIds: async (contentIds: ContentIdItem[]): Promise<ContentDto[]> => {
+    if (contentIds.length === 0) return [];
+
+    const movieIds = contentIds.filter((item) => item.type === 'movie').map((item) => item.id);
+    const tvIds = contentIds.filter((item) => item.type === 'tv').map((item) => item.id);
+
+    const [movies, tvShows] = await Promise.all([
+      contentApi.getContentsByTypeAndIds(movieIds, 'movie'),
+      contentApi.getContentsByTypeAndIds(tvIds, 'tv'),
+    ]);
+
+    return [...movies, ...tvShows];
+  },
+
+  /**
+   * 컬렉션과 연결된 콘텐츠 상세 정보를 포함하여 조회
+   * content_ids 순서를 유지하며, 중복 ID는 첫 번째만 포함
+   */
+  getCollectionWithContents: async (
+    collection: ContentCollectionDto,
+  ): Promise<ContentCollectionWithContentsDto> => {
+    const contents = await contentApi.getContentsByCollectionIds(collection.contentIds);
+
+    // 조회된 콘텐츠를 키 기반 맵으로 구성
+    const contentMap = new Map<string, ContentDto>();
+    contents.forEach((content) => {
+      contentMap.set(`${content.id}-${content.contentType}`, content);
+    });
+
+    // contentIds 순서 유지 + 중복 제거
+    const seenKeys = new Set<string>();
+    const orderedContents: ContentDto[] = [];
+
+    collection.contentIds.forEach((item) => {
+      const key = `${item.id}-${item.type}`;
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        const content = contentMap.get(key);
+        if (content) {
+          orderedContents.push(content);
+        }
+      }
+    });
+
+    const result: ContentCollectionWithContentsDto = {
+      id: collection.id,
+      title: collection.title,
+      subtitle: collection.subtitle,
+      themeKeywords: collection.themeKeywords,
+      displayOrder: collection.displayOrder,
+      isActive: collection.isActive,
+      contents: orderedContents,
+    };
+
+    return result;
   },
 };

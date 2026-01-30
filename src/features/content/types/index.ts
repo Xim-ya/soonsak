@@ -1,4 +1,4 @@
-import { ContentType } from '@/presentation/types/content/contentType.enum';
+import { ContentType, KnownContentType } from '@/presentation/types/content/contentType.enum';
 
 /**
  * ISO 8601 형식의 타임스탬프 문자열 타입
@@ -77,11 +77,41 @@ interface VideoWithContentDto extends VideoDto {
   readonly contentPosterPath: string;
 }
 
+/**
+ * 컬렉션 내 콘텐츠 ID 정보
+ */
+interface ContentIdItem {
+  readonly id: number;
+  readonly type: KnownContentType;
+}
+
+/**
+ * 'content_collections' 테이블 컬럼과 1대1 대응이 되는 데이터 클래스
+ */
+interface ContentCollectionDto {
+  readonly id: string;
+  readonly title: string;
+  readonly subtitle: string | undefined;
+  readonly themeKeywords: string[] | undefined;
+  readonly contentIds: ContentIdItem[];
+  readonly displayOrder: number;
+  readonly isActive: boolean;
+}
+
+/**
+ * 컬렉션과 연결된 콘텐츠 상세 정보를 포함하는 DTO
+ */
+interface ContentCollectionWithContentsDto extends Omit<ContentCollectionDto, 'contentIds'> {
+  readonly contents: ContentDto[];
+}
+
 export type {
   ISOTimestamp,
-  PersonDto,
   ContentDto,
   ContentWithVideoDto,
   VideoDto,
   VideoWithContentDto,
+  ContentIdItem,
+  ContentCollectionDto,
+  ContentCollectionWithContentsDto,
 };

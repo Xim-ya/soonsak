@@ -2,6 +2,9 @@
 
 export type ContentType = 'movie' | 'tv' | 'unknown';
 
+/** DB에 실제 존재하는 콘텐츠 타입 (unknown 제외) */
+export type KnownContentType = Exclude<ContentType, 'unknown'>;
+
 interface ContentTypeConfig {
   label: string;
 }
