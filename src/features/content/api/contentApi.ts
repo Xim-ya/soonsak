@@ -298,85 +298,81 @@ export const contentApi = {
   },
 
   /**
+   * 타입별 콘텐츠 일괄 조회
+   * @param ids 조회할 콘텐츠 ID 목록
+   * @param contentType 콘텐츠 타입
+   */
+  getContentsByTypeAndIds: async (
+    ids: number[],
+    contentType: ContentType,
+  ): Promise<ContentDto[]> => {
+    if (ids.length === 0) return [];
+
+    const { data, error } = await supabaseClient
+      .from(CONTENT_DATABASE.TABLES.CONTENTS)
+      .select('*')
+      .in('id', ids)
+      .eq('content_type', contentType);
+
+    if (error) {
+      console.error(`콘텐츠 조회 실패 (${contentType}):`, error);
+      throw new Error(`Failed to fetch ${contentType} contents: ${error.message}`);
+    }
+
+    return mapWithField<ContentDto[]>(data ?? []);
+  },
+
+  /**
    * 컬렉션에 포함된 콘텐츠 상세 정보 조회
-   * content_ids 배열을 기반으로 contents 테이블에서 조회
+   * content_ids 배열을 기반으로 contents 테이블에서 movie/tv 병렬 조회
    * @param contentIds 컬렉션의 콘텐츠 ID 목록
-   * @returns 콘텐츠 상세 정보 배열 (중복 제거됨)
+   * @returns 콘텐츠 상세 정보 배열
    */
   getContentsByCollectionIds: async (contentIds: ContentIdItem[]): Promise<ContentDto[]> => {
     if (contentIds.length === 0) return [];
 
-    // 중복 제거: id와 type 조합으로 유니크 키 생성
-    const uniqueMap = new Map<string, ContentIdItem>();
-    contentIds.forEach((item) => {
-      const key = `${item.id}-${item.type}`;
-      if (!uniqueMap.has(key)) {
-        uniqueMap.set(key, item);
-      }
-    });
-    const uniqueIds = Array.from(uniqueMap.values());
+    const movieIds = contentIds.filter((item) => item.type === 'movie').map((item) => item.id);
+    const tvIds = contentIds.filter((item) => item.type === 'tv').map((item) => item.id);
 
-    // movie와 tv를 분리하여 조회
-    const movieIds = uniqueIds.filter((item) => item.type === 'movie').map((item) => item.id);
-    const tvIds = uniqueIds.filter((item) => item.type === 'tv').map((item) => item.id);
+    const [movies, tvShows] = await Promise.all([
+      contentApi.getContentsByTypeAndIds(movieIds, 'movie'),
+      contentApi.getContentsByTypeAndIds(tvIds, 'tv'),
+    ]);
 
-    const fetchMovies = async (): Promise<ContentDto[]> => {
-      if (movieIds.length === 0) return [];
-      const { data, error } = await supabaseClient
-        .from(CONTENT_DATABASE.TABLES.CONTENTS)
-        .select('*')
-        .in('id', movieIds)
-        .eq('content_type', 'movie');
-      if (error) throw error;
-      return mapWithField<ContentDto[]>(data ?? []);
-    };
-
-    const fetchTv = async (): Promise<ContentDto[]> => {
-      if (tvIds.length === 0) return [];
-      const { data, error } = await supabaseClient
-        .from(CONTENT_DATABASE.TABLES.CONTENTS)
-        .select('*')
-        .in('id', tvIds)
-        .eq('content_type', 'tv');
-      if (error) throw error;
-      return mapWithField<ContentDto[]>(data ?? []);
-    };
-
-    const [movies, tvShows] = await Promise.all([fetchMovies(), fetchTv()]);
     return [...movies, ...tvShows];
   },
 
   /**
    * 컬렉션과 연결된 콘텐츠 상세 정보를 포함하여 조회
-   * 단일 컬렉션에 대해 콘텐츠 정보를 함께 반환
+   * content_ids 순서를 유지하며, 중복 ID는 첫 번째만 포함
    */
   getCollectionWithContents: async (
     collection: ContentCollectionDto,
   ): Promise<ContentCollectionWithContentsDto> => {
     const contents = await contentApi.getContentsByCollectionIds(collection.contentIds);
 
-    // contentIds 순서 유지하면서 중복 제거된 콘텐츠 반환
+    // 조회된 콘텐츠를 키 기반 맵으로 구성
     const contentMap = new Map<string, ContentDto>();
     contents.forEach((content) => {
-      const key = `${content.id}-${content.contentType}`;
-      contentMap.set(key, content);
+      contentMap.set(`${content.id}-${content.contentType}`, content);
     });
 
-    const orderedContents: ContentDto[] = [];
+    // contentIds 순서 유지 + 중복 제거
     const seenKeys = new Set<string>();
+    const orderedContents: ContentDto[] = [];
 
     collection.contentIds.forEach((item) => {
       const key = `${item.id}-${item.type}`;
       if (!seenKeys.has(key)) {
+        seenKeys.add(key);
         const content = contentMap.get(key);
         if (content) {
           orderedContents.push(content);
-          seenKeys.add(key);
         }
       }
     });
 
-    return {
+    const result: ContentCollectionWithContentsDto = {
       id: collection.id,
       title: collection.title,
       subtitle: collection.subtitle,
@@ -384,6 +380,8 @@ export const contentApi = {
       displayOrder: collection.displayOrder,
       isActive: collection.isActive,
       contents: orderedContents,
-    } as ContentCollectionWithContentsDto;
+    };
+
+    return result;
   },
 };

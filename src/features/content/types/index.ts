@@ -1,4 +1,4 @@
-import { ContentType } from '@/presentation/types/content/contentType.enum';
+import { ContentType, KnownContentType } from '@/presentation/types/content/contentType.enum';
 
 /**
  * ISO 8601 형식의 타임스탬프 문자열 타입
@@ -61,7 +61,7 @@ interface VideoWithContentDto extends VideoDto {
  */
 interface ContentIdItem {
   readonly id: number;
-  readonly type: 'movie' | 'tv';
+  readonly type: KnownContentType;
 }
 
 /**
@@ -70,8 +70,8 @@ interface ContentIdItem {
 interface ContentCollectionDto {
   readonly id: string;
   readonly title: string;
-  readonly subtitle?: string;
-  readonly themeKeywords?: string[];
+  readonly subtitle: string | undefined;
+  readonly themeKeywords: string[] | undefined;
   readonly contentIds: ContentIdItem[];
   readonly displayOrder: number;
   readonly isActive: boolean;
