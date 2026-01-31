@@ -12,3 +12,4 @@
  */
 
 export { useContentDetail as useTmdbMovie } from './useContentDetail';
+export { useWatchProviders } from './useWatchProviders';

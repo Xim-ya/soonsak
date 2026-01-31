@@ -11,6 +11,7 @@ import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
 import { buildYouTubeUrl, buildYouTubeAppUrl, isEmbeddedRestrictedError } from '@/features/youtube';
 import { contentApi } from '@/features/content/api/contentApi';
+import { PlayerWatchProviderView } from './_components/PlayerWatchProviderView';
 
 type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.player>;
 
@@ -234,6 +235,7 @@ export const PlayerPage = () => {
           // 외부 WebView 모드 사용 (전체화면 지원됨)
           useInlineHtml={false}
         />
+        <PlayerWatchProviderView contentId={contentId} contentType={contentType} />
         {/* 디버그 정보 표시 (개발 중에만 사용) */}
         {__DEV__ && (
           <DebugInfo>

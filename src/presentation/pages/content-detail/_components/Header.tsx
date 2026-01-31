@@ -252,7 +252,7 @@ const ContentInfo = React.memo(() => {
           )}
         </SubTextView>
       )}
-      <Gap size={16} />
+      <Gap size={10} />
 
       {/* 비디오 타이틀 */}
       {isVideosLoading ? (

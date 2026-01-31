@@ -1,6 +1,7 @@
 import { MovieDto } from '../types/movieDto';
 import { TvSeriesDto } from '../types/tvDto';
 import { TVCreditsResponse, MovieCreditsResponse } from '../types/creditDto';
+import { WatchProvidersResponseDto } from '../types/watchProviderDto';
 import {
   TmdbPaginatedResponse,
   RelatedMovieItemDto,
@@ -77,4 +78,13 @@ export const tmdbApi = {
    */
   getTrendingWeekly: () =>
     tmdbClient.get<TmdbPaginatedResponse<TrendingItemDto>>('/trending/all/week'),
+
+  /**
+   * 스트리밍 공급처 조회 (movie/tv 공통)
+   * @param contentId 콘텐츠 ID
+   * @param contentType 'movie' | 'tv'
+   * @returns 국가별 스트리밍 공급처 정보
+   */
+  getWatchProviders: (contentId: number, contentType: 'movie' | 'tv') =>
+    tmdbClient.get<WatchProvidersResponseDto>(`/${contentType}/${contentId}/watch/providers`),
 };
