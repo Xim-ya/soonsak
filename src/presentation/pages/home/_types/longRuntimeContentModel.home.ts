@@ -29,12 +29,12 @@ export namespace LongRuntimeContentModel {
   }
 
   /**
-   * 분 단위 런타임을 한글 포맷으로 변환
-   * @example 52 -> "52분", 229 -> "3시간 49분"
+   * 초 단위 런타임을 한글 포맷으로 변환
+   * @example 3120 -> "52분", 13740 -> "3시간 49분"
    */
-  export const formatRuntime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+  export const formatRuntime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
 
     if (hours > 0) {
       return mins > 0 ? `${hours}시간 ${mins}분` : `${hours}시간`;
