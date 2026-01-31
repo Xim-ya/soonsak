@@ -165,6 +165,23 @@ const formatter = {
   },
 
   /**
+   * 초 단위 런타임을 유튜브 스타일로 변환
+   * @param seconds 초 단위 런타임
+   * @returns 유튜브 포맷 (예: '3:45', '1:23:45')
+   */
+  formatRuntime(seconds: number): string {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    const paddedSecs = secs.toString().padStart(2, '0');
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${paddedSecs}`;
+    }
+    return `${mins}:${paddedSecs}`;
+  },
+
+  /**
    * 유튜브 비디오 링크에서 비디오 ID 추출
    * @param url 유튜브 URL
    * @returns 비디오 ID 또는 null
