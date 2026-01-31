@@ -53,10 +53,7 @@ export type RootStackParamList = {
     contentId: number;
     contentType: ContentType;
     backdropPath: string; // 헤더 이미지 제외용
-    title: string; // 콘텐츠 제목
-    primaryVideoId?: string; // 대표 영상 ID (영상 배너용)
-    primaryVideoTitle?: string; // 대표 영상 제목
-  }; // 미디어 목록 - 콘텐츠 정보 필수
+  }; // 스틸컷 목록 - 콘텐츠 정보 필수
   [routePages.imageDetail]: {
     contentId: number;
     contentType: ContentType;

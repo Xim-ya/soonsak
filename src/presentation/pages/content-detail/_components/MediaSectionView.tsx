@@ -1,19 +1,18 @@
 import React, { useMemo, useCallback } from 'react';
-import { TouchableOpacity } from 'react-native';
+import { Pressable, TouchableOpacity } from 'react-native';
 import styled from '@emotion/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import RightArrowIcon from '@assets/icons/right_arrrow.svg';
 import { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { useContentImages } from '@/features/tmdb/hooks/useContentImages';
 import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
 import { useContentDetail } from '../_hooks/useContentDetail';
-import { useContentVideos } from '../_provider/ContentDetailProvider';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { ImageGrid } from '@/presentation/components/image/ImageGrid';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import { AppSize } from '@/shared/utils/appSize';
-import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -25,7 +24,6 @@ const PREVIEW_COUNT = 5;
 function MediaSectionViewComponent() {
   const { id, type } = useContentDetailRoute();
   const { data: contentInfo } = useContentDetail(Number(id), type);
-  const { primaryVideo } = useContentVideos();
   const navigation = useNavigation<NavigationProp>();
 
   const backdropPath = contentInfo?.backdropPath || '';
@@ -38,7 +36,7 @@ function MediaSectionViewComponent() {
 
   const heroImage = images[0];
   const gridImages = useMemo(() => images.slice(1, PREVIEW_COUNT), [images]);
-  const hasMoreImages = images.length > PREVIEW_COUNT;
+  const showMoreButton = images.length > 1;
 
   const handleImagePress = useCallback(
     (index: number) => {
@@ -54,37 +52,30 @@ function MediaSectionViewComponent() {
 
   const handleGridImagePress = useCallback(
     (index: number) => {
-      // gridImages starts at index 1 of the full list
       handleImagePress(index);
     },
     [handleImagePress],
   );
 
   const handleMorePress = useCallback(() => {
-    const params: RootStackParamList[typeof routePages.mediaList] = {
+    navigation.navigate(routePages.mediaList, {
       contentId: Number(id),
       contentType: type,
       backdropPath,
-      title: contentInfo?.title || '',
-      ...(primaryVideo?.id ? { primaryVideoId: primaryVideo.id } : {}),
-      ...(primaryVideo?.title ? { primaryVideoTitle: primaryVideo.title } : {}),
-    };
-    navigation.navigate(routePages.mediaList, params);
-  }, [
-    navigation,
-    id,
-    type,
-    backdropPath,
-    contentInfo?.title,
-    primaryVideo?.id,
-    primaryVideo?.title,
-  ]);
+    });
+  }, [navigation, id, type, backdropPath]);
 
   if (!heroImage) return null;
 
   return (
     <Container>
-      <SectionTitle>미디어</SectionTitle>
+      {/* 타이틀 행: 스틸컷 + 오른쪽 화살표 */}
+      <Pressable onPress={showMoreButton ? handleMorePress : undefined}>
+        <TitleRow>
+          <SectionTitle>스틸컷</SectionTitle>
+          {showMoreButton && <RightArrowIcon style={{ width: 24, height: 24 }} />}
+        </TitleRow>
+      </Pressable>
 
       {/* 대형 이미지 (풀 너비, 16:9) */}
       <TouchableOpacity activeOpacity={0.8} onPress={() => handleImagePress(0)}>
@@ -109,15 +100,6 @@ function MediaSectionViewComponent() {
           />
         </GridWrapper>
       )}
-
-      {/* 더보기 버튼 */}
-      {hasMoreImages && (
-        <MoreButtonRow>
-          <TouchableOpacity onPress={handleMorePress} activeOpacity={0.6}>
-            <MoreButtonText>더보기 {'>'}</MoreButtonText>
-          </TouchableOpacity>
-        </MoreButtonRow>
-      )}
     </Container>
   );
 }
@@ -125,26 +107,22 @@ function MediaSectionViewComponent() {
 const Container = styled.View({
   paddingHorizontal: HORIZONTAL_PADDING,
   paddingTop: 24,
+  paddingBottom: 16,
+});
+
+const TitleRow = styled.View({
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginBottom: 10,
 });
 
 const SectionTitle = styled.Text({
   ...textStyles.title2,
-  color: colors.white,
-  marginBottom: 10,
 });
 
 const GridWrapper = styled.View({
   marginTop: IMAGE_GAP,
-});
-
-const MoreButtonRow = styled.View({
-  alignItems: 'flex-end',
-  marginTop: 12,
-});
-
-const MoreButtonText = styled.Text({
-  ...textStyles.alert1,
-  color: colors.gray02,
 });
 
 export const MediaSectionView = React.memo(MediaSectionViewComponent);
