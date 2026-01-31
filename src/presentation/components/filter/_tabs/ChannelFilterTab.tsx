@@ -2,8 +2,8 @@
  * ChannelFilterTab - 바텀시트 내 채널 필터 프리뷰
  *
  * 기본 2×4 그리드로 채널을 표시합니다.
- * 선택된 채널이 앞에 정렬되고, 나머지 슬롯은 미선택 채널로 채웁니다.
- * 9개 이상 선택 시 추가 행이 자동으로 확장됩니다.
+ * 기본 8개 채널은 원래 순서를 유지하며, 더보기 페이지에서 선택된
+ * 프리뷰 외 채널만 앞에 추가됩니다.
  *
  * @example
  * <ChannelFilterTab
@@ -13,7 +13,7 @@
  * />
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import styled from '@emotion/native';
 import { useQuery } from '@tanstack/react-query';
 import textStyles from '@/shared/styles/textStyles';
@@ -56,14 +56,31 @@ function ChannelFilterTab({
     staleTime: 5 * 60 * 1000,
   });
 
-  // 선택된 채널을 앞에 배치, 나머지 슬롯은 미선택 채널로 채움 (최소 8개 유지)
-  const displayChannels = useMemo(() => {
-    const selectedSet = new Set(selectedChannelIds);
-    const selected = channels.filter((ch) => selectedSet.has(ch.id));
-    const unselected = channels.filter((ch) => !selectedSet.has(ch.id));
+  // 기본 프리뷰 목록 (API 순서 상위 8개, 최초 1회만 고정)
+  const basePreviewRef = useRef<string[] | null>(null);
+  if (channels.length > 0 && basePreviewRef.current === null) {
+    basePreviewRef.current = channels.slice(0, MAX_PREVIEW_COUNT).map((ch) => ch.id);
+  }
 
-    const fillCount = Math.max(MAX_PREVIEW_COUNT - selected.length, 0);
-    return [...selected, ...unselected.slice(0, fillCount)];
+  // 기본 프리뷰에 없는 선택 채널만 앞에 추가, 나머지는 원래 순서 유지
+  const displayChannels = useMemo(() => {
+    if (channels.length === 0) return [];
+
+    const baseIds = basePreviewRef.current ?? [];
+    const baseSet = new Set(baseIds);
+
+    // 더보기에서 선택되었지만 기본 프리뷰에 없는 채널
+    const extraSelected = selectedChannelIds
+      .filter((id) => !baseSet.has(id))
+      .map((id) => channels.find((ch) => ch.id === id))
+      .filter((ch): ch is NonNullable<typeof ch> => ch != null);
+
+    // 기본 프리뷰 채널 (원래 순서 유지)
+    const baseChannels = baseIds
+      .map((id) => channels.find((ch) => ch.id === id))
+      .filter((ch): ch is NonNullable<typeof ch> => ch != null);
+
+    return [...extraSelected, ...baseChannels];
   }, [channels, selectedChannelIds]);
 
   // 채널 선택/해제 토글

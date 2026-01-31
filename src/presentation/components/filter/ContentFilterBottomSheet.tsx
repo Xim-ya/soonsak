@@ -202,35 +202,23 @@ function ContentFilterBottomSheet({
     handleClose();
   }, [tempFilter, onApply, handleClose]);
 
-  // 필터 업데이트 콜백 (인라인 함수 방지)
-  const handleIncludeEndingChange = useCallback(
-    (includeEnding: boolean) => updateFilter({ includeEnding }),
-    [updateFilter],
-  );
-  const handleContentTypeChange = useCallback(
-    (contentType: ContentFilter['contentType']) => updateFilter({ contentType, genreIds: [] }),
-    [updateFilter],
-  );
-  const handleGenreIdsChange = useCallback(
-    (genreIds: number[]) => updateFilter({ genreIds }),
-    [updateFilter],
-  );
-  const handleCountryCodesChange = useCallback(
-    (countryCodes: string[]) => updateFilter({ countryCodes }),
-    [updateFilter],
-  );
-  const handleReleaseYearRangeChange = useCallback(
-    (releaseYearRange: ContentFilter['releaseYearRange']) => updateFilter({ releaseYearRange }),
-    [updateFilter],
-  );
-  const handleMinStarRatingChange = useCallback(
-    (minStarRating: number | null) => updateFilter({ minStarRating }),
-    [updateFilter],
-  );
-  const handleChannelIdsChange = useCallback(
-    (channelIds: string[]) => updateFilter({ channelIds }),
-    [updateFilter],
-  );
+  // 필터 필드별 업데이트 콜백
+  const filterHandlers = useMemo(() => ({
+    onIncludeEndingChange: (includeEnding: boolean) =>
+      updateFilter({ includeEnding }),
+    onContentTypeChange: (contentType: ContentFilter['contentType']) =>
+      updateFilter({ contentType, genreIds: [] }),
+    onGenreIdsChange: (genreIds: number[]) =>
+      updateFilter({ genreIds }),
+    onCountryCodesChange: (countryCodes: string[]) =>
+      updateFilter({ countryCodes }),
+    onReleaseYearRangeChange: (releaseYearRange: ContentFilter['releaseYearRange']) =>
+      updateFilter({ releaseYearRange }),
+    onMinStarRatingChange: (minStarRating: number | null) =>
+      updateFilter({ minStarRating }),
+    onChannelIdsChange: (channelIds: string[]) =>
+      updateFilter({ channelIds }),
+  }), [updateFilter]);
 
   // 채널 더보기 핸들러
   const handleChannelMorePress = useCallback(() => {
@@ -320,7 +308,7 @@ function ContentFilterBottomSheet({
               <SectionWrapper onLayout={(e) => handleSectionLayout('recommend', e)}>
                 <RecommendFilterTab
                   includeEnding={tempFilter.includeEnding}
-                  onIncludeEndingChange={handleIncludeEndingChange}
+                  onIncludeEndingChange={filterHandlers.onIncludeEndingChange}
                 />
               </SectionWrapper>
             )}
@@ -331,8 +319,8 @@ function ContentFilterBottomSheet({
                 <GenreFilterTab
                   contentType={tempFilter.contentType}
                   selectedGenreIds={tempFilter.genreIds}
-                  onContentTypeChange={handleContentTypeChange}
-                  onGenreIdsChange={handleGenreIdsChange}
+                  onContentTypeChange={filterHandlers.onContentTypeChange}
+                  onGenreIdsChange={filterHandlers.onGenreIdsChange}
                 />
               </SectionWrapper>
             )}
@@ -342,7 +330,7 @@ function ContentFilterBottomSheet({
               <SectionWrapper onLayout={(e) => handleSectionLayout('country', e)}>
                 <CountryFilterTab
                   selectedCountryCodes={tempFilter.countryCodes}
-                  onCountryCodesChange={handleCountryCodesChange}
+                  onCountryCodesChange={filterHandlers.onCountryCodesChange}
                 />
               </SectionWrapper>
             )}
@@ -352,7 +340,7 @@ function ContentFilterBottomSheet({
               <SectionWrapper onLayout={(e) => handleSectionLayout('releaseYear', e)}>
                 <ReleaseYearFilterTab
                   selectedRange={tempFilter.releaseYearRange}
-                  onRangeChange={handleReleaseYearRangeChange}
+                  onRangeChange={filterHandlers.onReleaseYearRangeChange}
                 />
               </SectionWrapper>
             )}
@@ -362,7 +350,7 @@ function ContentFilterBottomSheet({
               <SectionWrapper onLayout={(e) => handleSectionLayout('rating', e)}>
                 <RatingFilterTab
                   selectedRating={tempFilter.minStarRating}
-                  onRatingChange={handleMinStarRatingChange}
+                  onRatingChange={filterHandlers.onMinStarRatingChange}
                 />
               </SectionWrapper>
             )}
@@ -372,7 +360,7 @@ function ContentFilterBottomSheet({
               <SectionWrapper onLayout={(e) => handleSectionLayout('channel', e)}>
                 <ChannelFilterTab
                   selectedChannelIds={tempFilter.channelIds}
-                  onChannelIdsChange={handleChannelIdsChange}
+                  onChannelIdsChange={filterHandlers.onChannelIdsChange}
                   onMorePress={handleChannelMorePress}
                 />
               </SectionWrapper>
