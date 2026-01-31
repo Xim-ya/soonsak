@@ -21,7 +21,7 @@ export namespace LongRuntimeContentModel {
       id: dto.id,
       type: dto.contentType,
       title: dto.title,
-      posterPath: dto.posterPath,
+      posterPath: dto.posterPath ?? '',
       backdropPath: dto.backdropPath,
       runtime: dto.runtime,
       formattedRuntime: formatRuntime(dto.runtime),
