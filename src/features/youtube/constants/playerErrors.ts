@@ -12,6 +12,10 @@ export const YOUTUBE_PLAYER_ERROR = {
   CONTENT_NOT_FOUND: 100,
   /** 채널 소유자가 임베드 재생을 제한함 */
   EMBEDDED_RESTRICTED: 150,
+  /** 광고 로딩 실패 또는 임베드 검증 실패 (doubleclick.net 연결 거부 등) */
+  AD_LOADING_FAILED: 152,
+  /** 비디오 플레이어 설정 오류 (Referer/쿠키 문제) */
+  PLAYER_CONFIG_ERROR: 153,
 } as const;
 
 export const YOUTUBE_PLAYER_ERROR_MESSAGE = {
@@ -19,11 +23,13 @@ export const YOUTUBE_PLAYER_ERROR_MESSAGE = {
 } as const;
 
 /**
- * 임베드 재생 제한 에러인지 확인
+ * 임베드 재생 제한 에러인지 확인 (에러 코드 150, 152, 153 포함)
  */
 export const isEmbeddedRestrictedError = (error: { code: number; message: string }): boolean => {
-  return (
-    error.code === YOUTUBE_PLAYER_ERROR.EMBEDDED_RESTRICTED &&
-    error.message === YOUTUBE_PLAYER_ERROR_MESSAGE.EMBEDDED_RESTRICTED
-  );
+  const embeddedRestrictedCodes: number[] = [
+    YOUTUBE_PLAYER_ERROR.EMBEDDED_RESTRICTED,
+    YOUTUBE_PLAYER_ERROR.AD_LOADING_FAILED,
+    YOUTUBE_PLAYER_ERROR.PLAYER_CONFIG_ERROR,
+  ];
+  return embeddedRestrictedCodes.includes(error.code);
 };

@@ -148,6 +148,13 @@ const HeaderBackground = React.memo(() => {
         </PlayButton>
       </PlayButtonContainer>
 
+      {/* 런타임 칩 - 좌측 하단 */}
+      {primaryVideo?.runtime != null && primaryVideo.runtime > 0 && (
+        <RuntimeChipContainer>
+          <DarkChip content={formatter.formatRuntime(primaryVideo.runtime)} />
+        </RuntimeChipContainer>
+      )}
+
       {/* 비디오 썸네일 - 우측 하단 (클릭 가능) */}
       <VideoThumbnailContainer>
         <TouchableOpacity onPress={handleThumbnailPress} activeOpacity={1}>
@@ -252,7 +259,7 @@ const ContentInfo = React.memo(() => {
           )}
         </SubTextView>
       )}
-      <Gap size={16} />
+      <Gap size={10} />
 
       {/* 비디오 타이틀 */}
       {isVideosLoading ? (
@@ -314,6 +321,13 @@ const PlayButtonContainer = styled.View({
   height: 120,
   transform: [{ translateX: -60 }, { translateY: -60 }],
   zIndex: 10,
+});
+
+const RuntimeChipContainer = styled.View({
+  position: 'absolute',
+  bottom: AppSize.ratioHeight(12),
+  left: AppSize.ratioWidth(12),
+  zIndex: 11,
 });
 
 const VideoThumbnailContainer = styled.View({

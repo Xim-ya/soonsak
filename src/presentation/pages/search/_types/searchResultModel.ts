@@ -25,7 +25,7 @@ export namespace SearchResultModel {
     return {
       id: dto.id,
       title: dto.title,
-      posterPath: dto.posterPath,
+      posterPath: dto.posterPath ?? null,
       contentType: dto.contentType,
       releaseYear,
     };

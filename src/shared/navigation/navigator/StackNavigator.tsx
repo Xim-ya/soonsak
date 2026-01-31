@@ -4,6 +4,8 @@ import ContentDetailPage from '../../../presentation/pages/content-detail/Conten
 import { PlayerPage } from '../../../presentation/pages/player/PlayerPage';
 import ChannelDetailPage from '../../../presentation/pages/channel-detail/ChannelDetailPage';
 import SearchPage from '../../../presentation/pages/search/SearchPage';
+import { MediaListPage } from '../../../presentation/pages/media/MediaListPage';
+import { ImageDetailPage } from '../../../presentation/pages/media/ImageDetailPage';
 import { RootStackParamList } from '../types';
 import { routePages } from '../constant/routePages';
 import colors from '@/shared/styles/colors';
@@ -41,6 +43,16 @@ export default function StackNavigator() {
       <Stack.Screen
         name={routePages.search}
         component={SearchPage}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={routePages.mediaList}
+        component={MediaListPage}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={routePages.imageDetail}
+        component={ImageDetailPage}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

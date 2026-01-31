@@ -18,7 +18,7 @@
 export { tmdbApi } from './api/tmdbApi';
 
 // React Query Hook exports
-export { useTmdbMovie } from './hooks';
+export { useTmdbMovie, useWatchProviders, useContentImages } from './hooks';
 
 // 타입들 exports
 export type {
@@ -33,6 +33,13 @@ export type {
 
 export type { MovieDto, CollectionDto } from './types/movieDto';
 export type { TvSeriesDto, CreatorDto, NetworkDto, EpisodeDto, SeasonDto } from './types/tvDto';
+export type {
+  WatchProviderDto,
+  WatchProviderCountryDto,
+  WatchProvidersResponseDto,
+} from './types/watchProviderDto';
+export type { WatchProviderModel } from './types/watchProviderModel';
+export type { TmdbImageItemDto, TmdbImagesResponseDto } from './types/imageDto';
 
 // 설정 상수들 exports
 export {

@@ -49,6 +49,17 @@ export type RootStackParamList = {
     subscriberCount?: number; // 구독자 수 (선택 - 없으면 API 조회)
   }; // 채널 상세 - channelId만 필수, 나머지는 API로 조회 가능
   [routePages.search]: undefined; // 검색 - 파라미터 없음
+  [routePages.mediaList]: {
+    contentId: number;
+    contentType: ContentType;
+    backdropPath: string; // 헤더 이미지 제외용
+  }; // 스틸컷 목록 - 콘텐츠 정보 필수
+  [routePages.imageDetail]: {
+    contentId: number;
+    contentType: ContentType;
+    backdropPath: string; // 헤더 이미지 제외용
+    initialIndex: number; // 시작 이미지 인덱스
+  }; // 이미지 상세 뷰어 - 콘텐츠 정보 + 시작 인덱스 필수
 };
 
 /**
