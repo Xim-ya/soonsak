@@ -10,6 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { contentApi } from '@/features/content/api/contentApi';
 import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
 import { AppSize } from '@/shared/utils/appSize';
+import type { ContentFilter } from '@/shared/types/filter/contentFilter';
+import { isFilterActive } from '@/shared/types/filter/contentFilter';
 
 // 그리드 레이아웃 상수
 const GRID_UNIT_WIDTH = 256;
@@ -93,9 +95,22 @@ interface UseSoonsakGridReturn {
 
   // 랜덤 콘텐츠 선택 (포커스 기능용)
   getRandomContent: () => ContentWithPosition | null;
+
+  // 필터 변경 시 그리드 리셋
+  resetGrid: () => void;
 }
 
-export function useSoonsakGrid(): UseSoonsakGridReturn {
+/** 배열 순서에 무관한 안정적 필터 키 생성 */
+function getStableFilterKey(filter: ContentFilter): string {
+  return JSON.stringify({
+    ...filter,
+    genreIds: [...filter.genreIds].sort((a, b) => a - b),
+    countryCodes: [...filter.countryCodes].sort(),
+    channelIds: [...filter.channelIds].sort(),
+  });
+}
+
+export function useSoonsakGrid(filter?: ContentFilter): UseSoonsakGridReturn {
   // 반응형 크기
   const cellWidth = AppSize.ratioWidth(GRID_UNIT_WIDTH);
   const cellHeight = AppSize.ratioHeight(CARD_HEIGHT) + AppSize.ratioWidth(CARD_MARGIN) * 2;
@@ -147,14 +162,23 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
   // 초기 로드 완료 여부
   const [isInitialLoadDone, setIsInitialLoadDone] = useState(false);
 
-  // 초기 콘텐츠 로드
+  // 필터 적용 여부
+  const hasFilter = filter ? isFilterActive(filter) : false;
+
+  // 필터 변경 추적용 키 (배열 순서 독립적 직렬화)
+  const filterKey = filter ? getStableFilterKey(filter) : 'none';
+
+  // 초기 콘텐츠 로드 (필터 포함)
   const { data: initialContents, isLoading: isInitialLoading } = useQuery({
-    queryKey: ['soonsakInitialContents'],
+    queryKey: ['soonsakInitialContents', filterKey],
     queryFn: async () => {
-      const contents = await contentApi.getRandomContents([], BATCH_SIZE);
+      const contents =
+        hasFilter && filter
+          ? await contentApi.getFilteredRandomContents(filter, [], BATCH_SIZE)
+          : await contentApi.getRandomContents([], BATCH_SIZE);
       return contents.map((dto) => BaseContentModel.fromContentDto(dto));
     },
-    staleTime: Infinity, // 초기 로드는 한 번만
+    staleTime: Infinity,
   });
 
   // 초기 콘텐츠를 셀에 배치 ((0,0) 중심 나선형 배치)
@@ -269,7 +293,10 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
 
       try {
         const excludeIds = Array.from(loadedIdsRef.current);
-        const newContents = await contentApi.getRandomContents(excludeIds, BATCH_SIZE);
+        const newContents =
+          hasFilter && filter
+            ? await contentApi.getFilteredRandomContents(filter, excludeIds, BATCH_SIZE)
+            : await contentApi.getRandomContents(excludeIds, BATCH_SIZE);
 
         if (newContents.length === 0) {
           setHasMoreContents(false);
@@ -311,7 +338,7 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
         setIsLoading(false);
       }
     },
-    [getCellKey],
+    [getCellKey, filter, hasFilter],
   );
 
   // 뷰포트 변경 시 빈 셀이 충분하면 콘텐츠 로드
@@ -401,6 +428,32 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
     };
   }, [screenWidth, screenHeight, cellWidth, cellHeight]);
 
+  // 그리드 리셋 (필터 변경 시 호출)
+  const resetGrid = useCallback(() => {
+    const emptyMap = new Map<string, BaseContentModel>();
+    contentMapRef.current = emptyMap;
+    setContentMap(emptyMap);
+    loadedIdsRef.current = new Set();
+    prevViewportRef.current = null;
+    setIsInitialLoadDone(false);
+    setHasMoreContents(true);
+    setVisibleRange({
+      startRow: initialStartRow,
+      endRow: initialStartRow + visibleRows,
+      startCol: initialStartCol,
+      endCol: initialStartCol + visibleCols,
+    });
+  }, [initialStartRow, visibleRows, initialStartCol, visibleCols]);
+
+  // 필터 변경 시 그리드 자동 리셋
+  const prevFilterKeyRef = useRef(filterKey);
+  useEffect(() => {
+    if (prevFilterKeyRef.current !== filterKey) {
+      prevFilterKeyRef.current = filterKey;
+      resetGrid();
+    }
+  }, [filterKey, resetGrid]);
+
   return {
     cells,
     isLoading: isLoading || isInitialLoading,
@@ -412,5 +465,6 @@ export function useSoonsakGrid(): UseSoonsakGridReturn {
     initialTranslateY,
     updateViewport,
     getRandomContent,
+    resetGrid,
   };
 }

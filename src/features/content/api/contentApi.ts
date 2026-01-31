@@ -11,6 +11,67 @@ import {
 } from '../types';
 import { CONTENT_DATABASE } from '../../utils/constants/dbConfig';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
+import type { ContentFilter } from '@/shared/types/filter/contentFilter';
+
+/** excludeIds 최대 허용 수 */
+const MAX_EXCLUDE_IDS = 1000;
+
+/** 조회수/재생수 RPC 호출 쓰로틀 (콘텐츠별 최소 간격) */
+const RPC_THROTTLE_MS = 5000;
+const rpcThrottleMap = new Map<string, number>();
+
+/** 쓰로틀 체크: 최근 호출 이후 충분한 시간이 지났는지 확인 */
+function shouldThrottleRpc(key: string): boolean {
+  const now = Date.now();
+  const lastCall = rpcThrottleMap.get(key);
+  if (lastCall !== undefined && now - lastCall < RPC_THROTTLE_MS) {
+    return true;
+  }
+  rpcThrottleMap.set(key, now);
+  return false;
+}
+
+/** excludeIds 유효성 검증 및 제한 */
+function sanitizeExcludeIds(excludeIds: number[]): number[] {
+  return excludeIds
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .slice(0, MAX_EXCLUDE_IDS);
+}
+
+/** 콘텐츠 필터 조건을 Supabase 쿼리에 적용 (count/data 쿼리 공용) */
+function applyContentFilters(
+  query: any,
+  filter: ContentFilter,
+  excludeIds: number[],
+  channelContentIds: number[] | null,
+): any {
+  let q = query;
+  if (channelContentIds !== null) {
+    q = q.in('id', channelContentIds);
+  }
+  if (filter.contentType) {
+    q = q.eq('content_type', filter.contentType);
+  }
+  if (filter.genreIds.length > 0) {
+    q = q.overlaps('genre_ids', filter.genreIds);
+  }
+  if (filter.countryCodes.length > 0) {
+    q = q.overlaps('origin_country', filter.countryCodes);
+  }
+  if (filter.releaseYearRange) {
+    q = q
+      .gte('release_date', `${filter.releaseYearRange.min}-01-01`)
+      .lte('release_date', `${filter.releaseYearRange.max}-12-31`);
+  }
+  if (filter.minStarRating !== null) {
+    q = q.gte('vote_average', filter.minStarRating * 2);
+  }
+  const safeIds = sanitizeExcludeIds(excludeIds);
+  if (safeIds.length > 0) {
+    q = q.not('id', 'in', `(${safeIds.join(',')})`);
+  }
+  return q;
+}
 
 export const contentApi = {
   /**
@@ -110,8 +171,11 @@ export const contentApi = {
 
   /**
    * 콘텐츠 조회수 증가 (상세 페이지 진입 시)
+   * 동일 콘텐츠에 대해 5초 이내 중복 호출 방지
    */
   incrementViewCount: async (contentId: number, contentType: ContentType): Promise<void> => {
+    if (shouldThrottleRpc(`view:${contentId}:${contentType}`)) return;
+
     const { error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.INCREMENT_VIEW_COUNT, {
       p_content_id: contentId,
       p_content_type: contentType,
@@ -125,8 +189,11 @@ export const contentApi = {
 
   /**
    * 콘텐츠 재생수 증가 (영상 재생 시)
+   * 동일 콘텐츠에 대해 5초 이내 중복 호출 방지
    */
   incrementPlayCount: async (contentId: number, contentType: ContentType): Promise<void> => {
+    if (shouldThrottleRpc(`play:${contentId}:${contentType}`)) return;
+
     const { error } = await supabaseClient.rpc(CONTENT_DATABASE.RPC.INCREMENT_PLAY_COUNT, {
       p_content_id: contentId,
       p_content_type: contentType,
@@ -314,9 +381,14 @@ export const contentApi = {
       .select('*')
       .range(randomOffset, randomOffset + limit - 1);
 
-    // 제외할 ID가 있으면 필터 적용
+    // 제외할 ID가 있으면 필터 적용 (유효성 검증 포함)
     if (excludeIds.length > 0) {
-      query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+      const safeIds = excludeIds
+        .filter((id) => Number.isInteger(id) && id > 0)
+        .slice(0, MAX_EXCLUDE_IDS);
+      if (safeIds.length > 0) {
+        query = query.not('id', 'in', `(${safeIds.join(',')})`);
+      }
     }
 
     const { data, error } = await query;
@@ -327,6 +399,81 @@ export const contentApi = {
     }
 
     // 결과를 섞어서 더 랜덤하게
+    const contents = mapWithField<ContentDto[]>(data ?? []);
+    return contents.sort(() => Math.random() - 0.5);
+  },
+
+  /**
+   * 필터 조건에 맞는 랜덤 콘텐츠 조회 (순삭 그리드 필터용)
+   * 기존 getRandomContents를 확장하여 장르, 국가, 연도, 평점 필터를 지원
+   * @param filter 콘텐츠 필터 조건
+   * @param excludeIds 제외할 콘텐츠 ID 배열
+   * @param limit 조회할 콘텐츠 수 (기본값: 20)
+   */
+  getFilteredRandomContents: async (
+    filter: ContentFilter,
+    excludeIds: number[] = [],
+    limit: number = 20,
+  ): Promise<ContentDto[]> => {
+    // 채널 필터가 있으면 먼저 해당 채널의 content_id 목록을 조회 (2단계 쿼리)
+    let channelContentIds: number[] | null = null;
+    if (filter.channelIds.length > 0) {
+      const { data: videoRows, error: videoError } = await supabaseClient
+        .from('videos')
+        .select('content_id')
+        .in('channel_id', filter.channelIds);
+
+      if (videoError) {
+        console.error('채널 콘텐츠 ID 조회 실패:', videoError);
+        throw new Error(`Failed to fetch channel content ids: ${videoError.message}`);
+      }
+
+      channelContentIds = [...new Set((videoRows ?? []).map((v: { content_id: number }) => v.content_id))];
+      if (channelContentIds.length === 0) return [];
+    }
+
+    // 전체 카운트 조회 (공통 필터 헬퍼 사용)
+    const countQuery = applyContentFilters(
+      supabaseClient
+        .from(CONTENT_DATABASE.TABLES.CONTENTS)
+        .select('*', { count: 'exact', head: true }),
+      filter,
+      excludeIds,
+      channelContentIds,
+    );
+
+    const { count, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error('필터 콘텐츠 수 조회 실패:', countError);
+      throw new Error(`Failed to count filtered contents: ${countError.message}`);
+    }
+
+    const totalCount = count ?? 0;
+    if (totalCount === 0) return [];
+
+    // 랜덤 offset 계산
+    const maxOffset = Math.max(0, totalCount - limit);
+    const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
+
+    // 동일한 필터로 데이터 조회 (공통 필터 헬퍼 사용)
+    const query = applyContentFilters(
+      supabaseClient
+        .from(CONTENT_DATABASE.TABLES.CONTENTS)
+        .select('*')
+        .range(randomOffset, randomOffset + limit - 1),
+      filter,
+      excludeIds,
+      channelContentIds,
+    );
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('필터 랜덤 콘텐츠 조회 실패:', error);
+      throw new Error(`Failed to fetch filtered random contents: ${error.message}`);
+    }
+
     const contents = mapWithField<ContentDto[]>(data ?? []);
     return contents.sort(() => Math.random() - 0.5);
   },

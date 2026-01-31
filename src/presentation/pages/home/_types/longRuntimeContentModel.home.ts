@@ -30,6 +30,20 @@ export namespace LongRuntimeContentModel {
   }
 
   /**
+   * 초 단위 런타임을 한글 포맷으로 변환
+   * @example 3120 -> "52분", 13740 -> "3시간 49분"
+   */
+  // export const formatRuntime = (seconds: number): string => {
+  //   const hours = Math.floor(seconds / 3600);
+  //   const mins = Math.floor((seconds % 3600) / 60);
+
+  //   if (hours > 0) {
+  //     return mins > 0 ? `${hours}시간 ${mins}분` : `${hours}시간`;
+  //   }
+  //   return `${mins}분`;
+  // };
+
+  /**
    * Fisher-Yates 알고리즘으로 배열 셔플
    */
   export const shuffle = <T>(items: T[]): T[] => {

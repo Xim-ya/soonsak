@@ -49,6 +49,9 @@ export type RootStackParamList = {
     subscriberCount?: number; // 구독자 수 (선택 - 없으면 API 조회)
   }; // 채널 상세 - channelId만 필수, 나머지는 API로 조회 가능
   [routePages.search]: undefined; // 검색 - 파라미터 없음
+  [routePages.channelSelection]: {
+    selectedChannelIds: string[]; // 현재 선택된 채널 ID 목록
+  }; // 채널 선택 - 바텀시트에서 전체 채널 선택 시 사용
   [routePages.mediaList]: {
     contentId: number;
     contentType: ContentType;

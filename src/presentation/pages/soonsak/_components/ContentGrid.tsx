@@ -34,6 +34,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { AppSize } from '@/shared/utils/appSize';
 import { BaseContentModel } from '@/presentation/types/content/baseContentModel';
+import type { ContentFilter } from '@/shared/types/filter/contentFilter';
 import { useSoonsakGrid, ZIGZAG_OFFSET, calcZigzagOffset } from '../_hooks/useSoonsakGrid';
 import { ContentCard } from './ContentCard';
 
@@ -152,6 +153,8 @@ const MemoizedCellWrapper = memo(
 
 interface ContentGridProps {
   onContentPress?: (content: BaseContentModel) => void;
+  /** 콘텐츠 필터 조건 */
+  filter?: ContentFilter;
 }
 
 // ContentGrid에서 외부로 노출하는 메서드
@@ -181,7 +184,7 @@ const LANDING_SPRING_CONFIG = {
 };
 
 const ContentGrid = forwardRef<ContentGridRef, ContentGridProps>(function ContentGrid(
-  { onContentPress },
+  { onContentPress, filter },
   ref,
 ) {
   const {
@@ -195,7 +198,7 @@ const ContentGrid = forwardRef<ContentGridRef, ContentGridProps>(function Conten
     initialTranslateY,
     updateViewport,
     getRandomContent,
-  } = useSoonsakGrid();
+  } = useSoonsakGrid(filter);
 
   const zigzagOffset = AppSize.ratioHeight(ZIGZAG_OFFSET);
 
@@ -211,6 +214,26 @@ const ContentGrid = forwardRef<ContentGridRef, ContentGridProps>(function Conten
   const [focusedCellKey, setFocusedCellKey] = useState<string | null>(null);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // focusTimer 언마운트 시 정리
+  useEffect(() => {
+    return () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current);
+      }
+    };
+  }, []);
+
+  // 필터 변경 시 그리드 위치 리셋
+  const prevFilterRef = useRef(filter);
+  useEffect(() => {
+    if (prevFilterRef.current !== filter) {
+      prevFilterRef.current = filter;
+      translateX.value = initialTranslateX;
+      translateY.value = initialTranslateY;
+      updateViewport(initialTranslateX, initialTranslateY);
+    }
+  }, [filter, initialTranslateX, initialTranslateY, translateX, translateY, updateViewport]);
 
   // Pan gesture worklet에서 접근할 수 있도록 shared value로 동기화
   const isFocusModeShared = useSharedValue(false);

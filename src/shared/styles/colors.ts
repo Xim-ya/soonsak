@@ -18,6 +18,8 @@ const colors = {
   gray05: '#303030',
   gray06: '#1F1F1F',
   gray07: '#171717',
+  primary: '#4A6CF7',
+  overlay: 'rgba(0, 0, 0, 0.6)',
 };
 
 export default colors;

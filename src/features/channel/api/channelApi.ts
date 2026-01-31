@@ -16,6 +16,7 @@ export const channelApi = {
       .from(CHANNEL_DATABASE.TABLES.CHANNELS)
       .select('*')
       .eq(CHANNEL_DATABASE.COLUMNS.IS_ACTIVE, true)
+      .order('subscriber_count', { ascending: false, nullsFirst: false })
       .limit(limit);
 
     if (error) {
