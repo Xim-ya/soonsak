@@ -52,6 +52,17 @@ export type RootStackParamList = {
   [routePages.channelSelection]: {
     selectedChannelIds: string[]; // 현재 선택된 채널 ID 목록
   }; // 채널 선택 - 바텀시트에서 전체 채널 선택 시 사용
+  [routePages.mediaList]: {
+    contentId: number;
+    contentType: ContentType;
+    backdropPath: string; // 헤더 이미지 제외용
+  }; // 스틸컷 목록 - 콘텐츠 정보 필수
+  [routePages.imageDetail]: {
+    contentId: number;
+    contentType: ContentType;
+    backdropPath: string; // 헤더 이미지 제외용
+    initialIndex: number; // 시작 이미지 인덱스
+  }; // 이미지 상세 뷰어 - 콘텐츠 정보 + 시작 인덱스 필수
 };
 
 /**

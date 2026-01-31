@@ -3,6 +3,7 @@ import styled from '@emotion/native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { Dimensions, ActivityIndicator, Platform, Alert, Linking } from 'react-native';
 import { YoutubeView, useYouTubePlayer, useYouTubeEvent } from 'react-native-youtube-bridge';
+import WebView from 'react-native-webview';
 import colors from '@/shared/styles/colors';
 import { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
@@ -10,13 +11,14 @@ import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
 import { buildYouTubeUrl, buildYouTubeAppUrl, isEmbeddedRestrictedError } from '@/features/youtube';
 import { contentApi } from '@/features/content/api/contentApi';
+import { PlayerWatchProviderView } from './_components/PlayerWatchProviderView';
 
 type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.player>;
 
 /**
  * YouTube 영상 재생 페이지
  * react-native-youtube-bridge를 사용하여 YouTube 영상을 재생합니다.
-
+ * 임베드 제한(에러 150/152/153) 발생 시 YouTube 모바일 사이트로 fallback합니다.
  */
 export const PlayerPage = () => {
   const route = useRoute<PlayerPageRouteProp>();
@@ -24,6 +26,7 @@ export const PlayerPage = () => {
   const { videoId, title, contentId, contentType } = route.params;
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1);
+  const [useFallbackPlayer, setUseFallbackPlayer] = useState(false);
   const hasIncrementedPlayCount = useRef(false);
 
   // 초기 화면 크기만 사용 (YouTube 플레이어가 자체적으로 전체화면 처리)
@@ -35,12 +38,15 @@ export const PlayerPage = () => {
     playsinline: false,
     rel: false,
     muted: false,
+    origin: 'https://www.youtube.com',
   });
 
   // 플레이어 준비 완료 이벤트
   useYouTubeEvent(player, 'ready', (playerInfo) => {
     console.log('플레이어 준비 완료:', playerInfo);
-    setIsPlayerReady(true);
+    if (!useFallbackPlayer) {
+      setIsPlayerReady(true);
+    }
 
     // 재생수 증가 (1회만 실행)
     if (!hasIncrementedPlayCount.current) {
@@ -127,22 +133,10 @@ export const PlayerPage = () => {
   useYouTubeEvent(player, 'error', (error) => {
     console.error('플레이어 에러:', error);
 
-    // EMBEDDED_RESTRICTED 오류인 경우 특별 처리
+    // 임베드 제한 에러(150/152/153)인 경우 fallback 플레이어로 전환
     if (isEmbeddedRestrictedError(error)) {
-      Alert.alert('재생 지원 제한', '채널 소유자의 정책으로 YouTube 앱을 실행합니다.', [
-        {
-          text: '취소',
-          style: 'cancel',
-          onPress: () => navigation.goBack(),
-        },
-        {
-          text: 'YouTube 열기',
-          onPress: async () => {
-            await openInYouTube();
-            navigation.goBack();
-          },
-        },
-      ]);
+      console.log('임베드 제한 감지 → YouTube 모바일 사이트 fallback 전환');
+      setUseFallbackPlayer(true);
     } else {
       // 기타 오류는 기존 처리 방식 + 뒤로 가기
       Alert.alert('재생 오류', `에러 코드: ${error.code}\n${error.message}`, [
@@ -157,6 +151,49 @@ export const PlayerPage = () => {
   // 16:9 비율로 계산된 높이 (화면 너비에 맞춰)
   const playerWidth = screenWidth;
   const playerHeight = (playerWidth * 9) / 16;
+
+  // Fallback: YouTube 모바일 사이트를 WebView로 직접 로드
+  if (useFallbackPlayer) {
+    const mobileYouTubeUrl = `https://m.youtube.com/watch?v=${videoId}`;
+
+    return (
+      <BasePage backgroundColor={colors.black} statusBarStyle="light-content">
+        <BackButtonAppBar title={title} backgroundColor={colors.black} />
+        <FallbackContainer>
+          <WebView
+            source={{ uri: mobileYouTubeUrl }}
+            style={{ flex: 1, backgroundColor: colors.black }}
+            allowsFullscreenVideo
+            allowsInlineMediaPlayback
+            mediaPlaybackRequiresUserAction={false}
+            javaScriptEnabled
+            domStorageEnabled
+            mixedContentMode="always"
+            thirdPartyCookiesEnabled
+            sharedCookiesEnabled
+            allowsBackForwardNavigationGestures={false}
+            onError={() => {
+              // WebView 로드 실패 시 YouTube 앱으로 fallback
+              Alert.alert('재생 오류', 'YouTube 앱에서 재생합니다.', [
+                {
+                  text: '취소',
+                  style: 'cancel',
+                  onPress: () => navigation.goBack(),
+                },
+                {
+                  text: 'YouTube 열기',
+                  onPress: async () => {
+                    await openInYouTube();
+                    navigation.goBack();
+                  },
+                },
+              ]);
+            }}
+          />
+        </FallbackContainer>
+      </BasePage>
+    );
+  }
 
   return (
     <BasePage backgroundColor={colors.black} statusBarStyle="light-content">
@@ -198,6 +235,7 @@ export const PlayerPage = () => {
           // 외부 WebView 모드 사용 (전체화면 지원됨)
           useInlineHtml={false}
         />
+        <PlayerWatchProviderView contentId={contentId} contentType={contentType} />
         {/* 디버그 정보 표시 (개발 중에만 사용) */}
         {__DEV__ && (
           <DebugInfo>
@@ -223,6 +261,11 @@ const Container = styled.View({
   backgroundColor: colors.black,
   justifyContent: 'center',
   alignItems: 'center',
+});
+
+const FallbackContainer = styled.View({
+  flex: 1,
+  backgroundColor: colors.black,
 });
 
 const LoadingContainer = styled.View({

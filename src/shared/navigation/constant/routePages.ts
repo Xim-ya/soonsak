@@ -5,6 +5,8 @@ export const routePages = {
   channelDetail: 'ChannelDetail',
   search: 'Search',
   channelSelection: 'ChannelSelection',
+  mediaList: 'MediaList',
+  imageDetail: 'ImageDetail',
 } as const;
 
 export type RoutePages = typeof routePages;

@@ -41,7 +41,7 @@ export namespace TopTenContentModel {
       id: content.id,
       title: content.title,
       type: content.contentType,
-      posterPath: content.posterPath,
+      posterPath: content.posterPath ?? '',
       backdropPath: content.backdropPath,
       source: 'engagement',
     };
