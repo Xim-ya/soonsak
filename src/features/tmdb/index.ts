@@ -18,7 +18,7 @@
 export { tmdbApi } from './api/tmdbApi';
 
 // React Query Hook exports
-export { useTmdbMovie, useWatchProviders } from './hooks';
+export { useTmdbMovie, useWatchProviders, useContentImages } from './hooks';
 
 // 타입들 exports
 export type {
@@ -39,6 +39,7 @@ export type {
   WatchProvidersResponseDto,
 } from './types/watchProviderDto';
 export type { WatchProviderModel } from './types/watchProviderModel';
+export type { TmdbImageItemDto, TmdbImagesResponseDto } from './types/imageDto';
 
 // 설정 상수들 exports
 export {

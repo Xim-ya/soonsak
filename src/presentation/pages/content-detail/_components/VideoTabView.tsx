@@ -4,6 +4,7 @@ import { useTabScrollListener } from '../_hooks/useTabScrollListener';
 import { VideoMetricsView } from './VideoMetricsView';
 import { SummaryView } from './SummaryView';
 import CaseView from './CaseView';
+import { MediaSectionView } from './MediaSectionView';
 import { OtherChannelVideoListView } from './OtherChannelVideoListView';
 import { ChannelInfoView } from './ChannelInfoView';
 import { FeaturedCommentView } from './FeaturedCommentView';
@@ -45,6 +46,9 @@ function VideoTabView({ onScrollChange }: { onScrollChange: (offset: number) => 
 
         {/* 출연진 */}
         <CaseView />
+
+        {/* 미디어 (스틸컷) */}
+        <MediaSectionView />
       </Tabs.ScrollView>
 
       {/* 전체 댓글 바텀시트 */}

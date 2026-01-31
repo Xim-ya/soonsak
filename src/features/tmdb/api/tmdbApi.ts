@@ -2,6 +2,7 @@ import { MovieDto } from '../types/movieDto';
 import { TvSeriesDto } from '../types/tvDto';
 import { TVCreditsResponse, MovieCreditsResponse } from '../types/creditDto';
 import { WatchProvidersResponseDto } from '../types/watchProviderDto';
+import { TmdbImagesResponseDto } from '../types/imageDto';
 import {
   TmdbPaginatedResponse,
   RelatedMovieItemDto,
@@ -87,4 +88,24 @@ export const tmdbApi = {
    */
   getWatchProviders: (contentId: number, contentType: 'movie' | 'tv') =>
     tmdbClient.get<WatchProvidersResponseDto>(`/${contentType}/${contentId}/watch/providers`),
+
+  /**
+   * 영화 이미지 목록 조회
+   * @param movieId 영화 ID
+   * @returns 배경, 포스터, 로고 이미지 목록
+   */
+  getMovieImages: (movieId: number) =>
+    tmdbClient.get<TmdbImagesResponseDto>(`/movie/${movieId}/images`, {
+      params: { include_image_language: 'ko,en,null' },
+    }),
+
+  /**
+   * TV 시리즈 이미지 목록 조회
+   * @param seriesId TV 시리즈 ID
+   * @returns 배경, 포스터, 로고 이미지 목록
+   */
+  getTvImages: (seriesId: number) =>
+    tmdbClient.get<TmdbImagesResponseDto>(`/tv/${seriesId}/images`, {
+      params: { include_image_language: 'ko,en,null' },
+    }),
 };
