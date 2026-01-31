@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { TmdbImageItemDto } from '../types/imageDto';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
@@ -27,22 +28,19 @@ export function useContentImages(
   const { data, isLoading, error } = useQuery({
     queryKey: ['tmdb', 'images', contentId, contentType],
     queryFn: async (): Promise<TmdbImageItemDto[]> => {
-      const response =
-        contentType === 'movie'
-          ? await tmdbApi.getMovieImages(contentId)
-          : await tmdbApi.getTvImages(contentId);
+      const response = await tmdbApi.getContentImages(contentId, contentType as 'movie' | 'tv');
 
-      return response.data.backdrops
-        .slice()
-        .sort((a, b) => b.voteAverage - a.voteAverage);
+      return response.data.backdrops.slice().sort((a, b) => b.voteAverage - a.voteAverage);
     },
     enabled: (contentType === 'movie' || contentType === 'tv') && !!contentId,
     retry: false,
   });
 
-  const filtered = excludeFilePath
-    ? (data || []).filter((img) => img.filePath !== excludeFilePath)
-    : data || [];
+  const filtered = useMemo(() => {
+    const images = data || [];
+    if (!excludeFilePath) return images;
+    return images.filter((img) => img.filePath !== excludeFilePath);
+  }, [data, excludeFilePath]);
 
   return {
     data: filtered,

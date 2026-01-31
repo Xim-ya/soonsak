@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { ScrollView, TouchableOpacity } from 'react-native';
 import styled from '@emotion/native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,8 +10,11 @@ import { useYouTubeVideo, buildYouTubeUrl } from '@/features/youtube';
 import { BasePage } from '@/presentation/components/page';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
-import { DarkedLinearShadow, LinearAlign } from '@/presentation/components/shadow/DarkedLinearShadow';
-import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
+import { ImageGrid } from '@/presentation/components/image/ImageGrid';
+import {
+  DarkedLinearShadow,
+  LinearAlign,
+} from '@/presentation/components/shadow/DarkedLinearShadow';
 import { AppSize } from '@/shared/utils/appSize';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
@@ -62,18 +65,6 @@ function MediaListPageComponent() {
     });
   }, [navigation, primaryVideoId, primaryVideoTitle, title, contentId, contentType]);
 
-  // 2열 그리드 행 단위 렌더링
-  const imageRows = useMemo(() => {
-    const rows: { left: (typeof images)[number]; right?: (typeof images)[number] }[] = [];
-    for (let i = 0; i < images.length; i += 2) {
-      const left = images[i];
-      if (!left) continue;
-      const right = images[i + 1];
-      rows.push(right ? { left, right } : { left });
-    }
-    return rows;
-  }, [images]);
-
   return (
     <BasePage useSafeArea safeAreaBottom={false}>
       <BackButtonAppBar title="미디어" centerAligned />
@@ -103,40 +94,13 @@ function MediaListPageComponent() {
         <ImageSectionContainer>
           <SubSectionTitle>이미지</SubSectionTitle>
 
-          {imageRows.map((row, rowIndex) => (
-            <GridRow key={rowIndex}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => handleImagePress(rowIndex * 2)}
-              >
-                <LoadableImageView
-                  source={formatter.prefixTmdbImgUrl(row.left.filePath, {
-                    size: TmdbImageSize.w780,
-                  })}
-                  width={gridItemWidth}
-                  height={gridItemHeight}
-                  borderRadius={4}
-                />
-              </TouchableOpacity>
-
-              {row.right && (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => handleImagePress(rowIndex * 2 + 1)}
-                  style={{ marginLeft: IMAGE_GAP }}
-                >
-                  <LoadableImageView
-                    source={formatter.prefixTmdbImgUrl(row.right.filePath, {
-                      size: TmdbImageSize.w780,
-                    })}
-                    width={gridItemWidth}
-                    height={gridItemHeight}
-                    borderRadius={4}
-                  />
-                </TouchableOpacity>
-              )}
-            </GridRow>
-          ))}
+          <ImageGrid
+            images={images}
+            itemWidth={gridItemWidth}
+            itemHeight={gridItemHeight}
+            gap={IMAGE_GAP}
+            onImagePress={handleImagePress}
+          />
         </ImageSectionContainer>
       </ScrollView>
     </BasePage>
@@ -177,11 +141,6 @@ const SubSectionTitle = styled.Text({
   ...textStyles.title2,
   color: colors.white,
   marginBottom: 10,
-});
-
-const GridRow = styled.View({
-  flexDirection: 'row',
-  marginBottom: IMAGE_GAP,
 });
 
 export const MediaListPage = React.memo(MediaListPageComponent);

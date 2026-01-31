@@ -22,6 +22,8 @@ const closeIconSvg = `
 </svg>
 `;
 
+const GALLERY_STYLE = { backgroundColor: colors.black } as const;
+
 function ImageDetailPageComponent() {
   const route = useRoute<ImageDetailRouteProp>();
   const navigation = useNavigation();
@@ -62,15 +64,12 @@ function ImageDetailPageComponent() {
         onIndexChange={handleIndexChange}
         maxScale={4}
         doubleTapScale={2}
-        style={{ backgroundColor: colors.black }}
+        style={GALLERY_STYLE}
       />
 
       {/* 상단 바 (X 닫기 + 인덱스 카운터) */}
       <TopBar topInset={insets.top}>
-        <CloseButton
-          onPress={handleClose}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
+        <CloseButton onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <SvgXml xml={closeIconSvg} width={CLOSE_ICON_SIZE} height={CLOSE_ICON_SIZE} />
         </CloseButton>
 

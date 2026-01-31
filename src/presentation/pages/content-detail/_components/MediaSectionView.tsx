@@ -10,6 +10,7 @@ import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
 import { useContentDetail } from '../_hooks/useContentDetail';
 import { useContentVideos } from '../_provider/ContentDetailProvider';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
+import { ImageGrid } from '@/presentation/components/image/ImageGrid';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import { AppSize } from '@/shared/utils/appSize';
 import colors from '@/shared/styles/colors';
@@ -31,11 +32,13 @@ function MediaSectionViewComponent() {
   const { data: images } = useContentImages(Number(id), type, backdropPath);
 
   const containerWidth = AppSize.screenWidth - HORIZONTAL_PADDING * 2;
-  const smallImageWidth = (containerWidth - IMAGE_GAP) / 2;
-  const largeImageHeight = containerWidth * (9 / 16);
-  const smallImageHeight = smallImageWidth * (9 / 16);
+  const gridItemWidth = (containerWidth - IMAGE_GAP) / 2;
+  const heroImageHeight = containerWidth * (9 / 16);
+  const gridItemHeight = gridItemWidth * (9 / 16);
 
-  const previewImages = useMemo(() => images.slice(0, PREVIEW_COUNT), [images]);
+  const heroImage = images[0];
+  const gridImages = useMemo(() => images.slice(1, PREVIEW_COUNT), [images]);
+  const hasMoreImages = images.length > PREVIEW_COUNT;
 
   const handleImagePress = useCallback(
     (index: number) => {
@@ -49,21 +52,35 @@ function MediaSectionViewComponent() {
     [navigation, id, type, backdropPath],
   );
 
+  const handleGridImagePress = useCallback(
+    (index: number) => {
+      // gridImages starts at index 1 of the full list
+      handleImagePress(index);
+    },
+    [handleImagePress],
+  );
+
   const handleMorePress = useCallback(() => {
-    navigation.navigate(routePages.mediaList, {
+    const params: RootStackParamList[typeof routePages.mediaList] = {
       contentId: Number(id),
       contentType: type,
       backdropPath,
       title: contentInfo?.title || '',
       ...(primaryVideo?.id ? { primaryVideoId: primaryVideo.id } : {}),
       ...(primaryVideo?.title ? { primaryVideoTitle: primaryVideo.title } : {}),
-    });
-  }, [navigation, id, type, backdropPath, contentInfo?.title, primaryVideo?.id, primaryVideo?.title]);
+    };
+    navigation.navigate(routePages.mediaList, params);
+  }, [
+    navigation,
+    id,
+    type,
+    backdropPath,
+    contentInfo?.title,
+    primaryVideo?.id,
+    primaryVideo?.title,
+  ]);
 
-  const firstImage = previewImages[0];
-  const restImages = previewImages.slice(1);
-
-  if (!firstImage) return null;
+  if (!heroImage) return null;
 
   return (
     <Container>
@@ -72,39 +89,29 @@ function MediaSectionViewComponent() {
       {/* 대형 이미지 (풀 너비, 16:9) */}
       <TouchableOpacity activeOpacity={0.8} onPress={() => handleImagePress(0)}>
         <LoadableImageView
-          source={formatter.prefixTmdbImgUrl(firstImage.filePath, { size: TmdbImageSize.w780 })}
+          source={formatter.prefixTmdbImgUrl(heroImage.filePath, { size: TmdbImageSize.w780 })}
           width={containerWidth}
-          height={largeImageHeight}
+          height={heroImageHeight}
           borderRadius={4}
         />
       </TouchableOpacity>
 
       {/* 2열 그리드 (나머지 이미지) */}
-      {restImages.length > 0 && (
-        <GridContainer>
-          {restImages.map((image, index) => (
-            <TouchableOpacity
-              key={image.filePath}
-              activeOpacity={0.8}
-              onPress={() => handleImagePress(index + 1)}
-              style={{
-                marginLeft: index % 2 === 1 ? IMAGE_GAP : 0,
-                marginTop: IMAGE_GAP,
-              }}
-            >
-              <LoadableImageView
-                source={formatter.prefixTmdbImgUrl(image.filePath, { size: TmdbImageSize.w780 })}
-                width={smallImageWidth}
-                height={smallImageHeight}
-                borderRadius={4}
-              />
-            </TouchableOpacity>
-          ))}
-        </GridContainer>
+      {gridImages.length > 0 && (
+        <GridWrapper>
+          <ImageGrid
+            images={gridImages}
+            itemWidth={gridItemWidth}
+            itemHeight={gridItemHeight}
+            gap={IMAGE_GAP}
+            onImagePress={handleGridImagePress}
+            indexOffset={1}
+          />
+        </GridWrapper>
       )}
 
       {/* 더보기 버튼 */}
-      {images.length > PREVIEW_COUNT && (
+      {hasMoreImages && (
         <MoreButtonRow>
           <TouchableOpacity onPress={handleMorePress} activeOpacity={0.6}>
             <MoreButtonText>더보기 {'>'}</MoreButtonText>
@@ -126,9 +133,8 @@ const SectionTitle = styled.Text({
   marginBottom: 10,
 });
 
-const GridContainer = styled.View({
-  flexDirection: 'row',
-  flexWrap: 'wrap',
+const GridWrapper = styled.View({
+  marginTop: IMAGE_GAP,
 });
 
 const MoreButtonRow = styled.View({
