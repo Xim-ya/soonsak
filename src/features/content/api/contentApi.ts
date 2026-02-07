@@ -33,18 +33,17 @@ function shouldThrottleRpc(key: string): boolean {
 
 /** excludeIds 유효성 검증 및 제한 */
 function sanitizeExcludeIds(excludeIds: number[]): number[] {
-  return excludeIds
-    .filter((id) => Number.isInteger(id) && id > 0)
-    .slice(0, MAX_EXCLUDE_IDS);
+  return excludeIds.filter((id) => Number.isInteger(id) && id > 0).slice(0, MAX_EXCLUDE_IDS);
 }
 
 /** 콘텐츠 필터 조건을 Supabase 쿼리에 적용 (count/data 쿼리 공용) */
-function applyContentFilters(
-  query: any,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyContentFilters<T extends { in: any; eq: any; overlaps: any; gte: any; not: any }>(
+  query: T,
   filter: ContentFilter,
   excludeIds: number[],
   channelContentIds: number[] | null,
-): any {
+): T {
   let q = query;
   if (channelContentIds !== null) {
     q = q.in('id', channelContentIds);
@@ -428,7 +427,9 @@ export const contentApi = {
         throw new Error(`Failed to fetch channel content ids: ${videoError.message}`);
       }
 
-      channelContentIds = [...new Set((videoRows ?? []).map((v: { content_id: number }) => v.content_id))];
+      channelContentIds = [
+        ...new Set((videoRows ?? []).map((v: { content_id: number }) => v.content_id)),
+      ];
       if (channelContentIds.length === 0) return [];
     }
 
@@ -687,7 +688,9 @@ export const contentApi = {
 
       const rows = rpcData ?? [];
       const totalCount = rows.length > 0 ? Number(rows[0].total_count) : 0;
-      const contents = mapWithField<ContentDto[]>(rows.map((r: { content_row: unknown }) => r.content_row));
+      const contents = mapWithField<ContentDto[]>(
+        rows.map((r: { content_row: unknown }) => r.content_row),
+      );
       const hasMore = (page + 1) * pageSize < totalCount;
 
       return { contents, hasMore, totalCount };
