@@ -7,9 +7,7 @@
 
 /** 배열에 항목이 있으면 제거, 없으면 추가 */
 function toggleArrayItem<T>(array: readonly T[], item: T): T[] {
-  return array.includes(item)
-    ? array.filter((v) => v !== item)
-    : [...array, item];
+  return array.includes(item) ? array.filter((v) => v !== item) : [...array, item];
 }
 
 export { toggleArrayItem };

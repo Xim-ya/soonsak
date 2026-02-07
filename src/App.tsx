@@ -1,7 +1,7 @@
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import StackNavigator from './shared/navigation/navigator/StackNavigator';
 import '@/shared/exntensions/arrayExtension';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -12,6 +12,9 @@ import colors from '@/shared/styles/colors';
 import { enableScreens } from 'react-native-screens';
 import { AuthProvider } from '@/shared/providers/AuthProvider';
 import { ContentFilterProvider } from '@/shared/context/ContentFilterContext';
+import { SnackbarProvider } from '@/shared/providers/SnackbarProvider';
+import { isAppError } from '@/shared/errors';
+import { showGlobalSnackbar } from '@/shared/utils/snackbarRef';
 
 // react-native-screens 활성화 (iOS 배경색 문제 해결을 위해)
 enableScreens(true);
@@ -31,6 +34,52 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false, // 모바일에서는 필요 없음
     },
   },
+  // 전역 Query 에러 핸들러
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // 개별 쿼리에서 전역 에러 핸들러 스킵 요청 시
+      if (query.meta?.['skipGlobalErrorHandler']) {
+        return;
+      }
+
+      // 사용자 취소는 스낵바 표시하지 않음
+      if (isAppError(error) && error.isUserCancelled) {
+        return;
+      }
+
+      // 에러 메시지 표시
+      const message = isAppError(error) ? error.userMessage : '오류가 발생했습니다';
+      showGlobalSnackbar(message);
+
+      // 개발 모드에서 콘솔 로그
+      if (__DEV__) {
+        console.error('[QueryCache Error]', message, error);
+      }
+    },
+  }),
+  // 전역 Mutation 에러 핸들러
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      // 개별 뮤테이션에서 전역 에러 핸들러 스킵 요청 시
+      if (mutation.meta?.['skipGlobalErrorHandler']) {
+        return;
+      }
+
+      // 사용자 취소는 스낵바 표시하지 않음
+      if (isAppError(error) && error.isUserCancelled) {
+        return;
+      }
+
+      // 에러 메시지 표시
+      const message = isAppError(error) ? error.userMessage : '오류가 발생했습니다';
+      showGlobalSnackbar(message);
+
+      // 개발 모드에서 콘솔 로그
+      if (__DEV__) {
+        console.error('[MutationCache Error]', message, error);
+      }
+    },
+  }),
 });
 
 // 네비게이션 테마 설정 (iOS 엣지 하얀색 배경 문제 해결)
@@ -92,9 +141,11 @@ export default function App() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black }}>
         <QueryClientProvider client={queryClient}>
-          <ContentFilterProvider>
-            <AppContent />
-          </ContentFilterProvider>
+          <SnackbarProvider>
+            <ContentFilterProvider>
+              <AppContent />
+            </ContentFilterProvider>
+          </SnackbarProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>

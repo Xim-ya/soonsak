@@ -71,7 +71,7 @@ export function useRealtimeTopTen() {
       );
 
       // 8. TMDB에서 이미 포함된 콘텐츠 제외
-      const tmdbContentKeys = new Set(tmdbTopContents.map((c) => `${c.id}-${c.contentType}`));
+      const tmdbContentKeys = new Set(tmdbTopContents.map((c) => `${c.id}-${c.type}`));
 
       const additionalContents: TopTenContentModel[] = [];
 

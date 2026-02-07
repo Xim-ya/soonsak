@@ -84,10 +84,7 @@ const ExploreTabContent = React.memo(function ExploreTabContent({
     [onContentPress],
   );
 
-  const keyExtractor = useCallback(
-    (item: ExploreContentModel) => `${item.id}-${item.type}`,
-    [],
-  );
+  const keyExtractor = useCallback((item: ExploreContentModel) => `${item.id}-${item.type}`, []);
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
