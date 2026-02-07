@@ -44,6 +44,9 @@ function LoadableImageViewComponent({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  // source가 빈 문자열이면 에러 상태로 처리
+  const isValidSource = source && source.length > 0;
+
   // Reanimated shared value (UI 스레드에서 애니메이션)
   const opacity = useSharedValue(0);
 
@@ -85,11 +88,13 @@ function LoadableImageViewComponent({
 
   return (
     <Container width={width} height={height} borderRadius={borderRadius} style={style}>
-      {/* 로딩 중일 때 회색 placeholder */}
-      {isLoading && <PlaceholderView width={width} height={height} borderRadius={borderRadius} />}
+      {/* 로딩 중일 때 회색 placeholder (유효한 소스일 때만) */}
+      {isLoading && isValidSource && (
+        <PlaceholderView width={width} height={height} borderRadius={borderRadius} />
+      )}
 
-      {/* 에러 시 에러 표시 */}
-      {hasError && (
+      {/* 에러 시 에러 표시 (빈 소스 포함) */}
+      {(hasError || !isValidSource) && (
         <ErrorContainer width={width} height={height} borderRadius={borderRadius}>
           <ErrorIcon width={width} height={height}>
             ?
@@ -98,7 +103,7 @@ function LoadableImageViewComponent({
       )}
 
       {/* 실제 이미지 - Reanimated 애니메이션 */}
-      {!hasError && (
+      {!hasError && isValidSource && (
         <Animated.Image
           source={imageSource}
           style={[imageStyle, animatedImageStyle]}

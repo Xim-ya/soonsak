@@ -25,6 +25,8 @@ interface ContentFilter {
   readonly includeEnding: boolean;
   /** 선택된 채널 ID 목록 (빈 배열 = 전체) */
   readonly channelIds: string[];
+  /** 본 작품 제외 여부 (추후 활성화 예정) */
+  readonly excludeWatched: boolean;
 }
 
 interface YearRange {
@@ -60,6 +62,7 @@ const DEFAULT_CONTENT_FILTER: ContentFilter = {
   minStarRating: null,
   includeEnding: false,
   channelIds: [],
+  excludeWatched: false,
 };
 
 /** 필터가 적용되었는지 확인 */
@@ -71,7 +74,8 @@ function isFilterActive(filter: ContentFilter): boolean {
     filter.releaseYearRange !== null ||
     filter.minStarRating !== null ||
     filter.includeEnding ||
-    filter.channelIds.length > 0
+    filter.channelIds.length > 0 ||
+    filter.excludeWatched
   );
 }
 
@@ -85,6 +89,7 @@ function getActiveFilterCount(filter: ContentFilter): number {
   if (filter.minStarRating !== null) count++;
   if (filter.includeEnding) count++;
   if (filter.channelIds.length > 0) count++;
+  if (filter.excludeWatched) count++;
   return count;
 }
 

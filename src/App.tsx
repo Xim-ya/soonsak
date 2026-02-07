@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { AppSize } from '@/shared/utils/appSize';
 import colors from '@/shared/styles/colors';
 import { enableScreens } from 'react-native-screens';
+import { ContentFilterProvider } from '@/shared/context/ContentFilterContext';
 
 // react-native-screens 활성화 (iOS 배경색 문제 해결을 위해)
 enableScreens(true);
@@ -89,7 +90,9 @@ export default function App() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black }}>
         <QueryClientProvider client={queryClient}>
-          <AppContent />
+          <ContentFilterProvider>
+            <AppContent />
+          </ContentFilterProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>

@@ -24,32 +24,45 @@ interface FilterChipProps {
   readonly selected: boolean;
   /** 칩 터치 콜백 */
   readonly onPress: () => void;
+  /** 비활성화 여부 */
+  readonly disabled?: boolean;
 }
 
 const FilterChip = React.memo(function FilterChip({
   label,
   selected,
   onPress,
+  disabled = false,
 }: FilterChipProps): React.ReactElement {
   return (
-    <ChipContainer selected={selected} onPress={onPress} activeOpacity={0.7}>
-      <ChipText selected={selected}>{label}</ChipText>
+    <ChipContainer
+      selected={selected}
+      disabled={disabled}
+      onPress={disabled ? undefined : onPress}
+      activeOpacity={disabled ? 1 : 0.7}
+    >
+      <ChipText selected={selected} disabled={disabled}>
+        {label}
+      </ChipText>
     </ChipContainer>
   );
 });
 
 /* Styled Components */
 
-const ChipContainer = styled.TouchableOpacity<{ selected: boolean }>(({ selected }) => ({
-  backgroundColor: selected ? colors.white : colors.gray05,
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-  borderRadius: 20,
-  borderWidth: selected ? 0 : 1,
-  borderColor: colors.gray04,
-}));
+const ChipContainer = styled.TouchableOpacity<{ selected: boolean; disabled: boolean }>(
+  ({ selected, disabled }) => ({
+    backgroundColor: selected ? colors.white : colors.gray05,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: selected ? 0 : 1,
+    borderColor: colors.gray04,
+    opacity: disabled ? 0.4 : 1,
+  }),
+);
 
-const ChipText = styled.Text<{ selected: boolean }>(({ selected }) => ({
+const ChipText = styled.Text<{ selected: boolean; disabled: boolean }>(({ selected }) => ({
   ...textStyles.alert1,
   color: selected ? colors.black : colors.gray01,
 }));
