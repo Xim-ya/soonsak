@@ -1,7 +1,6 @@
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import StackNavigator from './shared/navigation/navigator/StackNavigator';
 import '@/shared/exntensions/arrayExtension';
@@ -11,6 +10,7 @@ import { useEffect } from 'react';
 import { AppSize } from '@/shared/utils/appSize';
 import colors from '@/shared/styles/colors';
 import { enableScreens } from 'react-native-screens';
+import { AuthProvider } from '@/shared/providers/AuthProvider';
 import { ContentFilterProvider } from '@/shared/context/ContentFilterContext';
 
 // react-native-screens 활성화 (iOS 배경색 문제 해결을 위해)
@@ -66,9 +66,11 @@ function AppContent() {
   return (
     <>
       <StatusBar style="light" />
-      <NavigationContainer theme={navigationTheme}>
-        <StackNavigator />
-      </NavigationContainer>
+      <AuthProvider>
+        <NavigationContainer theme={navigationTheme}>
+          <StackNavigator />
+        </NavigationContainer>
+      </AuthProvider>
     </>
   );
 }

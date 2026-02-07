@@ -27,6 +27,7 @@ export default function ExploreScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
 
+
   const {
     filter,
     isVisible,
