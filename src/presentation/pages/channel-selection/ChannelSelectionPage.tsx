@@ -22,7 +22,10 @@ import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
 import { RoundedAvatorView } from '@/presentation/components/image/RoundedAvatarView';
 import { ChannelAvatarWrapper } from '@/presentation/components/channel/ChannelAvatarWrapper';
-import { DarkedLinearShadow, LinearAlign } from '@/presentation/components/shadow/DarkedLinearShadow';
+import {
+  DarkedLinearShadow,
+  LinearAlign,
+} from '@/presentation/components/shadow/DarkedLinearShadow';
 import type { ChannelDto } from '@/features/channel/types';
 import { useChannelSelection } from './_hooks/useChannelSelection';
 
@@ -30,7 +33,9 @@ import { useChannelSelection } from './_hooks/useChannelSelection';
 const COLUMN_COUNT = 3;
 const GRID_HORIZONTAL_PADDING = 20;
 const GRID_GAP = 12;
-const ITEM_WIDTH = (AppSize.screenWidth - GRID_HORIZONTAL_PADDING * 2 - GRID_GAP * (COLUMN_COUNT - 1)) / COLUMN_COUNT;
+const ITEM_WIDTH =
+  (AppSize.screenWidth - GRID_HORIZONTAL_PADDING * 2 - GRID_GAP * (COLUMN_COUNT - 1)) /
+  COLUMN_COUNT;
 /** 아바타 크기 */
 const AVATAR_SIZE = 72;
 /** 하단 버튼 영역 높이 */
@@ -71,15 +76,17 @@ export default function ChannelSelectionPage(): React.ReactElement {
 
       return (
         <ChannelItemContainer onPress={() => toggleChannel(item.id)}>
-          <ChannelAvatarWrapper isSelected={isSelected} avatarSize={AVATAR_SIZE} unselectedOpacity={0.5}>
+          <ChannelAvatarWrapper
+            isSelected={isSelected}
+            avatarSize={AVATAR_SIZE}
+            unselectedOpacity={0.5}
+          >
             <RoundedAvatorView source={item.logoUrl ?? ''} size={AVATAR_SIZE} />
           </ChannelAvatarWrapper>
           <ChannelName numberOfLines={1} isSelected={isSelected}>
             {item.name ?? ''}
           </ChannelName>
-          {subscriberText !== '' && (
-            <SubscriberText>{subscriberText}</SubscriberText>
-          )}
+          {subscriberText !== '' && <SubscriberText>{subscriberText}</SubscriberText>}
         </ChannelItemContainer>
       );
     },

@@ -38,12 +38,9 @@ function sanitizeExcludeIds(excludeIds: number[]): number[] {
 
 /** 콘텐츠 필터 조건을 Supabase 쿼리에 적용 (count/data 쿼리 공용) */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyContentFilters<T extends { in: any; eq: any; overlaps: any; gte: any; lte: any; not: any }>(
-  query: T,
-  filter: ContentFilter,
-  excludeIds: number[],
-  channelContentIds: number[] | null,
-): T {
+function applyContentFilters<
+  T extends { in: any; eq: any; overlaps: any; gte: any; lte: any; not: any },
+>(query: T, filter: ContentFilter, excludeIds: number[], channelContentIds: number[] | null): T {
   let q = query;
   if (channelContentIds !== null) {
     q = q.in('id', channelContentIds);

@@ -203,22 +203,20 @@ function ContentFilterBottomSheet({
   }, [tempFilter, onApply, handleClose]);
 
   // 필터 필드별 업데이트 콜백
-  const filterHandlers = useMemo(() => ({
-    onIncludeEndingChange: (includeEnding: boolean) =>
-      updateFilter({ includeEnding }),
-    onContentTypeChange: (contentType: ContentFilter['contentType']) =>
-      updateFilter({ contentType, genreIds: [] }),
-    onGenreIdsChange: (genreIds: number[]) =>
-      updateFilter({ genreIds }),
-    onCountryCodesChange: (countryCodes: string[]) =>
-      updateFilter({ countryCodes }),
-    onReleaseYearRangeChange: (releaseYearRange: ContentFilter['releaseYearRange']) =>
-      updateFilter({ releaseYearRange }),
-    onMinStarRatingChange: (minStarRating: number | null) =>
-      updateFilter({ minStarRating }),
-    onChannelIdsChange: (channelIds: string[]) =>
-      updateFilter({ channelIds }),
-  }), [updateFilter]);
+  const filterHandlers = useMemo(
+    () => ({
+      onIncludeEndingChange: (includeEnding: boolean) => updateFilter({ includeEnding }),
+      onContentTypeChange: (contentType: ContentFilter['contentType']) =>
+        updateFilter({ contentType, genreIds: [] }),
+      onGenreIdsChange: (genreIds: number[]) => updateFilter({ genreIds }),
+      onCountryCodesChange: (countryCodes: string[]) => updateFilter({ countryCodes }),
+      onReleaseYearRangeChange: (releaseYearRange: ContentFilter['releaseYearRange']) =>
+        updateFilter({ releaseYearRange }),
+      onMinStarRatingChange: (minStarRating: number | null) => updateFilter({ minStarRating }),
+      onChannelIdsChange: (channelIds: string[]) => updateFilter({ channelIds }),
+    }),
+    [updateFilter],
+  );
 
   // 채널 더보기 핸들러
   const handleChannelMorePress = useCallback(() => {

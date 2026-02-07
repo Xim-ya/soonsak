@@ -27,7 +27,6 @@ export default function ExploreScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
 
-
   const {
     filter,
     isVisible,
@@ -78,13 +77,25 @@ export default function ExploreScreen() {
             <ExploreTabContent sortType="all" filter={filter} onContentPress={handleContentPress} />
           </Tabs.Tab>
           <Tabs.Tab name="latest" label="최신">
-            <ExploreTabContent sortType="latest" filter={filter} onContentPress={handleContentPress} />
+            <ExploreTabContent
+              sortType="latest"
+              filter={filter}
+              onContentPress={handleContentPress}
+            />
           </Tabs.Tab>
           <Tabs.Tab name="popular" label="인기">
-            <ExploreTabContent sortType="popular" filter={filter} onContentPress={handleContentPress} />
+            <ExploreTabContent
+              sortType="popular"
+              filter={filter}
+              onContentPress={handleContentPress}
+            />
           </Tabs.Tab>
           <Tabs.Tab name="recommended" label="개발자 추천">
-            <ExploreTabContent sortType="recommended" filter={filter} onContentPress={handleContentPress} />
+            <ExploreTabContent
+              sortType="recommended"
+              filter={filter}
+              onContentPress={handleContentPress}
+            />
           </Tabs.Tab>
         </Tabs.Container>
       </TabsContainer>

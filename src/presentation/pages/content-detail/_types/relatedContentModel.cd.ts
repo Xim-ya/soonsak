@@ -26,7 +26,7 @@ export namespace RelatedContentModel {
     return {
       id: dto.id,
       title: dto.title,
-      posterPath: dto.posterPath,
+      posterPath: dto.posterPath ?? '',
       contentType: dto.contentType,
       isRecommended,
     };
@@ -37,7 +37,10 @@ export namespace RelatedContentModel {
    * @param dtoList - ContentDto 배열
    * @param isRecommended - TMDB 추천 콘텐츠 여부
    */
-  export function fromDtoList(dtoList: ContentDto[], isRecommended: boolean): RelatedContentModel[] {
+  export function fromDtoList(
+    dtoList: ContentDto[],
+    isRecommended: boolean,
+  ): RelatedContentModel[] {
     return dtoList.map((dto) => fromDto(dto, isRecommended));
   }
 }
