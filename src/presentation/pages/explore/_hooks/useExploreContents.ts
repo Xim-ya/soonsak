@@ -4,7 +4,7 @@
  * 정렬 및 필터 조건에 따라 콘텐츠를 페이지네이션하여 조회합니다.
  */
 
-import { useInfiniteQuery, InfiniteData } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { contentApi } from '@/features/content/api/contentApi';
 import { ContentDto } from '@/features/content/types';
 import type { ContentFilter } from '@/shared/types/filter/contentFilter';
@@ -50,6 +50,7 @@ function serializeFilter(filter: ContentFilter): string {
     minStarRating: filter.minStarRating,
     includeEnding: filter.includeEnding,
     channelIds: filter.channelIds,
+    excludeWatched: filter.excludeWatched,
   });
 }
 
@@ -64,30 +65,26 @@ export function useExploreContents(
   // 세션 시드 (앱 재시작 시마다 새로 생성, 'all' 정렬에서 사용)
   const sessionSeed = getSessionSeed();
 
+  const queryResult = useInfiniteQuery({
+    queryKey: ['exploreContents', effectiveSortType, filterKey, sessionSeed],
+    queryFn: async ({ pageParam = 0 }): Promise<ExploreContentsResponse> => {
+      return contentApi.getExploreContents(
+        effectiveSortType,
+        filter,
+        pageParam,
+        PAGE_SIZE,
+        effectiveSortType === 'all' ? sessionSeed : undefined,
+      );
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.hasMore ? allPages.length : undefined;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
-    useInfiniteQuery<
-      ExploreContentsResponse,
-      Error,
-      InfiniteData<ExploreContentsResponse>,
-      (string | number)[],
-      number
-    >({
-      queryKey: ['exploreContents', effectiveSortType, filterKey, sessionSeed],
-      queryFn: async ({ pageParam = 0 }) => {
-        return contentApi.getExploreContents(
-          effectiveSortType,
-          filter,
-          pageParam,
-          PAGE_SIZE,
-          effectiveSortType === 'all' ? sessionSeed : undefined,
-        );
-      },
-      initialPageParam: 0,
-      getNextPageParam: (lastPage, pages) => {
-        return lastPage.hasMore ? pages.length : undefined;
-      },
-      staleTime: 5 * 60 * 1000,
-    });
+    queryResult;
 
   const contents = data?.pages.flatMap((page) => page.contents.map(toExploreContentModel)) ?? [];
   const totalCount = data?.pages[0]?.totalCount ?? 0;
