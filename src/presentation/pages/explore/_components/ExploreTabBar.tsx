@@ -8,13 +8,66 @@
 import React from 'react';
 import { ScrollView } from 'react-native';
 import styled from '@emotion/native';
-import Animated, { useAnimatedStyle, useAnimatedReaction, runOnJS } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useAnimatedReaction,
+  runOnJS,
+  SharedValue,
+} from 'react-native-reanimated';
 import { TabBarProps, useCurrentTabScrollY } from 'react-native-collapsible-tab-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SvgXml } from 'react-native-svg';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { EXPLORE_SORT_TABS } from '../_types/exploreTypes';
+
+/** 개별 탭 버튼 Props */
+interface ExploreTabButtonProps<T extends string> {
+  readonly name: T;
+  readonly index: number;
+  readonly indexDecimal: SharedValue<number>;
+  readonly onTabPress: (name: T) => void;
+}
+
+/** 개별 탭 버튼 컴포넌트 - Hooks 규칙 준수를 위해 분리 */
+const ExploreTabButton = <T extends string>({
+  name,
+  index,
+  indexDecimal,
+  onTabPress,
+}: ExploreTabButtonProps<T>) => {
+  const tabConfig = EXPLORE_SORT_TABS.find((tab) => tab.key === name);
+  const label = tabConfig?.label ?? name;
+  const isDisabled = tabConfig?.isDisabled ?? false;
+
+  const textStyle = useAnimatedStyle(() => {
+    const isActive = Math.round(indexDecimal.value) === index;
+    return {
+      color: isDisabled ? colors.gray04 : isActive ? colors.white : colors.gray02,
+    };
+  });
+
+  const indicatorStyle = useAnimatedStyle(() => {
+    const isActive = Math.round(indexDecimal.value) === index;
+    return {
+      opacity: isActive && !isDisabled ? 1 : 0,
+    };
+  });
+
+  return (
+    <TabButton
+      onPress={() => {
+        if (!isDisabled) {
+          onTabPress(name);
+        }
+      }}
+      activeOpacity={isDisabled ? 1 : 0.7}
+    >
+      <AnimatedTabText style={textStyle}>{label}</AnimatedTabText>
+      <AnimatedIndicator style={indicatorStyle} />
+    </TabButton>
+  );
+};
 
 const HORIZONTAL_PADDING = 16;
 
@@ -86,46 +139,15 @@ const ExploreTabBar = <T extends string>({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: HORIZONTAL_PADDING }}
         >
-          {tabNames.map((name, index) => {
-            const tabConfig = EXPLORE_SORT_TABS.find((tab) => tab.key === name);
-            const label = tabConfig?.label ?? name;
-            const isDisabled = tabConfig?.isDisabled ?? false;
-
-            return (
-              <TabButton
-                key={name}
-                onPress={() => {
-                  if (!isDisabled) {
-                    onTabPress(name);
-                  }
-                }}
-                activeOpacity={isDisabled ? 1 : 0.7}
-              >
-                <AnimatedTabText
-                  style={useAnimatedStyle(() => {
-                    const isActive = Math.round(indexDecimal.value) === index;
-                    return {
-                      color: isDisabled
-                        ? colors.gray04
-                        : isActive
-                          ? colors.white
-                          : colors.gray02,
-                    };
-                  })}
-                >
-                  {label}
-                </AnimatedTabText>
-                <AnimatedIndicator
-                  style={useAnimatedStyle(() => {
-                    const isActive = Math.round(indexDecimal.value) === index;
-                    return {
-                      opacity: isActive && !isDisabled ? 1 : 0,
-                    };
-                  })}
-                />
-              </TabButton>
-            );
-          })}
+          {tabNames.map((name, index) => (
+            <ExploreTabButton
+              key={name}
+              name={name}
+              index={index}
+              indexDecimal={indexDecimal}
+              onTabPress={onTabPress}
+            />
+          ))}
         </ScrollView>
       </TabBarSection>
 
