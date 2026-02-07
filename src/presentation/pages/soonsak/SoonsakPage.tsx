@@ -15,9 +15,9 @@ import { BasePage } from '@/presentation/components/page/BasePage';
 import { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import type { ContentFilter } from '@/shared/types/filter/contentFilter';
-import { DEFAULT_CONTENT_FILTER, isFilterActive } from '@/shared/types/filter/contentFilter';
 import { ContentFilterBottomSheet } from '@/presentation/components/filter/ContentFilterBottomSheet';
 import { channelSelectionBridge } from '@/shared/utils/channelSelectionBridge';
+import { useContentFilter } from '@/shared/context/ContentFilterContext';
 import { SoonsakHeader } from './_components/SoonsakHeader';
 import { ContentGrid, ContentGridRef } from './_components/ContentGrid';
 
@@ -25,8 +25,8 @@ export default function SoonsakPage() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const gridRef = useRef<ContentGridRef>(null);
 
-  // 필터 상태
-  const [filter, setFilter] = useState<ContentFilter>(DEFAULT_CONTENT_FILTER);
+  // 공유 필터 컨텍스트에서 필터 상태 가져오기
+  const { filter, setFilter, isFilterApplied } = useContentFilter();
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   // 채널 선택 페이지에서 복귀 시 바텀시트를 복원하기 위한 임시 필터
   const [pendingFilter, setPendingFilter] = useState<ContentFilter | null>(null);
@@ -113,7 +113,7 @@ export default function SoonsakPage() {
           onFilterPress={handleFilterPress}
           onSearchPress={handleSearchPress}
           onNotificationPress={handleNotificationPress}
-          isFilterActive={isFilterActive(filter)}
+          isFilterActive={isFilterApplied}
         />
 
         {/* 필터 바텀시트 */}

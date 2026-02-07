@@ -1,99 +1,124 @@
-import React from 'react';
-import { TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import styled from '@emotion/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SvgXml } from 'react-native-svg';
-import colors from '@/shared/styles/colors';
-import textStyles from '@/shared/styles/textStyles';
-import { RootStackParamList } from '@/shared/navigation/types';
-import { routePages } from '@/shared/navigation/constant/routePages';
-import { useAuth } from '@/shared/providers/AuthProvider';
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const SEARCH_ICON_SIZE = 20;
-const HORIZONTAL_PADDING = 16;
-
-// 검색 아이콘 SVG
-const searchIconSvg = `
-<svg width="${SEARCH_ICON_SIZE}" height="${SEARCH_ICON_SIZE}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="${colors.gray02}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
-`;
-
 /**
  * ExploreScreen - 탐색 탭 화면
  *
- * 검색 버튼을 통해 검색 화면으로 이동할 수 있습니다.
+ * 콘텐츠를 필터링하고 정렬하여 탐색할 수 있는 화면입니다.
+ * 스와이프로 탭을 전환할 수 있습니다.
  */
+
+import { useCallback } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import styled from '@emotion/native';
+import { Tabs } from 'react-native-collapsible-tab-view';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import colors from '@/shared/styles/colors';
+import { RootStackParamList } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
+import { ContentFilterBottomSheet } from '@/presentation/components/filter/ContentFilterBottomSheet';
+import type { ExploreContentModel } from './_types/exploreTypes';
+import { ExploreHeader } from './_components/ExploreHeader';
+import { ExploreTabBar } from './_components/ExploreTabBar';
+import { ExploreTabContent } from './_components/ExploreTabContent';
+import { useExploreFilterSheet } from './_hooks/useExploreFilterSheet';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function ExploreScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const { signOut } = useAuth();
 
-  const handleSearchPress = () => {
-    navigation.navigate(routePages.search);
-  };
 
-  const handleLogout = async () => {
-    await signOut();
-  };
+  const {
+    filter,
+    isVisible,
+    sheetFilter,
+    hasPendingFilter,
+    isCustomFilterActive,
+    toggleIncludeEnding,
+    openSheet,
+    closeSheet,
+    applyFilter,
+    requestChannelSelection,
+  } = useExploreFilterSheet();
+
+  const handleContentPress = useCallback(
+    (content: ExploreContentModel) => {
+      navigation.navigate(routePages.contentDetail, {
+        id: content.id,
+        title: content.title,
+        type: content.type,
+      });
+    },
+    [navigation],
+  );
 
   return (
-    <Container topInset={insets.top}>
-      <SearchButton onPress={handleSearchPress} activeOpacity={0.7}>
-        <SearchIconWrapper>
-          <SvgXml xml={searchIconSvg} width={SEARCH_ICON_SIZE} height={SEARCH_ICON_SIZE} />
-        </SearchIconWrapper>
-        <SearchPlaceholder>콘텐츠 검색</SearchPlaceholder>
-      </SearchButton>
+    <Container>
+      {/* Status bar 영역을 덮는 불투명 배경 - 헤더가 스크롤될 때 이 뒤로 사라짐 */}
+      <StatusBarBackground style={{ height: insets.top }} />
 
-      {/* 임시 로그아웃 버튼 */}
-      <LogoutButton onPress={handleLogout} activeOpacity={0.7}>
-        <LogoutButtonText>로그아웃 (임시)</LogoutButtonText>
-      </LogoutButton>
+      <TabsContainer paddingTop={insets.top}>
+        <Tabs.Container
+          renderHeader={() => <ExploreHeader />}
+          renderTabBar={(props) => (
+            <ExploreTabBar
+              {...props}
+              includeEnding={filter.includeEnding}
+              onIncludeEndingToggle={toggleIncludeEnding}
+              isCustomFilterActive={isCustomFilterActive}
+              onFilterPress={openSheet}
+            />
+          )}
+          containerStyle={{ backgroundColor: colors.black }}
+          headerContainerStyle={{ backgroundColor: colors.black }}
+          minHeaderHeight={0}
+          pagerProps={{ style: { backgroundColor: colors.black } }}
+        >
+          <Tabs.Tab name="all" label="전체">
+            <ExploreTabContent sortType="all" filter={filter} onContentPress={handleContentPress} />
+          </Tabs.Tab>
+          <Tabs.Tab name="latest" label="최신">
+            <ExploreTabContent sortType="latest" filter={filter} onContentPress={handleContentPress} />
+          </Tabs.Tab>
+          <Tabs.Tab name="popular" label="인기">
+            <ExploreTabContent sortType="popular" filter={filter} onContentPress={handleContentPress} />
+          </Tabs.Tab>
+          <Tabs.Tab name="recommended" label="개발자 추천">
+            <ExploreTabContent sortType="recommended" filter={filter} onContentPress={handleContentPress} />
+          </Tabs.Tab>
+        </Tabs.Container>
+      </TabsContainer>
+
+      {/* 필터 바텀시트 */}
+      <ContentFilterBottomSheet
+        visible={isVisible}
+        currentFilter={sheetFilter}
+        onApply={applyFilter}
+        onClose={closeSheet}
+        onRequestChannelSelection={requestChannelSelection}
+        preserveScrollPosition={hasPendingFilter}
+      />
     </Container>
   );
 }
 
 /* Styled Components */
-const Container = styled.View<{ topInset: number }>(({ topInset }) => ({
+const Container = styled.View({
   flex: 1,
   backgroundColor: colors.black,
-  paddingTop: topInset + 16,
+});
+
+const TabsContainer = styled.View<{ paddingTop: number }>(({ paddingTop }) => ({
+  flex: 1,
+  backgroundColor: colors.black,
+  paddingTop,
 }));
 
-const SearchButton = styled(TouchableOpacity)({
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: colors.gray05,
-  borderRadius: 8,
-  marginHorizontal: HORIZONTAL_PADDING,
-  paddingHorizontal: 12,
-  height: 44,
-});
-
-const SearchIconWrapper = styled.View({
-  marginRight: 8,
-});
-
-const SearchPlaceholder = styled.Text({
-  ...textStyles.body2,
-  color: colors.gray02,
-});
-
-const LogoutButton = styled(TouchableOpacity)({
-  backgroundColor: colors.gray04,
-  borderRadius: 8,
-  marginHorizontal: HORIZONTAL_PADDING,
-  marginTop: 20,
-  paddingVertical: 12,
-  alignItems: 'center',
-});
-
-const LogoutButtonText = styled.Text({
-  ...textStyles.body1,
-  color: colors.white,
+const StatusBarBackground = styled.View({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  backgroundColor: colors.black,
+  zIndex: 100,
 });
