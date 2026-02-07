@@ -9,6 +9,7 @@ import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
+import { useAuth } from '@/shared/providers/AuthProvider';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,9 +31,14 @@ const searchIconSvg = `
 export default function ExploreScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const { signOut } = useAuth();
 
   const handleSearchPress = () => {
     navigation.navigate(routePages.search);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
   };
 
   return (
@@ -43,6 +49,11 @@ export default function ExploreScreen() {
         </SearchIconWrapper>
         <SearchPlaceholder>콘텐츠 검색</SearchPlaceholder>
       </SearchButton>
+
+      {/* 임시 로그아웃 버튼 */}
+      <LogoutButton onPress={handleLogout} activeOpacity={0.7}>
+        <LogoutButtonText>로그아웃 (임시)</LogoutButtonText>
+      </LogoutButton>
     </Container>
   );
 }
@@ -71,4 +82,18 @@ const SearchIconWrapper = styled.View({
 const SearchPlaceholder = styled.Text({
   ...textStyles.body2,
   color: colors.gray02,
+});
+
+const LogoutButton = styled(TouchableOpacity)({
+  backgroundColor: colors.gray04,
+  borderRadius: 8,
+  marginHorizontal: HORIZONTAL_PADDING,
+  marginTop: 20,
+  paddingVertical: 12,
+  alignItems: 'center',
+});
+
+const LogoutButtonText = styled.Text({
+  ...textStyles.body1,
+  color: colors.white,
 });

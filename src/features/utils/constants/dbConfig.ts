@@ -39,3 +39,19 @@ export const CHANNEL_DATABASE = {
     DEFAULT_RANDOM: 12,
   },
 } as const;
+
+export const AUTH_DATABASE = {
+  TABLES: {
+    PROFILES: 'profiles',
+  },
+  COLUMNS: {
+    ID: 'id',
+    EMAIL: 'email',
+    DISPLAY_NAME: 'display_name',
+    AVATAR_URL: 'avatar_url',
+    PROVIDER: 'provider',
+    CREATED_AT: 'created_at',
+    UPDATED_AT: 'updated_at',
+    LAST_LOGIN_AT: 'last_login_at',
+  },
+} as const;

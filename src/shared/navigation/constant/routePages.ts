@@ -1,4 +1,5 @@
 export const routePages = {
+  login: 'Login',
   mainTabs: 'MainTabs',
   contentDetail: 'ContentDetail',
   player: 'Player',
