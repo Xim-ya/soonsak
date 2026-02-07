@@ -36,11 +36,23 @@ function sanitizeExcludeIds(excludeIds: number[]): number[] {
   return excludeIds.filter((id) => Number.isInteger(id) && id > 0).slice(0, MAX_EXCLUDE_IDS);
 }
 
+/** Supabase 쿼리 필터 메서드 인터페이스 */
+interface FilterableQuery {
+  in(column: string, values: readonly (number | string)[]): this;
+  eq(column: string, value: unknown): this;
+  overlaps(column: string, values: readonly (number | string)[]): this;
+  gte(column: string, value: string | number): this;
+  lte(column: string, value: string | number): this;
+  not(column: string, operator: string, value: string): this;
+}
+
 /** 콘텐츠 필터 조건을 Supabase 쿼리에 적용 (count/data 쿼리 공용) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyContentFilters<
-  T extends { in: any; eq: any; overlaps: any; gte: any; lte: any; not: any },
->(query: T, filter: ContentFilter, excludeIds: number[], channelContentIds: number[] | null): T {
+function applyContentFilters<T extends FilterableQuery>(
+  query: T,
+  filter: ContentFilter,
+  excludeIds: number[],
+  channelContentIds: number[] | null,
+): T {
   let q = query;
   if (channelContentIds !== null) {
     q = q.in('id', channelContentIds);
