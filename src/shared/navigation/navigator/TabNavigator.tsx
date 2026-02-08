@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 import { TabConfig, TabRoutes } from '../constant/tabConfigs';
 import Explorepage from '../../../presentation/pages/explore/ExploreScreen';
 import SoonsakPage from '../../../presentation/pages/soonsak/SoonsakPage';
+import MyPage from '../../../presentation/pages/my/MyPage';
 import { TabParamList } from '../types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -25,6 +26,7 @@ export default function TabNavigator() {
       <Tab.Screen name={TabRoutes.Home} component={HomeScreen} />
       <Tab.Screen name={TabRoutes.Explore} component={Explorepage} />
       <Tab.Screen name={TabRoutes.Soonsak} component={SoonsakPage} />
+      <Tab.Screen name={TabRoutes.My} component={MyPage} />
     </Tab.Navigator>
   );
 }
