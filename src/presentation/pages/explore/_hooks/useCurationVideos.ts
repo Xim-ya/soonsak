@@ -28,11 +28,8 @@ export function useCurationVideos(): UseCurationVideosReturn {
     gcTime: GC_TIME,
   });
 
-  // backdrop 이미지가 없는 항목 필터링
-  const videos = (data ?? []).filter((video) => video.backdropPath);
-
   return {
-    videos,
+    videos: data ?? [],
     isLoading,
     error: error as Error | null,
     refetch,

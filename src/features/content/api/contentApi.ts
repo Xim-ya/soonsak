@@ -778,24 +778,28 @@ export const contentApi = {
       throw new Error(`Failed to fetch curation videos: ${error.message}`);
     }
 
-    // RPC 결과를 CurationVideoModel로 변환
-    return (data ?? []).map(
-      (item: {
-        video_id: string;
-        content_id: number;
-        content_type: string;
-        video_title: string;
-        content_title: string;
-        thumbnail_url: string | null;
-        runtime: number | null;
-        channel_id: string | null;
-        channel_name: string | null;
-        channel_logo_url: string | null;
-        poster_path: string | null;
-        backdrop_path: string;
-        release_date: string | null;
-        genre_ids: number[] | null;
-      }) => ({
+    // RPC 결과 타입 정의
+    type RpcCurationVideo = {
+      video_id: string;
+      content_id: number;
+      content_type: string;
+      video_title: string;
+      content_title: string;
+      thumbnail_url: string | null;
+      runtime: number | null;
+      channel_id: string | null;
+      channel_name: string | null;
+      channel_logo_url: string | null;
+      poster_path: string | null;
+      backdrop_path: string | null;
+      release_date: string | null;
+      genre_ids: number[] | null;
+    };
+
+    // backdrop_path가 null인 항목 필터링 후 CurationVideoModel로 변환
+    return (data ?? [])
+      .filter((item: RpcCurationVideo) => item.backdrop_path != null)
+      .map((item: RpcCurationVideo) => ({
         videoId: item.video_id,
         contentId: item.content_id,
         contentType: item.content_type as ContentType,
@@ -807,10 +811,9 @@ export const contentApi = {
         channelName: item.channel_name ?? undefined,
         channelLogoUrl: item.channel_logo_url ?? undefined,
         posterPath: item.poster_path ?? undefined,
-        backdropPath: item.backdrop_path,
+        backdropPath: item.backdrop_path as string,
         releaseDate: item.release_date ?? undefined,
         genreIds: item.genre_ids ?? undefined,
-      }),
-    );
+      }));
   },
 };
