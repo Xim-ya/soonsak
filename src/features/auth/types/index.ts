@@ -42,7 +42,13 @@ export interface AuthState {
   session: Session | null;
 }
 
-/** AuthContext 액션 타입 */
-export interface AuthContextValue extends AuthState {
+/** 유저 프로필 Model (User DTO에서 UI용으로 파생) */
+export interface UserProfileModel {
+  displayName: string;
+  avatarUrl: string | undefined;
+}
+
+/** AuthContext 값 타입 */
+export interface AuthContextValue extends AuthState, UserProfileModel {
   signOut: () => Promise<void>;
 }
