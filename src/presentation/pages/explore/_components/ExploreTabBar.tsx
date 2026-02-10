@@ -5,8 +5,10 @@
  * 탭 바 아래에 필터 바도 포함하여 함께 스티키됩니다.
  */
 
-import React from 'react';
-import { ScrollView } from 'react-native';
+import React, { useCallback } from 'react';
+import { ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import styled from '@emotion/native';
 import Animated, {
   useAnimatedStyle,
@@ -19,7 +21,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SvgXml } from 'react-native-svg';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
+import { RootStackParamList } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
 import { EXPLORE_SORT_TABS } from '../_types/exploreTypes';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 /** 개별 탭 버튼 Props */
 interface ExploreTabButtonProps<T extends string> {
@@ -83,6 +89,12 @@ const filterIconSvg = `
 </svg>
 `;
 
+const searchIconSvg = `
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="${colors.white}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`;
+
 interface ExploreTabBarProps<T extends string> extends TabBarProps<T> {
   /** 결말 포함 필터 활성화 여부 */
   readonly includeEnding: boolean;
@@ -103,6 +115,8 @@ const ExploreTabBar = <T extends string>({
   isCustomFilterActive,
   onFilterPress,
 }: ExploreTabBarProps<T>) => {
+  const navigation = useNavigation<NavigationProp>();
+
   // 개발자 추천 탭(index 3)일 때 필터 바 숨김
   const [showFilterBar, setShowFilterBar] = React.useState(true);
   // 스티키 상태 (헤더가 접혔을 때)
@@ -110,6 +124,11 @@ const ExploreTabBar = <T extends string>({
 
   // 스크롤 위치 추적
   const scrollY = useCurrentTabScrollY();
+
+  // 검색 버튼 핸들러
+  const handleSearchPress = useCallback(() => {
+    navigation.navigate(routePages.search);
+  }, [navigation]);
 
   // 탭 인덱스 변화 감지하여 필터 바 표시 여부 업데이트
   useAnimatedReaction(
@@ -134,21 +153,22 @@ const ExploreTabBar = <T extends string>({
     <Container>
       {/* 탭 바 */}
       <TabBarSection>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: HORIZONTAL_PADDING }}
-        >
-          {tabNames.map((name, index) => (
-            <ExploreTabButton
-              key={name}
-              name={name}
-              index={index}
-              indexDecimal={indexDecimal}
-              onTabPress={onTabPress}
-            />
-          ))}
-        </ScrollView>
+        <TabBarContent>
+          <TabsWrapper>
+            {tabNames.map((name, index) => (
+              <ExploreTabButton
+                key={name}
+                name={name}
+                index={index}
+                indexDecimal={indexDecimal}
+                onTabPress={onTabPress}
+              />
+            ))}
+          </TabsWrapper>
+          <SearchButton onPress={handleSearchPress} activeOpacity={0.7}>
+            <SvgXml xml={searchIconSvg} width={16} height={16} />
+          </SearchButton>
+        </TabBarContent>
       </TabBarSection>
 
       {/* 필터 바 (개발자 추천 탭이 아닐 때만 표시) */}
@@ -201,6 +221,23 @@ const TabBarSection = styled.View({
   height: 44,
   borderBottomWidth: 1,
   borderBottomColor: colors.gray05,
+});
+
+const TabBarContent = styled.View({
+  flex: 1,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: HORIZONTAL_PADDING,
+});
+
+const TabsWrapper = styled.View({
+  flexDirection: 'row',
+  alignItems: 'center',
+});
+
+const SearchButton = styled(TouchableOpacity)({
+  padding: 8,
 });
 
 const TabButton = styled.TouchableOpacity({

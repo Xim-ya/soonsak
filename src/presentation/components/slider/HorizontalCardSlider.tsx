@@ -10,6 +10,8 @@ export const CARD_SLIDER = {
   ITEM_WIDTH: 220,
   ITEM_HEIGHT: 140,
   SEPARATOR_WIDTH: 12,
+  /** 스냅 간격: 아이템 너비 + 간격 */
+  SNAP_INTERVAL: 220 + 12,
 } as const;
 
 /** 아이템 간격 컴포넌트 */
@@ -72,6 +74,9 @@ function HorizontalCardSlider<T>({
         initialNumToRender={5}
         maxToRenderPerBatch={5}
         windowSize={3}
+        snapToInterval={CARD_SLIDER.SNAP_INTERVAL}
+        snapToAlignment="start"
+        decelerationRate="fast"
       />
     </SectionContainer>
   );
