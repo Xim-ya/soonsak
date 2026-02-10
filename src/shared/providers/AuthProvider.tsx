@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { authApi } from '@/features/auth/api/authApi';
-import type { AuthState, AuthContextValue } from '@/features/auth/types';
+import type { AuthState, AuthContextValue, UserProfileModel } from '@/features/auth/types';
 
 /** 초기 인증 상태 */
 const initialState: AuthState = {
@@ -8,6 +9,34 @@ const initialState: AuthState = {
   user: null,
   session: null,
 };
+
+const DEFAULT_DISPLAY_NAME = '사용자';
+
+/**
+ * 유저 프로필 Model 파생
+ * - User DTO(SDK)에서 UI용 Model로 변환
+ * - 저렴한 계산이므로 useMemo 불필요 (Kent C. Dodds 가이드라인)
+ */
+function deriveUserProfile(user: User | null): UserProfileModel {
+  if (!user) {
+    return { displayName: DEFAULT_DISPLAY_NAME, avatarUrl: undefined };
+  }
+
+  const metadata = user.user_metadata;
+
+  // displayName: name > email prefix > 기본값
+  const name = metadata?.['name'];
+  const displayName =
+    typeof name === 'string' && name.length > 0
+      ? name
+      : (user.email?.split('@')[0] ?? DEFAULT_DISPLAY_NAME);
+
+  // avatarUrl: 있으면 사용, 없으면 undefined
+  const avatarUrl =
+    typeof metadata?.['avatar_url'] === 'string' ? metadata['avatar_url'] : undefined;
+
+  return { displayName, avatarUrl };
+}
 
 /** AuthContext 생성 */
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -99,8 +128,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
+  // User DTO → UserProfileModel 변환
+  const profile = deriveUserProfile(state.user);
+
   const value: AuthContextValue = {
     ...state,
+    ...profile,
     signOut,
   };
 
@@ -116,13 +149,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
  * - status: 'idle' | 'authenticated' | 'unauthenticated'
  * - user: Supabase User 객체
  * - session: Supabase Session 객체
+ * - displayName: 표시용 사용자 이름 (name > email prefix > '사용자')
+ * - avatarUrl: 프로필 이미지 URL
  * - signOut: 로그아웃 함수
  *
  * @example
- * const { status, user, signOut } = useAuth();
+ * const { status, displayName, avatarUrl, signOut } = useAuth();
  *
  * if (status === 'authenticated') {
- *   console.log('로그인됨:', user?.email);
+ *   console.log('로그인됨:', displayName);
  * }
  */
 export function useAuth(): AuthContextValue {

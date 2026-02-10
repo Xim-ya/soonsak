@@ -11,6 +11,7 @@ import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
 import { buildYouTubeUrl, buildYouTubeAppUrl, isEmbeddedRestrictedError } from '@/features/youtube';
 import { contentApi } from '@/features/content/api/contentApi';
+import { useAddWatchHistory } from '@/features/watch-history';
 import { PlayerWatchProviderView } from './_components/PlayerWatchProviderView';
 
 type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.player>;
@@ -28,6 +29,9 @@ export const PlayerPage = () => {
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1);
   const [useFallbackPlayer, setUseFallbackPlayer] = useState(false);
   const hasIncrementedPlayCount = useRef(false);
+
+  // 시청 기록 추가 mutation
+  const { mutate: addWatchHistory } = useAddWatchHistory();
 
   // 초기 화면 크기만 사용 (YouTube 플레이어가 자체적으로 전체화면 처리)
   const screenWidth = Dimensions.get('window').width;
@@ -48,10 +52,17 @@ export const PlayerPage = () => {
       setIsPlayerReady(true);
     }
 
-    // 재생수 증가 (1회만 실행)
+    // 재생수 증가 + 시청 기록 저장 (1회만 실행)
     if (!hasIncrementedPlayCount.current) {
       hasIncrementedPlayCount.current = true;
       contentApi.incrementPlayCount(contentId, contentType);
+
+      // 시청 기록 저장
+      addWatchHistory({
+        contentId,
+        contentType,
+        videoId,
+      });
     }
 
     // iOS에서 음소거 상태로 자동 재생 후 음소거 해제
