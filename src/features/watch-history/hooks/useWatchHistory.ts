@@ -13,7 +13,8 @@ import type {
 /** Query Key 팩토리 */
 const watchHistoryKeys = {
   all: ['watchHistory'] as const,
-  calendar: (year: number, month: number) => [...watchHistoryKeys.all, 'calendar', year, month] as const,
+  calendar: (year: number, month: number) =>
+    [...watchHistoryKeys.all, 'calendar', year, month] as const,
   list: () => [...watchHistoryKeys.all, 'list'] as const,
   uniqueList: () => [...watchHistoryKeys.all, 'uniqueList'] as const,
 };
@@ -46,11 +47,14 @@ export const useWatchHistoryList = (
   options?: {
     enabled?: boolean;
   },
-): UseQueryResult<{
-  items: WatchHistoryWithContentDto[];
-  hasMore: boolean;
-  totalCount: number;
-}, Error> => {
+): UseQueryResult<
+  {
+    items: WatchHistoryWithContentDto[];
+    hasMore: boolean;
+    totalCount: number;
+  },
+  Error
+> => {
   return useQuery({
     queryKey: [...watchHistoryKeys.list(), limit, offset],
     queryFn: () => watchHistoryApi.getWatchHistoryList(limit, offset),
@@ -69,10 +73,13 @@ export const useUniqueWatchHistory = (
   options?: {
     enabled?: boolean;
   },
-): UseQueryResult<{
-  items: WatchHistoryWithContentDto[];
-  hasMore: boolean;
-}, Error> => {
+): UseQueryResult<
+  {
+    items: WatchHistoryWithContentDto[];
+    hasMore: boolean;
+  },
+  Error
+> => {
   return useQuery({
     queryKey: [...watchHistoryKeys.uniqueList(), limit, offset],
     queryFn: () => watchHistoryApi.getUniqueContentHistory(limit, offset),
