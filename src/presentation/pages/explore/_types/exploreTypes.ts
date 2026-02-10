@@ -30,6 +30,24 @@ interface ExploreContentModel {
   readonly posterPath: string;
 }
 
+/** 큐레이션 캐러셀용 비디오 모델 */
+interface CurationVideoModel {
+  readonly videoId: string;
+  readonly contentId: number;
+  readonly contentType: ContentType;
+  readonly videoTitle: string;
+  readonly contentTitle: string;
+  readonly thumbnailUrl?: string;
+  readonly runtime?: number;
+  readonly channelId?: string;
+  readonly channelName?: string;
+  readonly channelLogoUrl?: string;
+  readonly posterPath?: string;
+  readonly backdropPath: string;
+  readonly releaseDate?: string;
+  readonly genreIds?: number[];
+}
+
 /** 페이지네이션 응답 */
 interface ExploreContentsResponse {
   readonly contents: ExploreContentModel[];
@@ -37,5 +55,11 @@ interface ExploreContentsResponse {
   readonly totalCount: number;
 }
 
-export type { ExploreSortType, ExploreSortTabConfig, ExploreContentModel, ExploreContentsResponse };
+export type {
+  ExploreSortType,
+  ExploreSortTabConfig,
+  ExploreContentModel,
+  ExploreContentsResponse,
+  CurationVideoModel,
+};
 export { EXPLORE_SORT_TABS };

@@ -12,6 +12,7 @@ import {
 import { CONTENT_DATABASE } from '../../utils/constants/dbConfig';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 import type { ContentFilter } from '@/shared/types/filter/contentFilter';
+import type { CurationVideoModel } from '@/presentation/pages/explore/_types/exploreTypes';
 
 /** excludeIds 최대 허용 수 */
 const MAX_EXCLUDE_IDS = 1000;
@@ -759,5 +760,57 @@ export const contentApi = {
     const hasMore = (page + 1) * pageSize < totalCount;
 
     return { contents, hasMore, totalCount };
+  },
+
+  /**
+   * 큐레이션 캐러셀용 랜덤 대표 비디오 조회
+   * 콘텐츠별 대표 비디오 1개를 랜덤하게 선정하여 반환
+   * @param limit 조회할 비디오 수 (기본값: 10)
+   */
+  getCurationVideos: async (limit: number = 10): Promise<CurationVideoModel[]> => {
+    const { data, error } = await supabaseClient.rpc(
+      CONTENT_DATABASE.RPC.GET_RANDOM_CURATION_VIDEOS,
+      { p_limit: limit },
+    );
+
+    if (error) {
+      console.error('큐레이션 비디오 조회 실패:', error);
+      throw new Error(`Failed to fetch curation videos: ${error.message}`);
+    }
+
+    // RPC 결과를 CurationVideoModel로 변환
+    return (data ?? []).map(
+      (item: {
+        video_id: string;
+        content_id: number;
+        content_type: string;
+        video_title: string;
+        content_title: string;
+        thumbnail_url: string | null;
+        runtime: number | null;
+        channel_id: string | null;
+        channel_name: string | null;
+        channel_logo_url: string | null;
+        poster_path: string | null;
+        backdrop_path: string;
+        release_date: string | null;
+        genre_ids: number[] | null;
+      }) => ({
+        videoId: item.video_id,
+        contentId: item.content_id,
+        contentType: item.content_type as ContentType,
+        videoTitle: item.video_title,
+        contentTitle: item.content_title,
+        thumbnailUrl: item.thumbnail_url ?? undefined,
+        runtime: item.runtime ?? undefined,
+        channelId: item.channel_id ?? undefined,
+        channelName: item.channel_name ?? undefined,
+        channelLogoUrl: item.channel_logo_url ?? undefined,
+        posterPath: item.poster_path ?? undefined,
+        backdropPath: item.backdrop_path,
+        releaseDate: item.release_date ?? undefined,
+        genreIds: item.genre_ids ?? undefined,
+      }),
+    );
   },
 };

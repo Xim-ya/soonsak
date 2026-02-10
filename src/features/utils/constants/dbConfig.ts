@@ -19,6 +19,7 @@ export const CONTENT_DATABASE = {
     GET_DISTINCT_CONTENTS_BY_CHANNEL: 'get_distinct_contents_by_channel',
     GET_CONTENTS_BY_GENRE: 'get_contents_by_genre',
     GET_LONG_RUNTIME_CONTENTS: 'get_long_runtime_contents',
+    GET_RANDOM_CURATION_VIDEOS: 'get_random_curation_videos',
   },
 } as const;
 

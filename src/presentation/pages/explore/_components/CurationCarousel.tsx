@@ -1,0 +1,104 @@
+/**
+ * CurationCarousel - 큐레이션 캐러셀 컴포넌트
+ *
+ * 랜덤으로 선정된 콘텐츠의 대표 비디오를 가로 스크롤로 보여줍니다.
+ * 터치 시 콘텐츠 상세 페이지로 이동합니다.
+ *
+ * @example
+ * <CurationCarousel />
+ */
+
+import React, { useCallback } from 'react';
+import { FlatList } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import styled from '@emotion/native';
+import colors from '@/shared/styles/colors';
+import Gap from '@/presentation/components/view/Gap';
+import { RootStackParamList } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
+import { useCurationVideos } from '../_hooks/useCurationVideos';
+import { CurationVideoItem, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT } from './CurationVideoItem';
+import type { CurationVideoModel } from '../_types/exploreTypes';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// 스냅 간격: 아이템 너비 + 간격
+const ITEM_GAP = 12;
+const SNAP_INTERVAL = THUMBNAIL_WIDTH + ITEM_GAP;
+
+/** 아이템 간격 컴포넌트 (렌더링 최적화) */
+const ItemSeparator = React.memo(() => <Gap size={ITEM_GAP} />);
+ItemSeparator.displayName = 'CurationItemSeparator';
+
+function CurationCarousel() {
+  const navigation = useNavigation<NavigationProp>();
+  const { videos, isLoading, error } = useCurationVideos();
+
+  const handleVideoPress = useCallback(
+    (video: CurationVideoModel) => {
+      navigation.navigate(routePages.contentDetail, {
+        id: video.contentId,
+        title: video.contentTitle,
+        type: video.contentType,
+        videoId: video.videoId,
+      });
+    },
+    [navigation],
+  );
+
+  // 로딩 중 스켈레톤 표시
+  if (isLoading) {
+    return (
+      <LoadingContainer>
+        <SkeletonItem />
+        <Gap size={ITEM_GAP} />
+        <SkeletonItem />
+      </LoadingContainer>
+    );
+  }
+
+  // 에러 또는 데이터 없음 시 숨김
+  if (error || videos.length === 0) {
+    return null;
+  }
+
+  return (
+    <Container>
+      <VideoList
+        horizontal
+        data={videos}
+        renderItem={({ item }) => <CurationVideoItem video={item} onPress={handleVideoPress} />}
+        keyExtractor={(item) => item.videoId}
+        ItemSeparatorComponent={ItemSeparator}
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={SNAP_INTERVAL}
+        snapToAlignment="start"
+        decelerationRate="fast"
+      />
+    </Container>
+  );
+}
+
+/* Styled Components */
+const Container = styled.View({
+  backgroundColor: colors.black,
+});
+
+const VideoList = styled(FlatList<CurationVideoModel>)({
+  paddingHorizontal: 16,
+});
+
+const LoadingContainer = styled.View({
+  flexDirection: 'row',
+  paddingHorizontal: 16,
+});
+
+const SkeletonItem = styled.View({
+  width: THUMBNAIL_WIDTH,
+  height: THUMBNAIL_HEIGHT + 40,
+  backgroundColor: colors.gray05,
+  borderRadius: 8,
+});
+
+export { CurationCarousel };
