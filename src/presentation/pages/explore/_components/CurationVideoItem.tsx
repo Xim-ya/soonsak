@@ -58,9 +58,9 @@ function formatGenres(genreIds?: number[]): string {
 }
 
 function CurationVideoItem({ video, onPress }: CurationVideoItemProps) {
-  // DB에 채널 로고가 없을 때만 API 조회
-  const shouldFetchChannel = !video.channelLogoUrl;
-  const { data: fetchedChannel } = useYouTubeChannel(video.channelId, {
+  // DB에 채널 로고가 없고 channelId가 있을 때만 API 조회
+  const shouldFetchChannel = !video.channelLogoUrl && !!video.channelId;
+  const { data: fetchedChannel } = useYouTubeChannel(video.channelId ?? '', {
     enabled: shouldFetchChannel,
   });
 
