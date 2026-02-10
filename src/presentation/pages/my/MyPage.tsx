@@ -54,10 +54,7 @@ export default function MyPage() {
   } = useCalendarNavigation();
 
   // 캘린더 시청 기록 조회
-  const { data: calendarData, isLoading: isCalendarLoading } = useWatchHistoryCalendar(
-    selectedYear,
-    selectedMonth,
-  );
+  const { data: calendarData } = useWatchHistoryCalendar(selectedYear, selectedMonth);
 
   // 고유 콘텐츠 시청 기록 조회 (하단 목록용)
   const { data: watchHistoryData, isLoading: isHistoryLoading } = useUniqueWatchHistory(10, 0);
@@ -88,7 +85,6 @@ export default function MyPage() {
             year={selectedYear}
             month={selectedMonth}
             calendarData={calendarData}
-            isLoading={isCalendarLoading}
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
             onOpenMonthPicker={handleOpenMonthPicker}

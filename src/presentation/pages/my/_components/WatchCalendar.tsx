@@ -25,8 +25,6 @@ interface WatchCalendarProps {
   readonly month: number;
   /** 해당 월의 시청 기록 */
   readonly calendarData: WatchHistoryCalendarItemDto[] | undefined;
-  /** 로딩 상태 */
-  readonly isLoading?: boolean;
   /** 이전 월로 이동 */
   readonly onPrevMonth: () => void;
   /** 다음 월로 이동 */
@@ -111,7 +109,9 @@ function WatchCalendarComponent({
 
         <TouchableOpacity onPress={onOpenMonthPicker} activeOpacity={0.7}>
           <MonthSelector>
-            <MonthText>{year}년 {month}월</MonthText>
+            <MonthText>
+              {year}년 {month}월
+            </MonthText>
             <DropdownIcon>▼</DropdownIcon>
           </MonthSelector>
         </TouchableOpacity>
