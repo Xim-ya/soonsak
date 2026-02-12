@@ -71,7 +71,7 @@ export const watchHistoryApi = {
           video_id: params.videoId,
           last_watched_at: now,
         },
-        { onConflict: 'user_id,content_id' },
+        { onConflict: 'user_id,content_id,content_type' },
       )
       .select()
       .single();
@@ -355,6 +355,7 @@ export const watchHistoryApi = {
       .select('id, is_fully_watched')
       .eq('user_id', user.id)
       .eq('content_id', params.contentId)
+      .eq('content_type', params.contentType)
       .maybeSingle();
 
     // is_fully_watched OR 연산: 한번 true면 계속 true 유지
