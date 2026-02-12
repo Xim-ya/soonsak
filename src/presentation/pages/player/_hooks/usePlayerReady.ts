@@ -8,7 +8,7 @@
  * - iOS 음소거 해제
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Platform } from 'react-native';
 import type { useYouTubePlayer } from 'react-native-youtube-bridge';
 import { contentApi } from '@/features/content/api/contentApi';
@@ -38,6 +38,7 @@ export function usePlayerReady({
 }: UsePlayerReadyParams): PlayerReadyResult {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const hasIncrementedPlayCount = useRef(false);
+  const unmuteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { mutate: addWatchHistory } = useAddWatchHistory();
 
@@ -63,11 +64,20 @@ export function usePlayerReady({
 
     // iOS에서 음소거 상태로 자동 재생 후 음소거 해제
     if (Platform.OS === 'ios') {
-      setTimeout(() => {
+      unmuteTimeoutRef.current = setTimeout(() => {
         player.unMute();
       }, 500);
     }
   };
+
+  // 언마운트 시 timeout 정리
+  useEffect(() => {
+    return () => {
+      if (unmuteTimeoutRef.current) {
+        clearTimeout(unmuteTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     isPlayerReady,
