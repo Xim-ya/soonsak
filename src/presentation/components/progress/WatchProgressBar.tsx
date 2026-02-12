@@ -54,26 +54,21 @@ export function shouldShowProgressBar(
   progressSeconds: number,
   durationSeconds: number,
 ): boolean {
-  if (durationSeconds <= 0 || progressSeconds <= 0) return false;
+  const hasValidDuration = durationSeconds > 0 && progressSeconds > 0;
+  if (!hasValidDuration) return false;
 
   const percent = (progressSeconds / durationSeconds) * 100;
   const remainingSeconds = durationSeconds - progressSeconds;
 
-  // 최소 기준 미달: 1% 미만이고 10초 미만이면 미표시
-  const meetsMinimum =
+  const hasStartedWatching =
     percent >= WATCH_PROGRESS_POLICY.MIN_PERCENT ||
     progressSeconds >= WATCH_PROGRESS_POLICY.MIN_SECONDS;
 
-  if (!meetsMinimum) return false;
-
-  // 완료 기준: 95% 이상 또는 남은 10초 이하면 미표시
-  const isCompleted =
+  const hasCompletedWatching =
     percent >= WATCH_PROGRESS_POLICY.COMPLETION_PERCENT ||
     remainingSeconds <= WATCH_PROGRESS_POLICY.COMPLETION_REMAINING_SECONDS;
 
-  if (isCompleted) return false;
-
-  return true;
+  return hasStartedWatching && !hasCompletedWatching;
 }
 
 /**

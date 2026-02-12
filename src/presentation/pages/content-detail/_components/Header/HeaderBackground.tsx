@@ -4,54 +4,39 @@ import styled from '@emotion/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/shared/navigation/types';
-import { DarkedLinearShadow, LinearAlign } from '../../../components/shadow/DarkedLinearShadow';
+import { DarkedLinearShadow, LinearAlign } from '@/presentation/components/shadow/DarkedLinearShadow';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import PlayButtonSvg from '@assets/icons/play_button.svg';
-import ContentTypeChip from '@/presentation/components/chip/ContentTypeChip';
 import DarkChip from '@/presentation/components/chip/DarkChip';
-import { videoTagConfigs } from '@/presentation/types/content/videoTag.enum';
-import Gap from '@/presentation/components/view/Gap';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
-import { StartRateView } from './StartRateView';
-import { useContentDetail } from '../_hooks/useContentDetail';
-import { useContentVideos } from '../_provider/ContentDetailProvider';
-import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
+import { useContentDetail } from '../../_hooks/useContentDetail';
+import { useContentVideos } from '../../_provider/ContentDetailProvider';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { AppSize } from '@/shared/utils/appSize';
-import { useImageTransition } from '../_hooks/useImageTransition';
+import { useImageTransition } from '../../_hooks/useImageTransition';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { useYouTubeVideo, buildYouTubeUrl } from '@/features/youtube';
-import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
+import { useContentDetailRoute } from '../../_hooks/useContentDetailRoute';
 import {
   shouldShowProgressBar,
   calculateProgressPercent,
 } from '@/presentation/components/progress';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>; // Player 뷰
-
-/**
- * 콘텐츠 상세 페이지의 헤더 컴포넌트
- * 배경 이미지, 그라데이션 그림자, 콘텐츠 정보를 포함합니다.
- */
-export const Header = React.memo(() => {
-  return (
-    <HeaderContainer>
-      <HeaderBackground />
-      <ContentInfo />
-    </HeaderContainer>
-  );
-});
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 /**
  * 헤더 배경 이미지와 재생 버튼을 포함하는 컴포넌트
+ *
+ * 책임:
+ * - TMDB/YouTube 배경 이미지 전환 애니메이션
+ * - 재생 버튼 및 이어보기 기능
+ * - 시청 진행률 표시
+ * - 런타임 칩 표시
  */
-const HeaderBackground = React.memo(() => {
+export const HeaderBackground = React.memo(() => {
   const { id, type } = useContentDetailRoute();
   const { data: contentInfo } = useContentDetail(Number(id), type);
-
-  // 비디오 데이터 가져오기 (Provider에서 videoId 우선순위 적용된 primaryVideo 사용)
-  // 시청 진행률도 Provider에서 페이지 진입 시 미리 조회됨
   const { primaryVideo, watchProgress } = useContentVideos();
 
   const { toggleImages, opacityValues } = useImageTransition();
@@ -76,13 +61,14 @@ const HeaderBackground = React.memo(() => {
     }
   }, [youtubeLoading, videoInfo?.thumbnails?.high, youtubeOpacity]);
 
-  // 메모이제이션된 값들
+  // 썸네일 크기 계산
   const thumbnailSize = useMemo(() => {
     const height = AppSize.ratioHeight(32);
     const width = height * (16 / 9);
     return { width, height };
   }, []);
 
+  // 이미지 URL 메모이제이션
   const imageUrls = useMemo(
     () => ({
       youtube: videoInfo?.thumbnails?.high || '',
@@ -93,42 +79,40 @@ const HeaderBackground = React.memo(() => {
     [contentInfo?.backdropPath, videoInfo?.thumbnails?.high],
   );
 
-  // 콘텐츠 제목 (ContentDetailModel에서 이미 title로 통합됨)
+  // 콘텐츠 제목
   const contentTitle = contentInfo?.title ?? '';
 
-  // 이벤트 핸들러들
+  // 이어보기 가능 여부 판단 - 복잡한 조건에 명시적 이름 부여
+  const isSameVideo = watchProgress?.videoId === primaryVideo?.id;
+  const hasValidProgress = shouldShowProgressBar(
+    watchProgress?.progressSeconds ?? 0,
+    watchProgress?.durationSeconds ?? 0,
+  );
+  const canResume = isSameVideo && hasValidProgress;
+
+  // 재생 버튼 핸들러
   const handlePlayPress = useCallback(() => {
     if (!primaryVideo) return;
-
-    // 이어보기: YouTube 정책에 따라 완료되지 않은 경우에만 startSeconds 전달
-    // 95% 이상 또는 남은 10초 이하면 완료로 간주하여 처음부터 재생
-    const canResume =
-      watchProgress &&
-      watchProgress.videoId === primaryVideo.id &&
-      shouldShowProgressBar(watchProgress.progressSeconds, watchProgress.durationSeconds);
 
     const playerParams = {
       videoId: primaryVideo.id,
       title: primaryVideo.title || contentTitle || '',
       contentId: Number(id),
       contentType: type,
-      ...(canResume && { startSeconds: watchProgress.progressSeconds }),
+      ...(canResume && { startSeconds: watchProgress!.progressSeconds }),
     };
 
     navigation.navigate(routePages.player, playerParams);
-  }, [navigation, primaryVideo, contentTitle, id, type, watchProgress]);
+  }, [navigation, primaryVideo, contentTitle, id, type, canResume, watchProgress]);
 
+  // 썸네일 클릭 핸들러
   const handleThumbnailPress = useCallback(() => {
     toggleImages();
   }, [toggleImages]);
 
-  // 시청 진행률 표시 여부 (YouTube 스타일 정책 적용)
-  const hasWatchProgress = shouldShowProgressBar(
-    watchProgress?.progressSeconds ?? 0,
-    watchProgress?.durationSeconds ?? 0,
-  );
-  const showRuntimeChip =
-    !hasWatchProgress && primaryVideo?.runtime != null && primaryVideo.runtime > 0;
+  // UI 상태 파생 - 복잡한 조건에 명시적 이름 부여
+  const hasRuntimeInfo = primaryVideo?.runtime != null && primaryVideo.runtime > 0;
+  const showRuntimeChip = !hasValidProgress && hasRuntimeInfo;
 
   // 진행률 계산
   const progressPercent = calculateProgressPercent(
@@ -137,7 +121,7 @@ const HeaderBackground = React.memo(() => {
   );
 
   return (
-    <HeaderBackgroundContainer>
+    <Container>
       <ImageWrapper>
         {/* TMDB 배경 이미지 */}
         {imageUrls.tmdb && (
@@ -176,8 +160,8 @@ const HeaderBackground = React.memo(() => {
         >
           <PlayButtonSvg width={120} height={120} />
         </PlayButton>
-        {/* 이어서 보기 텍스트 - YouTube 정책에 따라 프로그레스 바와 동일 조건 */}
-        {hasWatchProgress && <ResumeText>이어서 보기</ResumeText>}
+        {/* 이어서 보기 텍스트 */}
+        {hasValidProgress && <ResumeText>이어서 보기</ResumeText>}
       </PlayButtonContainer>
 
       {/* 런타임 칩 - 좌측 하단 (시청 기록 없을 때만) */}
@@ -187,8 +171,8 @@ const HeaderBackground = React.memo(() => {
         </RuntimeChipContainer>
       )}
 
-      {/* 시청 진행률 - 하단 전체 (YouTube 정책 적용) */}
-      {hasWatchProgress && (
+      {/* 시청 진행률 - 하단 전체 */}
+      {hasValidProgress && (
         <ProgressContainer>
           <DarkChip content={formatter.formatRuntime(watchProgress!.progressSeconds)} />
           <ProgressBarWrapper>
@@ -198,7 +182,7 @@ const HeaderBackground = React.memo(() => {
         </ProgressContainer>
       )}
 
-      {/* 비디오 썸네일 - 우측 하단 (클릭 가능) */}
+      {/* 비디오 썸네일 - 우측 하단 */}
       <VideoThumbnailContainer>
         <TouchableOpacity onPress={handleThumbnailPress} activeOpacity={1}>
           <ThumbnailWrapper width={thumbnailSize.width} height={thumbnailSize.height}>
@@ -232,110 +216,19 @@ const HeaderBackground = React.memo(() => {
           </ThumbnailWrapper>
         </TouchableOpacity>
       </VideoThumbnailContainer>
-    </HeaderBackgroundContainer>
+    </Container>
   );
 });
 
 HeaderBackground.displayName = 'HeaderBackground';
 
-/**
- * 콘텐츠 기본 정보 표시 컴포넌트
- *
- * 콘텐츠 타입, 제목, 개봉년도, 장르 리스트를 표시합니다.
- */
-const ContentInfo = React.memo(() => {
-  const { id, title, type } = useContentDetailRoute();
-  const {
-    data: contentInfo,
-    isLoading: isContentInfoLoading,
-    error: contentInfoError,
-  } = useContentDetail(Number(id), type);
-
-  // 비디오 데이터 가져오기 (Provider에서 videoId 우선순위 적용된 primaryVideo 사용)
-  const { primaryVideo, isLoading: isVideosLoading } = useContentVideos();
-
-  const dotText = ' · ';
-
-  // 연도 추출 (ContentDetailModel은 이미 releaseDate로 통합됨)
-  const releaseYear = contentInfo?.releaseDate ? formatter.dateToYear(contentInfo.releaseDate) : '';
-
-  // 평점 추출
-  const rating = contentInfo?.voteAverage ? contentInfo.voteAverage / 2 : 0;
-
-  // route params에서 title과 type이 있으면 바로 표시 (스켈레톤 대신)
-  return (
-    <ContentInfoContainer>
-      {/* 콘텐츠 타입 및 결말 포함 칩 */}
-      <ChipRow>
-        <ContentTypeChip contentType={type} />
-        {primaryVideo?.includesEnding && (
-          <>
-            <Gap size={6} />
-            <DarkChip content={videoTagConfigs.includesEnding.label} />
-          </>
-        )}
-      </ChipRow>
-      <Gap size={4} />
-
-      {/* 제목은 route params에서 바로 표시 */}
-      <Title>{title}</Title>
-      <Gap size={2} />
-
-      {/* 연도/장르는 로딩 중이면 스켈레톤 */}
-      {isContentInfoLoading ? (
-        <SubTextView>
-          <SkeletonView width={200} height={16} borderRadius={4} />
-        </SubTextView>
-      ) : contentInfoError ? null : (
-        <SubTextView>
-          {releaseYear && <SubText>{releaseYear}</SubText>}
-          {contentInfo?.genres && contentInfo.genres.length > 0 && (
-            <>
-              {releaseYear && <DotText>{dotText}</DotText>}
-              {contentInfo.genres.map((genre, index) => (
-                <React.Fragment key={genre.id}>
-                  <SubText>{genre.name}</SubText>
-                  {index < contentInfo.genres.length - 1 && <SubText>{dotText}</SubText>}
-                </React.Fragment>
-              ))}
-            </>
-          )}
-        </SubTextView>
-      )}
-      <Gap size={10} />
-
-      {/* 비디오 타이틀 */}
-      {isVideosLoading ? (
-        <SkeletonView width={250} height={20} borderRadius={4} />
-      ) : (
-        <ContentTitle numberOfLines={1}>
-          {primaryVideo?.title || '비디오를 불러오는 중...'}
-        </ContentTitle>
-      )}
-      <Gap size={8} />
-
-      {/* 별점은 로딩 중이면 0, 데이터 있으면 표시 */}
-      <RatingWrapper>
-        <StartRateView rating={rating} />
-      </RatingWrapper>
-    </ContentInfoContainer>
-  );
-});
-
-ContentInfo.displayName = 'ContentInfo';
-
-/* Styled Components */
-const HeaderContainer = styled.View({
-  backgroundColor: colors.black,
-  pointerEvents: 'box-none' as const, // 스크롤 제스처 허용 (터치 가능한 요소가 있는 경우)
-});
-
-const HeaderBackgroundContainer = styled.View({
+/* Styled Components - HeaderBackground 전용 */
+const Container = styled.View({
   position: 'relative',
   width: '100%',
   aspectRatio: 375 / 240,
   overflow: 'hidden',
-  pointerEvents: 'box-none' as const, // 재생 버튼 터치는 허용하면서 스크롤도 가능하게
+  pointerEvents: 'box-none' as const,
 });
 
 const ImageWrapper = styled.View({
@@ -365,6 +258,10 @@ const PlayButtonContainer = styled.View({
   alignItems: 'center',
 });
 
+const PlayButton = styled(TouchableHighlight)({
+  borderRadius: 60,
+});
+
 const ResumeText = styled.Text({
   ...textStyles.alert1,
   color: colors.white,
@@ -389,42 +286,7 @@ const VideoThumbnailContainer = styled.View({
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.3,
   shadowRadius: 4,
-  elevation: 5, // Android shadow
-});
-
-const ContentInfoContainer = styled.View({
-  justifyContent: 'center',
-  alignItems: 'center',
-  paddingVertical: 20,
-  paddingHorizontal: 16,
-  pointerEvents: 'box-none' as const, // 스크롤 제스처 통과 허용
-});
-
-const ChipRow = styled.View({
-  flexDirection: 'row',
-  alignItems: 'center',
-});
-
-const ContentTitle = styled.Text({
-  ...textStyles.body3,
-});
-
-const SubTextView = styled.View({
-  flexDirection: 'row',
-  alignItems: 'center',
-});
-
-const Title = styled.Text({
-  ...textStyles.headline1,
-});
-
-const SubText = styled.Text({
-  ...textStyles.alert1,
-  color: colors.gray01,
-});
-
-const RatingWrapper = styled.View({
-  alignItems: 'center',
+  elevation: 5,
 });
 
 const AnimatedBackgroundImage = styled(Animated.Image)({
@@ -445,15 +307,11 @@ const ThumbnailWrapper = styled.View<{ width: number; height: number }>(({ width
   borderRadius: 2,
 }));
 
-const PlayButton = styled(TouchableHighlight)({
-  borderRadius: 60,
-});
-
 const ProgressContainer = styled.View({
   position: 'absolute',
   bottom: AppSize.ratioHeight(12),
   left: AppSize.ratioWidth(12),
-  right: AppSize.ratioWidth(12) + AppSize.ratioHeight(32) * (16 / 9) + 8, // 썸네일 너비 + 여백
+  right: AppSize.ratioWidth(12) + AppSize.ratioHeight(32) * (16 / 9) + 8,
   flexDirection: 'row',
   alignItems: 'center',
   zIndex: 11,
@@ -484,10 +342,3 @@ const ProgressBarFill = styled.View({
   backgroundColor: colors.red,
   borderRadius: 2,
 });
-
-const DotText = styled.Text({
-  ...textStyles.alert1,
-  color: colors.white,
-});
-
-Header.displayName = 'Header';

@@ -65,11 +65,11 @@ export function useWatchProgressSync({
   const syncToServer = useCallback(async () => {
     const { currentTime, duration } = progressRef.current;
 
-    // 유효하지 않은 값이면 동기화하지 않음
-    if (currentTime <= 0 || duration <= 0) return;
+    const hasValidProgress = currentTime > 0 && duration > 0;
+    if (!hasValidProgress) return;
 
-    // 이미 동기화 중이면 스킵
-    if (isSyncingRef.current) return;
+    const isAlreadySyncing = isSyncingRef.current;
+    if (isAlreadySyncing) return;
 
     isSyncingRef.current = true;
 
@@ -113,14 +113,12 @@ export function useWatchProgressSync({
       const lastTime = lastProgressTimeRef.current;
       const timeDiff = Math.abs(currentTime - lastTime);
 
-      // 시간 점프 감지 (seek)
-      const isSeek = lastTime > 0 && timeDiff >= SEEK_THRESHOLD_SECONDS;
+      const hasTimeJump = lastTime > 0 && timeDiff >= SEEK_THRESHOLD_SECONDS;
 
       progressRef.current = { currentTime, duration };
       lastProgressTimeRef.current = currentTime;
 
-      // seek 감지 시 debounce 적용하여 동기화
-      if (isSeek) {
+      if (hasTimeJump) {
         if (seekDebounceRef.current) {
           clearTimeout(seekDebounceRef.current);
         }
