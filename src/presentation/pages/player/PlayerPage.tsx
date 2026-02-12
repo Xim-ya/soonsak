@@ -11,7 +11,7 @@ import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
 import { buildYouTubeUrl, buildYouTubeAppUrl, isEmbeddedRestrictedError } from '@/features/youtube';
 import { contentApi } from '@/features/content/api/contentApi';
-import { useAddWatchHistory } from '@/features/watch-history';
+import { useAddWatchHistory, useWatchProgressSync } from '@/features/watch-history';
 import { PlayerWatchProviderView } from './_components/PlayerWatchProviderView';
 
 type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.player>;
@@ -24,14 +24,22 @@ type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.playe
 export const PlayerPage = () => {
   const route = useRoute<PlayerPageRouteProp>();
   const navigation = useNavigation();
-  const { videoId, title, contentId, contentType } = route.params;
+  const { videoId, title, contentId, contentType, startSeconds } = route.params;
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1);
   const [useFallbackPlayer, setUseFallbackPlayer] = useState(false);
   const hasIncrementedPlayCount = useRef(false);
+  const hasSeekToStart = useRef(false);
 
   // 시청 기록 추가 mutation
   const { mutate: addWatchHistory } = useAddWatchHistory();
+
+  // 시청 진행률 동기화
+  const { updateProgress, handleStateChange, syncNow } = useWatchProgressSync({
+    contentId,
+    contentType,
+    videoId,
+  });
 
   // 초기 화면 크기만 사용 (YouTube 플레이어가 자체적으로 전체화면 처리)
   const screenWidth = Dimensions.get('window').width;
@@ -76,6 +84,17 @@ export const PlayerPage = () => {
   // 재생 상태 변경 이벤트
   useYouTubeEvent(player, 'stateChange', (state) => {
     console.log('재생 상태 변경:', state);
+
+    const stateValue = typeof state === 'number' ? state : (state as { state: number }).state;
+
+    // 이어보기: 재생 시작 시 저장된 위치로 이동 (1회만 실행)
+    if (stateValue === 1 && startSeconds && startSeconds > 0 && !hasSeekToStart.current) {
+      hasSeekToStart.current = true;
+      player.seekTo(startSeconds, true);
+    }
+
+    // 시청 진행률 동기화 (재생/일시정지/종료 감지)
+    handleStateChange(stateValue);
   });
 
   // 재생율 변경 이벤트 - 콜백 함수
@@ -102,8 +121,17 @@ export const PlayerPage = () => {
         duration: progress.duration,
         percentage: (progress.currentTime / progress.duration) * 100,
       });
+      // 시청 진행률 업데이트
+      updateProgress(progress.currentTime, progress.duration);
     }
-  }, [progress]);
+  }, [progress, updateProgress]);
+
+  // 페이지 이탈 시 시청 진행률 저장
+  useEffect(() => {
+    return () => {
+      syncNow();
+    };
+  }, [syncNow]);
 
   // 자동 재생 차단 감지
   useYouTubeEvent(player, 'autoplayBlocked', () => {

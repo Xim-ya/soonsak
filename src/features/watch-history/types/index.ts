@@ -13,6 +13,7 @@ type ISODate = string;
 /**
  * 시청 기록 DTO
  * watch_history 테이블과 1대1 대응
+ * user_id + content_id로 유니크 (한 유저당 한 콘텐츠에 하나의 기록)
  */
 interface WatchHistoryDto {
   readonly id: string;
@@ -20,9 +21,11 @@ interface WatchHistoryDto {
   readonly contentId: number;
   readonly contentType: ContentType;
   readonly videoId: string;
-  readonly watchedAt: ISOTimestamp;
-  readonly watchedDate: ISODate;
+  /** 마지막 시청 시간 */
+  readonly lastWatchedAt: ISOTimestamp;
   readonly createdAt: ISOTimestamp;
+  /** 전체 시청 여부 (95% 이상 시청 또는 남은 10초 이하, 한번 true면 유지) */
+  readonly isFullyWatched: boolean;
 }
 
 /**
@@ -32,6 +35,20 @@ interface WatchHistoryDto {
 interface WatchHistoryWithContentDto extends WatchHistoryDto {
   readonly contentTitle: string;
   readonly contentPosterPath: string;
+  readonly contentBackdropPath: string;
+  readonly progressSeconds: number;
+  readonly durationSeconds: number;
+}
+
+/**
+ * 시청 진행률 업데이트 파라미터
+ */
+interface UpdateWatchProgressParams {
+  readonly contentId: number;
+  readonly contentType: ContentType;
+  readonly videoId: string;
+  readonly progressSeconds: number;
+  readonly durationSeconds: number;
 }
 
 /**
@@ -71,4 +88,5 @@ export type {
   WatchHistoryCalendarItemDto,
   MonthlyWatchSummaryDto,
   CreateWatchHistoryParams,
+  UpdateWatchProgressParams,
 };

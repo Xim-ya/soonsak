@@ -42,7 +42,8 @@ export type RootStackParamList = {
     title: string;
     contentId: number; // 재생수 증가용
     contentType: ContentType; // 재생수 증가용
-  }; // 플레이어 - 비디오 ID, 제목, 콘텐츠 정보 필수
+    startSeconds?: number; // 이어보기 시작 시간 (초)
+  }; // 플레이어 - 비디오 ID, 제목, 콘텐츠 정보 필수, 이어보기 시간 선택
   [routePages.channelDetail]: {
     channelId: string; // YouTube 채널 ID (필수)
     channelName?: string; // 채널 이름 (선택 - 없으면 API 조회)

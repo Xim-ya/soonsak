@@ -18,7 +18,10 @@ export {
   useAddWatchHistory,
   useDeleteWatchHistory,
   useClearAllWatchHistory,
+  useContentProgress,
 } from './hooks/useWatchHistory';
+
+export { useWatchProgressSync } from './hooks/useWatchProgressSync';
 
 // Types
 export type {
@@ -27,4 +30,5 @@ export type {
   WatchHistoryCalendarItemDto,
   MonthlyWatchSummaryDto,
   CreateWatchHistoryParams,
+  UpdateWatchProgressParams,
 } from './types';

@@ -23,6 +23,10 @@ import { useImageTransition } from '../_hooks/useImageTransition';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { useYouTubeVideo, buildYouTubeUrl } from '@/features/youtube';
 import { useContentDetailRoute } from '../_hooks/useContentDetailRoute';
+import {
+  shouldShowProgressBar,
+  calculateProgressPercent,
+} from '@/presentation/components/progress';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>; // Player 뷰
 
@@ -47,7 +51,8 @@ const HeaderBackground = React.memo(() => {
   const { data: contentInfo } = useContentDetail(Number(id), type);
 
   // 비디오 데이터 가져오기 (Provider에서 videoId 우선순위 적용된 primaryVideo 사용)
-  const { primaryVideo } = useContentVideos();
+  // 시청 진행률도 Provider에서 페이지 진입 시 미리 조회됨
+  const { primaryVideo, watchProgress } = useContentVideos();
 
   const { toggleImages, opacityValues } = useImageTransition();
   const navigation = useNavigation<NavigationProp>();
@@ -94,17 +99,42 @@ const HeaderBackground = React.memo(() => {
   // 이벤트 핸들러들
   const handlePlayPress = useCallback(() => {
     if (!primaryVideo) return;
-    navigation.navigate(routePages.player, {
+
+    // 이어보기: YouTube 정책에 따라 완료되지 않은 경우에만 startSeconds 전달
+    // 95% 이상 또는 남은 10초 이하면 완료로 간주하여 처음부터 재생
+    const canResume =
+      watchProgress &&
+      watchProgress.videoId === primaryVideo.id &&
+      shouldShowProgressBar(watchProgress.progressSeconds, watchProgress.durationSeconds);
+
+    const playerParams = {
       videoId: primaryVideo.id,
       title: primaryVideo.title || contentTitle || '',
       contentId: Number(id),
       contentType: type,
-    });
-  }, [navigation, primaryVideo, contentTitle, id, type]);
+      ...(canResume && { startSeconds: watchProgress.progressSeconds }),
+    };
+
+    navigation.navigate(routePages.player, playerParams);
+  }, [navigation, primaryVideo, contentTitle, id, type, watchProgress]);
 
   const handleThumbnailPress = useCallback(() => {
     toggleImages();
   }, [toggleImages]);
+
+  // 시청 진행률 표시 여부 (YouTube 스타일 정책 적용)
+  const hasWatchProgress = shouldShowProgressBar(
+    watchProgress?.progressSeconds ?? 0,
+    watchProgress?.durationSeconds ?? 0,
+  );
+  const showRuntimeChip =
+    !hasWatchProgress && primaryVideo?.runtime != null && primaryVideo.runtime > 0;
+
+  // 진행률 계산
+  const progressPercent = calculateProgressPercent(
+    watchProgress?.progressSeconds ?? 0,
+    watchProgress?.durationSeconds ?? 0,
+  );
 
   return (
     <HeaderBackgroundContainer>
@@ -146,13 +176,26 @@ const HeaderBackground = React.memo(() => {
         >
           <PlayButtonSvg width={120} height={120} />
         </PlayButton>
+        {/* 이어서 보기 텍스트 - YouTube 정책에 따라 프로그레스 바와 동일 조건 */}
+        {hasWatchProgress && <ResumeText>이어서 보기</ResumeText>}
       </PlayButtonContainer>
 
-      {/* 런타임 칩 - 좌측 하단 */}
-      {primaryVideo?.runtime != null && primaryVideo.runtime > 0 && (
+      {/* 런타임 칩 - 좌측 하단 (시청 기록 없을 때만) */}
+      {showRuntimeChip && (
         <RuntimeChipContainer>
-          <DarkChip content={formatter.formatRuntime(primaryVideo.runtime)} />
+          <DarkChip content={formatter.formatRuntime(primaryVideo!.runtime!)} />
         </RuntimeChipContainer>
+      )}
+
+      {/* 시청 진행률 - 하단 전체 (YouTube 정책 적용) */}
+      {hasWatchProgress && (
+        <ProgressContainer>
+          <DarkChip content={formatter.formatRuntime(watchProgress!.progressSeconds)} />
+          <ProgressBarWrapper>
+            <ProgressBarTrack />
+            <ProgressBarFill style={{ width: `${progressPercent}%` }} />
+          </ProgressBarWrapper>
+        </ProgressContainer>
       )}
 
       {/* 비디오 썸네일 - 우측 하단 (클릭 가능) */}
@@ -317,10 +360,17 @@ const PlayButtonContainer = styled.View({
   position: 'absolute',
   top: '50%',
   left: '50%',
-  width: 120,
-  height: 120,
   transform: [{ translateX: -60 }, { translateY: -60 }],
   zIndex: 10,
+  alignItems: 'center',
+});
+
+const ResumeText = styled.Text({
+  ...textStyles.alert1,
+  color: colors.white,
+  position: 'absolute',
+  bottom: 8,
+  opacity: 0.8,
 });
 
 const RuntimeChipContainer = styled.View({
@@ -397,6 +447,42 @@ const ThumbnailWrapper = styled.View<{ width: number; height: number }>(({ width
 
 const PlayButton = styled(TouchableHighlight)({
   borderRadius: 60,
+});
+
+const ProgressContainer = styled.View({
+  position: 'absolute',
+  bottom: AppSize.ratioHeight(12),
+  left: AppSize.ratioWidth(12),
+  right: AppSize.ratioWidth(12) + AppSize.ratioHeight(32) * (16 / 9) + 8, // 썸네일 너비 + 여백
+  flexDirection: 'row',
+  alignItems: 'center',
+  zIndex: 11,
+});
+
+const ProgressBarWrapper = styled.View({
+  flex: 1,
+  height: 4,
+  marginLeft: 8,
+  position: 'relative',
+});
+
+const ProgressBarTrack = styled.View({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  height: '100%',
+  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  borderRadius: 2,
+});
+
+const ProgressBarFill = styled.View({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  height: '100%',
+  backgroundColor: colors.red,
+  borderRadius: 2,
 });
 
 const DotText = styled.Text({
