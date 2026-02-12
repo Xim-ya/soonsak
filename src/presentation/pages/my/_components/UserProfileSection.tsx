@@ -28,11 +28,7 @@ interface UserProfileSectionProps {
 const AVATAR_SIZE = 48;
 const ICON_SIZE = 20;
 
-function UserProfileSectionComponent({
-  displayName,
-  avatarUrl,
-  onPress,
-}: UserProfileSectionProps) {
+function UserProfileSectionComponent({ displayName, avatarUrl, onPress }: UserProfileSectionProps) {
   // 프로필 이미지가 없는 경우 이니셜 표시용 텍스트
   const initial = displayName.charAt(0).toUpperCase();
 

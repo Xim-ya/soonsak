@@ -8,7 +8,7 @@
  * Collapsible Tab View의 헤더로 사용됩니다.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ImageBackground, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,9 +22,10 @@ import {
   DarkedLinearShadow,
   LinearAlign,
 } from '@/presentation/components/shadow/DarkedLinearShadow';
-// TODO: 개발 완료 후 복원
-// import { useAuth } from '@/shared/providers/AuthProvider';
-// import { CurationCarousel } from './CurationCarousel';
+import { LoginPromptDialog } from '@/presentation/components/dialog/LoginPromptDialog';
+import { useAuth } from '@/shared/providers/AuthProvider';
+import { useSocialLogin } from '@/presentation/pages/login/_hooks/useSocialLogin';
+import { CurationCarousel } from './CurationCarousel';
 import { CurationPromptCard } from './CurationPromptCard';
 import { useRandomBackdrop } from '../_hooks/useRandomBackdrop';
 
@@ -37,55 +38,110 @@ const BOTTOM_GRADIENT_HEIGHT = AppSize.ratioHeight(180);
 
 const ExploreHeader = React.memo(function ExploreHeader(): React.ReactElement {
   const navigation = useNavigation<NavigationProp>();
-  // TODO: 개발 완료 후 로그인 상태에 따른 분기 복원
-  // const { status } = useAuth();
-  // const isLoggedIn = status === 'authenticated';
+  const { status, signOut } = useAuth();
+  const isLoggedIn = status === 'authenticated';
 
   const { backdropUrl } = useRandomBackdrop();
+  const { handleLogin, loadingProvider } = useSocialLogin();
+
+  // 로그인 다이얼로그 상태
+  const [isLoginDialogVisible, setLoginDialogVisible] = useState(false);
 
   const handleLoginPress = useCallback(() => {
+    setLoginDialogVisible(true);
+  }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    setLoginDialogVisible(false);
+  }, []);
+
+  const handleKakaoLogin = useCallback(() => {
+    handleLogin('kakao');
+    setLoginDialogVisible(false);
+  }, [handleLogin]);
+
+  const handleOtherLogin = useCallback(() => {
     navigation.navigate(routePages.login);
+    setLoginDialogVisible(false);
   }, [navigation]);
 
-  // 백드롭 이미지가 없을 때 폴백 렌더링
-  if (!backdropUrl) {
+  // TODO: 테스트용 로그아웃 - 개발 완료 후 제거
+  const handleLogoutPress = useCallback(() => {
+    signOut();
+  }, [signOut]);
+
+  // 로그인 상태: 캐러셀만 표시 (백드롭/그라데이션 없음)
+  if (isLoggedIn) {
     return (
-      <FallbackContainer>
+      <LoggedInContainer>
         <TitleRow>
           <TitleText>탐색</TitleText>
-          <LoginButton onPress={handleLoginPress} activeOpacity={0.8}>
-            <LoginButtonText>로그인</LoginButtonText>
+          <LoginButton onPress={handleLogoutPress} activeOpacity={0.8}>
+            <LoginButtonText>로그아웃</LoginButtonText>
           </LoginButton>
         </TitleRow>
-        <CurationPromptCard />
-      </FallbackContainer>
+        <CurationCarousel />
+      </LoggedInContainer>
     );
   }
 
-  return (
-    <Container>
-      <BackdropImage source={{ uri: backdropUrl }} resizeMode="cover">
-        {/* 상단 그라데이션 */}
-        <DarkedLinearShadow height={TOP_GRADIENT_HEIGHT} align={LinearAlign.topBottom} />
-
-        <ContentOverlay>
+  // 비로그인 상태: 백드롭 이미지가 없을 때 폴백 렌더링
+  if (!backdropUrl) {
+    return (
+      <>
+        <FallbackContainer>
           <TitleRow>
             <TitleText>탐색</TitleText>
             <LoginButton onPress={handleLoginPress} activeOpacity={0.8}>
               <LoginButtonText>로그인</LoginButtonText>
             </LoginButton>
           </TitleRow>
+          <CurationPromptCard />
+        </FallbackContainer>
+        <LoginPromptDialog
+          visible={isLoginDialogVisible}
+          onClose={handleCloseDialog}
+          onKakaoLogin={handleKakaoLogin}
+          onOtherLogin={handleOtherLogin}
+          isKakaoLoading={loadingProvider === 'kakao'}
+        />
+      </>
+    );
+  }
 
-          <CardSection>
-            {/* TODO: 개발 완료 후 복원 - {isLoggedIn ? <CurationCarousel /> : <CurationPromptCard />} */}
-            <CurationPromptCard />
-          </CardSection>
-        </ContentOverlay>
+  // 비로그인 상태: 백드롭 이미지 + 그라데이션 + 로그인 유도 카드
+  return (
+    <>
+      <Container>
+        <BackdropImage source={{ uri: backdropUrl }} resizeMode="cover">
+          {/* 상단 그라데이션 */}
+          <DarkedLinearShadow height={TOP_GRADIENT_HEIGHT} align={LinearAlign.topBottom} />
 
-        {/* 하단 그라데이션 */}
-        <DarkedLinearShadow height={BOTTOM_GRADIENT_HEIGHT} align={LinearAlign.bottomTop} />
-      </BackdropImage>
-    </Container>
+          <ContentOverlay>
+            <TitleRow>
+              <TitleText>탐색</TitleText>
+              <LoginButton onPress={handleLoginPress} activeOpacity={0.8}>
+                <LoginButtonText>로그인</LoginButtonText>
+              </LoginButton>
+            </TitleRow>
+
+            <CardSection>
+              <CurationPromptCard />
+            </CardSection>
+          </ContentOverlay>
+
+          {/* 하단 그라데이션 */}
+          <DarkedLinearShadow height={BOTTOM_GRADIENT_HEIGHT} align={LinearAlign.bottomTop} />
+        </BackdropImage>
+      </Container>
+      <LoginPromptDialog
+        visible={isLoginDialogVisible}
+        onClose={handleCloseDialog}
+        onKakaoLogin={handleKakaoLogin}
+        onOtherLogin={handleOtherLogin}
+        isKakaoLoading={loadingProvider === 'kakao'}
+      />
+    </>
   );
 });
 
@@ -93,6 +149,12 @@ const ExploreHeader = React.memo(function ExploreHeader(): React.ReactElement {
 const Container = styled.View({
   height: HEADER_HEIGHT,
   backgroundColor: colors.black,
+});
+
+const LoggedInContainer = styled.View({
+  backgroundColor: colors.black,
+  paddingTop: 16,
+  paddingBottom: 20,
 });
 
 const FallbackContainer = styled.View({
