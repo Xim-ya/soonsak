@@ -3,6 +3,15 @@ import { VideoDto } from '@/features/content/types';
 import { contentApi } from '@/features/content/api/contentApi';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
 import { usePrefetchCommentToken } from '@/features/youtube';
+import { useContentProgress } from '@/features/watch-history';
+import { useAuth } from '@/shared/providers/AuthProvider';
+
+/** 시청 진행률 데이터 */
+interface WatchProgressData {
+  progressSeconds: number;
+  durationSeconds: number;
+  videoId: string;
+}
 
 interface ContentDetailContextType {
   videos: VideoDto[];
@@ -16,6 +25,8 @@ interface ContentDetailContextType {
   commentTotalCountText: string | undefined;
   /** 댓글 토큰 로딩 중 여부 */
   isCommentTokenLoading: boolean;
+  /** 시청 진행률 (이어보기용, 페이지 진입 시 미리 조회) */
+  watchProgress: WatchProgressData | null;
 }
 
 const ContentDetailContext = createContext<ContentDetailContextType | undefined>(undefined);
@@ -101,6 +112,13 @@ export function ContentDetailProvider({
     isLoading: isCommentTokenLoading,
   } = usePrefetchCommentToken(primaryVideo?.id);
 
+  // 시청 진행률 조회 (로그인 유저만, 페이지 진입 시 미리 조회)
+  const { status } = useAuth();
+  const isAuthenticated = status === 'authenticated';
+  const { data: watchProgress } = useContentProgress(contentId, contentType, {
+    enabled: isAuthenticated,
+  });
+
   const contextValue: ContentDetailContextType = {
     videos,
     primaryVideo,
@@ -110,6 +128,7 @@ export function ContentDetailProvider({
     commentToken,
     commentTotalCountText,
     isCommentTokenLoading,
+    watchProgress: watchProgress ?? null,
   };
 
   return (

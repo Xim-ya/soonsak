@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styled from '@emotion/native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
-import { Dimensions, ActivityIndicator, Platform, Alert, Linking } from 'react-native';
+import { Dimensions, ActivityIndicator, Platform, Alert } from 'react-native';
 import { YoutubeView, useYouTubePlayer, useYouTubeEvent } from 'react-native-youtube-bridge';
 import WebView from 'react-native-webview';
 import colors from '@/shared/styles/colors';
@@ -9,10 +9,9 @@ import { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
-import { buildYouTubeUrl, buildYouTubeAppUrl, isEmbeddedRestrictedError } from '@/features/youtube';
-import { contentApi } from '@/features/content/api/contentApi';
-import { useAddWatchHistory } from '@/features/watch-history';
+import { useWatchProgressSync } from '@/features/watch-history';
 import { PlayerWatchProviderView } from './_components/PlayerWatchProviderView';
+import { usePlayerReady, useResumePlayback, useFallbackPlayer } from './_hooks';
 
 type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.player>;
 
@@ -24,16 +23,9 @@ type PlayerPageRouteProp = RouteProp<RootStackParamList, typeof routePages.playe
 export const PlayerPage = () => {
   const route = useRoute<PlayerPageRouteProp>();
   const navigation = useNavigation();
-  const { videoId, title, contentId, contentType } = route.params;
-  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const { videoId, title, contentId, contentType, startSeconds } = route.params;
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1);
-  const [useFallbackPlayer, setUseFallbackPlayer] = useState(false);
-  const hasIncrementedPlayCount = useRef(false);
 
-  // 시청 기록 추가 mutation
-  const { mutate: addWatchHistory } = useAddWatchHistory();
-
-  // 초기 화면 크기만 사용 (YouTube 플레이어가 자체적으로 전체화면 처리)
   const screenWidth = Dimensions.get('window').width;
 
   const player = useYouTubePlayer(videoId, {
@@ -45,51 +37,54 @@ export const PlayerPage = () => {
     origin: 'https://www.youtube.com',
   });
 
-  // 플레이어 준비 완료 이벤트
-  useYouTubeEvent(player, 'ready', (playerInfo) => {
-    console.log('플레이어 준비 완료:', playerInfo);
-    if (!useFallbackPlayer) {
-      setIsPlayerReady(true);
-    }
+  // Fallback 플레이어 로직
+  const { isFallbackMode, handleError, openInYouTube } = useFallbackPlayer({ videoId });
 
-    // 재생수 증가 + 시청 기록 저장 (1회만 실행)
-    if (!hasIncrementedPlayCount.current) {
-      hasIncrementedPlayCount.current = true;
-      contentApi.incrementPlayCount(contentId, contentType);
-
-      // 시청 기록 저장
-      addWatchHistory({
-        contentId,
-        contentType,
-        videoId,
-      });
-    }
-
-    // iOS에서 음소거 상태로 자동 재생 후 음소거 해제
-    if (Platform.OS === 'ios') {
-      setTimeout(() => {
-        player.unMute();
-      }, 500);
-    }
+  // 플레이어 준비 및 초기화 로직
+  const { isPlayerReady, handleReady } = usePlayerReady({
+    contentId,
+    contentType,
+    videoId,
+    isFallbackMode,
+    player,
   });
+
+  // 이어보기 로직
+  const { handleResumeOnStateChange } = useResumePlayback({
+    startSeconds,
+    player,
+  });
+
+  // 시청 진행률 동기화
+  const { updateProgress, handleStateChange, syncNow } = useWatchProgressSync({
+    contentId,
+    contentType,
+    videoId,
+  });
+
+  // 플레이어 준비 완료 이벤트
+  useYouTubeEvent(player, 'ready', handleReady);
 
   // 재생 상태 변경 이벤트
   useYouTubeEvent(player, 'stateChange', (state) => {
     console.log('재생 상태 변경:', state);
+
+    const stateValue = typeof state === 'number' ? state : (state as { state: number }).state;
+
+    handleResumeOnStateChange(stateValue);
+    handleStateChange(stateValue);
   });
 
-  // 재생율 변경 이벤트 - 콜백 함수
+  // 재생율 변경 이벤트
   const onPlaybackRateChange = useCallback((rate: number) => {
     console.log('재생율 변경됨:', rate);
     setCurrentPlaybackRate(rate);
 
-    // 사용자에게 재생율 변경 알림 (선택사항)
     if (rate !== 1) {
       console.log(`재생 속도가 ${rate}배로 변경되었습니다`);
     }
   }, []);
 
-  // 재생율 변경 이벤트 리스너
   useYouTubeEvent(player, 'playbackRateChange', onPlaybackRateChange);
 
   // 재생 진행률 추적 (1초마다)
@@ -102,13 +97,20 @@ export const PlayerPage = () => {
         duration: progress.duration,
         percentage: (progress.currentTime / progress.duration) * 100,
       });
+      updateProgress(progress.currentTime, progress.duration);
     }
-  }, [progress]);
+  }, [progress, updateProgress]);
+
+  // 페이지 이탈 시 시청 진행률 저장
+  useEffect(() => {
+    return () => {
+      syncNow();
+    };
+  }, [syncNow]);
 
   // 자동 재생 차단 감지
   useYouTubeEvent(player, 'autoplayBlocked', () => {
     console.log('자동 재생이 차단되었습니다');
-    // iOS에서 자동 재생이 차단된 경우 수동으로 재생 시도
     if (Platform.OS === 'ios') {
       Alert.alert('자동 재생 차단됨', '재생 버튼을 눌러 영상을 시작하세요', [
         {
@@ -119,52 +121,15 @@ export const PlayerPage = () => {
     }
   });
 
-  // YouTube 앱 열기 함수
-  const openInYouTube = useCallback(async () => {
-    const youtubeUrl = buildYouTubeUrl(videoId);
-    const youtubeAppUrl = buildYouTubeAppUrl(videoId);
-
-    try {
-      // YouTube 앱이 설치되어 있는지 확인하고 열기
-      const canOpenYouTubeApp = await Linking.canOpenURL(youtubeAppUrl);
-      if (canOpenYouTubeApp) {
-        await Linking.openURL(youtubeAppUrl);
-      } else {
-        // YouTube 앱이 없으면 브라우저에서 열기
-        await Linking.openURL(youtubeUrl);
-      }
-    } catch (linkingError) {
-      console.error('링크 열기 실패:', linkingError);
-      // 링크 열기도 실패한 경우 기본 오류 메시지
-      Alert.alert('오류', 'YouTube로 연결할 수 없습니다.');
-    }
-  }, [videoId]);
-
   // 에러 이벤트
-  useYouTubeEvent(player, 'error', (error) => {
-    console.error('플레이어 에러:', error);
+  useYouTubeEvent(player, 'error', handleError);
 
-    // 임베드 제한 에러(150/152/153)인 경우 fallback 플레이어로 전환
-    if (isEmbeddedRestrictedError(error)) {
-      console.log('임베드 제한 감지 → YouTube 모바일 사이트 fallback 전환');
-      setUseFallbackPlayer(true);
-    } else {
-      // 기타 오류는 기존 처리 방식 + 뒤로 가기
-      Alert.alert('재생 오류', `에러 코드: ${error.code}\n${error.message}`, [
-        {
-          text: '확인',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
-    }
-  });
-
-  // 16:9 비율로 계산된 높이 (화면 너비에 맞춰)
+  // 16:9 비율로 계산된 높이
   const playerWidth = screenWidth;
   const playerHeight = (playerWidth * 9) / 16;
 
   // Fallback: YouTube 모바일 사이트를 WebView로 직접 로드
-  if (useFallbackPlayer) {
+  if (isFallbackMode) {
     const mobileYouTubeUrl = `https://m.youtube.com/watch?v=${videoId}`;
 
     return (
@@ -184,7 +149,6 @@ export const PlayerPage = () => {
             sharedCookiesEnabled
             allowsBackForwardNavigationGestures={false}
             onError={() => {
-              // WebView 로드 실패 시 YouTube 앱으로 fallback
               Alert.alert('재생 오류', 'YouTube 앱에서 재생합니다.', [
                 {
                   text: '취소',
@@ -235,19 +199,15 @@ export const PlayerPage = () => {
             backgroundColor: colors.black,
           }}
           webViewProps={{
-            // 전체화면 지원을 위한 WebView 설정
             allowsInlineMediaPlayback: true,
             mediaPlaybackRequiresUserAction: false,
             allowsFullscreenVideo: true,
-            // 추가 보안 설정
             mixedContentMode: 'always',
             domStorageEnabled: true,
           }}
-          // 외부 WebView 모드 사용 (전체화면 지원됨)
           useInlineHtml={false}
         />
         <PlayerWatchProviderView contentId={contentId} contentType={contentType} />
-        {/* 디버그 정보 표시 (개발 중에만 사용) */}
         {__DEV__ && (
           <DebugInfo>
             <DebugText>

@@ -11,7 +11,7 @@ import type {
 } from '../types';
 
 /** Query Key 팩토리 */
-const watchHistoryKeys = {
+export const watchHistoryKeys = {
   all: ['watchHistory'] as const,
   calendar: (year: number, month: number) =>
     [...watchHistoryKeys.all, 'calendar', year, month] as const,
@@ -138,5 +138,26 @@ export const useClearAllWatchHistory = () => {
     onError: (error) => {
       console.error('전체 시청 기록 삭제 실패:', error);
     },
+  });
+};
+
+/**
+ * 특정 콘텐츠의 시청 진행률 조회 Hook
+ * 이어보기 기능에서 사용
+ */
+export const useContentProgress = (
+  contentId: number,
+  contentType: string,
+  options?: { enabled?: boolean },
+): UseQueryResult<
+  { progressSeconds: number; durationSeconds: number; videoId: string } | null,
+  Error
+> => {
+  return useQuery({
+    queryKey: [...watchHistoryKeys.all, 'progress', contentId, contentType],
+    queryFn: () => watchHistoryApi.getContentProgress(contentId, contentType),
+    enabled: options?.enabled ?? true,
+    staleTime: 30 * 1000, // 30초
+    gcTime: 5 * 60 * 1000, // 5분
   });
 };

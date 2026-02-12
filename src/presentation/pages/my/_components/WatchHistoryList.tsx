@@ -15,6 +15,11 @@ import { AppSize } from '@/shared/utils/appSize';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
 import type { WatchHistoryWithContentDto } from '@/features/watch-history';
+import {
+  shouldShowProgressBar,
+  calculateProgressPercent,
+} from '@/presentation/components/progress';
+import DarkChip from '@/presentation/components/chip/DarkChip';
 
 /* Types */
 
@@ -31,10 +36,11 @@ interface WatchHistoryItemProps {
 
 /* Constants */
 
-const ITEM_WIDTH = AppSize.ratioWidth(100);
-const ITEM_HEIGHT = ITEM_WIDTH * (150 / 100);
+const ITEM_WIDTH = AppSize.ratioWidth(160);
+const ITEM_HEIGHT = ITEM_WIDTH * (9 / 16); // 16:9 비율 (백드롭용)
 const ITEM_GAP = AppSize.ratioWidth(8);
 const HORIZONTAL_PADDING = AppSize.ratioWidth(16);
+const PROGRESS_BAR_HEIGHT = 3;
 
 const LIST_CONTENT_STYLE = {
   paddingHorizontal: HORIZONTAL_PADDING,
@@ -43,9 +49,18 @@ const LIST_CONTENT_STYLE = {
 /* Components */
 
 const WatchHistoryItemComponent = memo(({ item, onItemPress }: WatchHistoryItemProps) => {
-  const posterUrl = item.contentPosterPath
-    ? formatter.prefixTmdbImgUrl(item.contentPosterPath, { size: TmdbImageSize.w185 })
-    : '';
+  // 백드롭 이미지 우선, 없으면 포스터 사용
+  const imageUrl = item.contentBackdropPath
+    ? formatter.prefixTmdbImgUrl(item.contentBackdropPath, { size: TmdbImageSize.w342 })
+    : item.contentPosterPath
+      ? formatter.prefixTmdbImgUrl(item.contentPosterPath, { size: TmdbImageSize.w185 })
+      : '';
+
+  // YouTube 스타일 프로그레스 바 표시 여부 (공통 정책 적용)
+  const showProgressBar = shouldShowProgressBar(item.progressSeconds, item.durationSeconds);
+
+  // 진행률 계산 (0~100) - 공통 유틸리티 사용
+  const progressPercent = calculateProgressPercent(item.progressSeconds, item.durationSeconds);
 
   const handlePress = useCallback(() => {
     onItemPress?.(item);
@@ -54,12 +69,26 @@ const WatchHistoryItemComponent = memo(({ item, onItemPress }: WatchHistoryItemP
   return (
     <ItemContainer>
       <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
-        <LoadableImageView
-          source={posterUrl}
-          width={ITEM_WIDTH}
-          height={ITEM_HEIGHT}
-          borderRadius={4}
-        />
+        <ImageWrapper>
+          <LoadableImageView
+            source={imageUrl}
+            width={ITEM_WIDTH}
+            height={ITEM_HEIGHT}
+            borderRadius={4}
+          />
+          {/* 런타임 칩 - 우측 하단 */}
+          {item.durationSeconds > 0 && (
+            <RuntimeChipContainer>
+              <DarkChip content={formatter.formatRuntime(item.durationSeconds)} />
+            </RuntimeChipContainer>
+          )}
+          {showProgressBar && (
+            <ProgressBarContainer>
+              <ProgressBarBackground />
+              <ProgressBarFill style={{ width: `${progressPercent}%` }} />
+            </ProgressBarContainer>
+          )}
+        </ImageWrapper>
         <ItemTitle numberOfLines={1}>{item.contentTitle}</ItemTitle>
       </TouchableOpacity>
     </ItemContainer>
@@ -122,6 +151,42 @@ const SeparatorView = styled.View({
 
 const ItemContainer = styled.View({
   width: ITEM_WIDTH,
+});
+
+const ImageWrapper = styled.View({
+  position: 'relative',
+  width: ITEM_WIDTH,
+  height: ITEM_HEIGHT,
+  borderRadius: 4,
+  overflow: 'hidden',
+});
+
+const RuntimeChipContainer = styled.View({
+  position: 'absolute',
+  bottom: 6,
+  right: 6,
+  zIndex: 1,
+});
+
+const ProgressBarContainer = styled.View({
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: PROGRESS_BAR_HEIGHT,
+});
+
+const ProgressBarBackground = styled.View({
+  position: 'absolute',
+  width: '100%',
+  height: '100%',
+  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+});
+
+const ProgressBarFill = styled.View({
+  position: 'absolute',
+  height: '100%',
+  backgroundColor: '#FF0000', // YouTube 빨간색
 });
 
 const ItemTitle = styled.Text({

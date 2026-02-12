@@ -59,14 +59,17 @@ export default function MyPage() {
   // 고유 콘텐츠 시청 기록 조회 (하단 목록용)
   const { data: watchHistoryData, isLoading: isHistoryLoading } = useUniqueWatchHistory(10, 0);
 
-  // 시청 기록 아이템 클릭 핸들러
+  // 시청 기록 아이템 클릭 핸들러 (이어보기: 플레이어로 직접 이동)
   const handleWatchHistoryItemPress = useCallback(
     (item: WatchHistoryWithContentDto) => {
-      navigation.navigate(routePages.contentDetail, {
-        id: item.contentId,
-        type: item.contentType,
+      const playerParams = {
+        videoId: item.videoId,
         title: item.contentTitle,
-      });
+        contentId: item.contentId,
+        contentType: item.contentType,
+        ...(item.progressSeconds > 0 && { startSeconds: item.progressSeconds }),
+      };
+      navigation.navigate(routePages.player, playerParams);
     },
     [navigation],
   );
@@ -81,6 +84,14 @@ export default function MyPage() {
         >
           <UserProfileSection displayName={displayName} avatarUrl={avatarUrl} />
 
+          {watchHistoryData && (
+            <WatchHistoryList
+              items={watchHistoryData.items}
+              isLoading={isHistoryLoading}
+              onItemPress={handleWatchHistoryItemPress}
+            />
+          )}
+
           <WatchCalendar
             year={selectedYear}
             month={selectedMonth}
@@ -89,14 +100,6 @@ export default function MyPage() {
             onNextMonth={handleNextMonth}
             onOpenMonthPicker={handleOpenMonthPicker}
           />
-
-          {watchHistoryData && (
-            <WatchHistoryList
-              items={watchHistoryData.items}
-              isLoading={isHistoryLoading}
-              onItemPress={handleWatchHistoryItemPress}
-            />
-          )}
         </ScrollView>
       </Container>
 
