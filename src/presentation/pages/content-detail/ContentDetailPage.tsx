@@ -12,7 +12,7 @@ import { useCallback } from 'react';
 import { TabBar } from './_components/TabBar';
 import { ContentTabView } from './_components/VideoTabView';
 import { RelatedContentTabView } from './_components/OriginContentTabView';
-import { AnimatedAppBAr } from './_components/AnimatedAppBar';
+import { AnimatedAppBar } from './_components/AnimatedAppBar';
 import { ScreenRouteProp } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { ContentDetailProvider } from './_provider/ContentDetailProvider';
@@ -79,7 +79,7 @@ export default function ContentDetailPage() {
           }, [appBarOpacity])}
           safeAreaHeight={insets.top}
         />
-        <AnimatedAppBAr insets={insets} opacity={appBarOpacity} onMorePress={handleMorePress} />
+        <AnimatedAppBar insets={insets} opacity={appBarOpacity} onMorePress={handleMorePress} />
         <TabsContainer paddingTop={insets.top}>
           <Tabs.Container
             renderHeader={() => <Header />}

@@ -209,7 +209,7 @@ export const useContentProgress = (
   contentType: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<
-  { progressSeconds: number; durationSeconds: number; videoId: string } | null,
+  { progressSeconds: number; durationSeconds: number; videoId: string | null } | null,
   Error
 > => {
   const { user } = useAuth();

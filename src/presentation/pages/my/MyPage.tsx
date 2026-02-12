@@ -93,7 +93,7 @@ export default function MyPage() {
 
           <UserStatsSection
             favoritesCount={favoritesCount}
-            ratingsCount={0}
+            ratingsCount={0} // TODO: 평점 기능 구현 시 실제 데이터로 교체
             watchedCount={watchedCount}
           />
 

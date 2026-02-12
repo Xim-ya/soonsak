@@ -11,7 +11,7 @@ interface AnimatedAppBarProps {
 }
 
 // 최적화된 AnimatedBackButtonAppBar 컴포넌트
-const AnimatedAppBAr = React.memo<AnimatedAppBarProps>(({ insets, opacity, onMorePress }) => {
+const AnimatedAppBar = React.memo<AnimatedAppBarProps>(({ insets, opacity, onMorePress }) => {
   // backgroundColor 문자열 생성 최적화
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';
@@ -46,7 +46,7 @@ const AnimatedAppBAr = React.memo<AnimatedAppBarProps>(({ insets, opacity, onMor
   );
 });
 
-AnimatedAppBAr.displayName = 'AnimatedAppBAr';
+AnimatedAppBar.displayName = 'AnimatedAppBar';
 
-export { AnimatedAppBAr };
+export { AnimatedAppBar };
 export type { AnimatedAppBarProps };

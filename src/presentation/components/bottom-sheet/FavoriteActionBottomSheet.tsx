@@ -78,8 +78,12 @@ function FavoriteActionBottomSheet({
         duration: 300,
         easing: Easing.out(Easing.ease),
       });
+    } else {
+      // visible이 외부에서 false로 변경될 때 애니메이션 값 초기화
+      overlayOpacity.value = 0;
+      sheetTranslateY.value = sheetHeight;
     }
-  }, [visible, overlayOpacity, sheetTranslateY]);
+  }, [visible, overlayOpacity, sheetTranslateY, sheetHeight]);
 
   // 닫기 애니메이션
   const handleClose = useCallback(() => {
