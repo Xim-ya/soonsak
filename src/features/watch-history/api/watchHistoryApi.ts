@@ -14,23 +14,26 @@ const TABLE_NAME = 'watch_history';
 
 /**
  * 인증된 사용자 정보 반환
- * @throws 미인증 시 에러
+ * @returns 미인증 시 null
  */
-async function requireAuth(): Promise<User> {
-  const { data } = await supabaseClient.auth.getUser();
-  if (!data.user) {
-    throw new Error('User not authenticated');
+async function getAuthUser(): Promise<User | null> {
+  const { data, error } = await supabaseClient.auth.getUser();
+  if (error) {
+    return null;
   }
-  return data.user;
+  return data.user ?? null;
 }
 
 /**
  * 인증된 사용자 정보 반환
- * @returns 미인증 시 null
+ * @throws 미인증 시 에러
  */
-async function getAuthUser(): Promise<User | null> {
-  const { data } = await supabaseClient.auth.getUser();
-  return data.user ?? null;
+async function requireAuth(): Promise<User> {
+  const user = await getAuthUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  return user;
 }
 
 /**
@@ -38,10 +41,17 @@ async function getAuthUser(): Promise<User | null> {
  * 95% 이상 시청 또는 남은 10초 이하면 전체 시청으로 간주
  */
 function calculateIsFullyWatched(progressSeconds: number, durationSeconds: number): boolean {
-  if (durationSeconds <= 0) return false;
+  // Validate durationSeconds
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    return false;
+  }
 
-  const percent = (progressSeconds / durationSeconds) * 100;
-  const remainingSeconds = durationSeconds - progressSeconds;
+  // Sanitize and clamp progressSeconds
+  const sanitizedProgress = Number.isFinite(progressSeconds) ? progressSeconds : 0;
+  const clampedProgress = Math.max(0, Math.min(sanitizedProgress, durationSeconds));
+
+  const percent = (clampedProgress / durationSeconds) * 100;
+  const remainingSeconds = durationSeconds - clampedProgress;
 
   return (
     percent >= WATCH_PROGRESS_POLICY.COMPLETION_PERCENT ||
@@ -55,7 +65,7 @@ function calculateIsFullyWatched(progressSeconds: number, durationSeconds: numbe
 export const watchHistoryApi = {
   /**
    * 시청 기록 추가 (upsert)
-   * user_id + content_id가 이미 존재하면 업데이트
+   * user_id + content_id + content_type가 이미 존재하면 업데이트
    */
   addWatchHistory: async (params: CreateWatchHistoryParams): Promise<WatchHistoryDto> => {
     const user = await requireAuth();
@@ -97,7 +107,7 @@ export const watchHistoryApi = {
 
     // 월의 시작과 끝 날짜 계산
     const startDate = `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`;
-    const lastDay = new Date(year, month, 0).getDate();
+    const lastDay = new Date(year, month - 1 + 1, 0).getDate(); // month is 1-12, so convert to 0-11 for Date constructor
     const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
 
     const { data, error } = await supabaseClient
@@ -132,6 +142,7 @@ export const watchHistoryApi = {
     >();
 
     for (const item of data ?? []) {
+      if (!item.last_watched_at) continue; // Skip if last_watched_at is null/undefined
       const date = item.last_watched_at.split('T')[0]; // YYYY-MM-DD 추출
       const existing = groupedByDate.get(date);
       const posterPath = (item.contents as { poster_path?: string } | null)?.poster_path ?? '';
@@ -331,7 +342,7 @@ export const watchHistoryApi = {
 
   /**
    * 시청 진행률 업데이트 (upsert)
-   * user_id + content_id 유니크 제약조건 사용
+   * user_id + content_id + content_type 유니크 제약조건 사용
    * - progress_seconds: 항상 현재 위치로 업데이트 (이어보기용)
    * - is_fully_watched: 한번 true면 계속 true 유지 (OR 연산)
    * - last_watched_at: 항상 최신 시간으로 업데이트
@@ -346,8 +357,31 @@ export const watchHistoryApi = {
       params.durationSeconds,
     );
 
-    // 기존 기록 조회 (is_fully_watched OR 연산을 위해)
-    const { data: existingRecord } = await supabaseClient
+    // 먼저 insert 시도
+    const { error: insertError } = await supabaseClient.from(TABLE_NAME).insert({
+      user_id: user.id,
+      content_id: params.contentId,
+      content_type: params.contentType,
+      video_id: params.videoId,
+      last_watched_at: now,
+      progress_seconds: params.progressSeconds,
+      duration_seconds: params.durationSeconds,
+      is_fully_watched: newIsFullyWatched,
+    });
+
+    // insert 성공하면 종료
+    if (!insertError) {
+      return;
+    }
+
+    // unique constraint violation (code 23505)이 아니면 에러 발생
+    if (insertError.code !== '23505') {
+      console.error('시청 진행률 생성 실패:', insertError);
+      throw new Error(`Failed to create watch progress: ${insertError.message}`);
+    }
+
+    // 충돌 시 기존 기록 조회 (is_fully_watched OR 연산을 위해)
+    const { data: existingRecord, error: selectError } = await supabaseClient
       .from(TABLE_NAME)
       .select('id, is_fully_watched')
       .eq('user_id', user.id)
@@ -355,43 +389,33 @@ export const watchHistoryApi = {
       .eq('content_type', params.contentType)
       .maybeSingle();
 
+    if (selectError) {
+      console.error('기존 시청 기록 조회 실패:', selectError);
+      throw new Error(`Failed to fetch existing watch progress: ${selectError.message}`);
+    }
+
+    if (!existingRecord) {
+      throw new Error('Expected existing record after conflict, but none found');
+    }
+
     // is_fully_watched OR 연산: 한번 true면 계속 true 유지
-    const isFullyWatched = existingRecord?.is_fully_watched || newIsFullyWatched;
+    const isFullyWatched = existingRecord.is_fully_watched || newIsFullyWatched;
 
-    if (existingRecord) {
-      // 기존 기록 업데이트
-      const { error } = await supabaseClient
-        .from(TABLE_NAME)
-        .update({
-          video_id: params.videoId,
-          progress_seconds: params.progressSeconds,
-          duration_seconds: params.durationSeconds,
-          last_watched_at: now,
-          is_fully_watched: isFullyWatched,
-        })
-        .eq('id', existingRecord.id);
-
-      if (error) {
-        console.error('시청 진행률 업데이트 실패:', error);
-        throw new Error(`Failed to update watch progress: ${error.message}`);
-      }
-    } else {
-      // 새 기록 생성
-      const { error } = await supabaseClient.from(TABLE_NAME).insert({
-        user_id: user.id,
-        content_id: params.contentId,
-        content_type: params.contentType,
+    // 기존 기록 업데이트
+    const { error: updateError } = await supabaseClient
+      .from(TABLE_NAME)
+      .update({
         video_id: params.videoId,
-        last_watched_at: now,
         progress_seconds: params.progressSeconds,
         duration_seconds: params.durationSeconds,
+        last_watched_at: now,
         is_fully_watched: isFullyWatched,
-      });
+      })
+      .eq('id', existingRecord.id);
 
-      if (error) {
-        console.error('시청 진행률 생성 실패:', error);
-        throw new Error(`Failed to create watch progress: ${error.message}`);
-      }
+    if (updateError) {
+      console.error('시청 진행률 업데이트 실패:', updateError);
+      throw new Error(`Failed to update watch progress: ${updateError.message}`);
     }
   },
 
@@ -402,7 +426,11 @@ export const watchHistoryApi = {
   getContentProgress: async (
     contentId: number,
     contentType: string,
-  ): Promise<{ progressSeconds: number; durationSeconds: number; videoId: string } | null> => {
+  ): Promise<{
+    progressSeconds: number;
+    durationSeconds: number;
+    videoId: string | null;
+  } | null> => {
     const user = await getAuthUser();
     if (!user) {
       return null;
@@ -416,14 +444,23 @@ export const watchHistoryApi = {
       .eq('content_type', contentType)
       .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
+      console.error('시청 진행률 조회 실패:', {
+        contentId,
+        contentType,
+        error,
+      });
+      return null;
+    }
+
+    if (!data) {
       return null;
     }
 
     return {
       progressSeconds: data.progress_seconds ?? 0,
       durationSeconds: data.duration_seconds ?? 0,
-      videoId: data.video_id,
+      videoId: data.video_id ?? null,
     };
   },
 
@@ -436,20 +473,28 @@ export const watchHistoryApi = {
     contentId: number,
     contentType: string,
     durationSeconds: number,
+    videoId?: string | null,
   ): Promise<void> => {
     const user = await requireAuth();
 
-    const { error } = await supabaseClient
-      .from(TABLE_NAME)
-      .update({
+    // Guard: invalid duration
+    if (durationSeconds <= 0) {
+      return;
+    }
+
+    const { error } = await supabaseClient.from(TABLE_NAME).upsert(
+      {
+        user_id: user.id,
+        content_id: contentId,
+        content_type: contentType,
         is_fully_watched: true,
         progress_seconds: durationSeconds,
         duration_seconds: durationSeconds,
         last_watched_at: new Date().toISOString(),
-      })
-      .eq('user_id', user.id)
-      .eq('content_id', contentId)
-      .eq('content_type', contentType);
+        video_id: videoId ?? null,
+      },
+      { onConflict: 'user_id,content_id,content_type' },
+    );
 
     if (error) {
       console.error('영상 완료 처리 실패:', error);
