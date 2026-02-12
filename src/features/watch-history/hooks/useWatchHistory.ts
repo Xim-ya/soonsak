@@ -6,10 +6,7 @@ import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack
 import { useAuth } from '@/shared/providers/AuthProvider';
 import { watchHistoryApi } from '../api/watchHistoryApi';
 import type { CreateWatchHistoryParams } from '../types';
-import {
-  WatchHistoryModel,
-  WatchHistoryCalendarModel,
-} from '../types/watchHistoryModel';
+import { WatchHistoryModel, WatchHistoryCalendarModel } from '../types/watchHistoryModel';
 
 /** 캐시 시간 상수 */
 const THIRTY_SECONDS = 30 * 1000;
