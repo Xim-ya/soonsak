@@ -8,7 +8,7 @@
  * Collapsible Tab View의 헤더로 사용됩니다.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ImageBackground, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,7 +22,9 @@ import {
   DarkedLinearShadow,
   LinearAlign,
 } from '@/presentation/components/shadow/DarkedLinearShadow';
+import { LoginPromptDialog } from '@/presentation/components/dialog/LoginPromptDialog';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { useSocialLogin } from '@/presentation/pages/login/_hooks/useSocialLogin';
 import { CurationCarousel } from './CurationCarousel';
 import { CurationPromptCard } from './CurationPromptCard';
 import { useRandomBackdrop } from '../_hooks/useRandomBackdrop';
@@ -40,9 +42,27 @@ const ExploreHeader = React.memo(function ExploreHeader(): React.ReactElement {
   const isLoggedIn = status === 'authenticated';
 
   const { backdropUrl } = useRandomBackdrop();
+  const { handleLogin, loadingProvider } = useSocialLogin();
+
+  // 로그인 다이얼로그 상태
+  const [isLoginDialogVisible, setLoginDialogVisible] = useState(false);
 
   const handleLoginPress = useCallback(() => {
+    setLoginDialogVisible(true);
+  }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    setLoginDialogVisible(false);
+  }, []);
+
+  const handleKakaoLogin = useCallback(() => {
+    handleLogin('kakao');
+    setLoginDialogVisible(false);
+  }, [handleLogin]);
+
+  const handleOtherLogin = useCallback(() => {
     navigation.navigate(routePages.login);
+    setLoginDialogVisible(false);
   }, [navigation]);
 
   // TODO: 테스트용 로그아웃 - 개발 완료 후 제거
@@ -68,42 +88,60 @@ const ExploreHeader = React.memo(function ExploreHeader(): React.ReactElement {
   // 비로그인 상태: 백드롭 이미지가 없을 때 폴백 렌더링
   if (!backdropUrl) {
     return (
-      <FallbackContainer>
-        <TitleRow>
-          <TitleText>탐색</TitleText>
-          <LoginButton onPress={handleLoginPress} activeOpacity={0.8}>
-            <LoginButtonText>로그인</LoginButtonText>
-          </LoginButton>
-        </TitleRow>
-        <CurationPromptCard />
-      </FallbackContainer>
-    );
-  }
-
-  // 비로그인 상태: 백드롭 이미지 + 그라데이션 + 로그인 유도 카드
-  return (
-    <Container>
-      <BackdropImage source={{ uri: backdropUrl }} resizeMode="cover">
-        {/* 상단 그라데이션 */}
-        <DarkedLinearShadow height={TOP_GRADIENT_HEIGHT} align={LinearAlign.topBottom} />
-
-        <ContentOverlay>
+      <>
+        <FallbackContainer>
           <TitleRow>
             <TitleText>탐색</TitleText>
             <LoginButton onPress={handleLoginPress} activeOpacity={0.8}>
               <LoginButtonText>로그인</LoginButtonText>
             </LoginButton>
           </TitleRow>
+          <CurationPromptCard />
+        </FallbackContainer>
+        <LoginPromptDialog
+          visible={isLoginDialogVisible}
+          onClose={handleCloseDialog}
+          onKakaoLogin={handleKakaoLogin}
+          onOtherLogin={handleOtherLogin}
+          isKakaoLoading={loadingProvider === 'kakao'}
+        />
+      </>
+    );
+  }
 
-          <CardSection>
-            <CurationPromptCard />
-          </CardSection>
-        </ContentOverlay>
+  // 비로그인 상태: 백드롭 이미지 + 그라데이션 + 로그인 유도 카드
+  return (
+    <>
+      <Container>
+        <BackdropImage source={{ uri: backdropUrl }} resizeMode="cover">
+          {/* 상단 그라데이션 */}
+          <DarkedLinearShadow height={TOP_GRADIENT_HEIGHT} align={LinearAlign.topBottom} />
 
-        {/* 하단 그라데이션 */}
-        <DarkedLinearShadow height={BOTTOM_GRADIENT_HEIGHT} align={LinearAlign.bottomTop} />
-      </BackdropImage>
-    </Container>
+          <ContentOverlay>
+            <TitleRow>
+              <TitleText>탐색</TitleText>
+              <LoginButton onPress={handleLoginPress} activeOpacity={0.8}>
+                <LoginButtonText>로그인</LoginButtonText>
+              </LoginButton>
+            </TitleRow>
+
+            <CardSection>
+              <CurationPromptCard />
+            </CardSection>
+          </ContentOverlay>
+
+          {/* 하단 그라데이션 */}
+          <DarkedLinearShadow height={BOTTOM_GRADIENT_HEIGHT} align={LinearAlign.bottomTop} />
+        </BackdropImage>
+      </Container>
+      <LoginPromptDialog
+        visible={isLoginDialogVisible}
+        onClose={handleCloseDialog}
+        onKakaoLogin={handleKakaoLogin}
+        onOtherLogin={handleOtherLogin}
+        isKakaoLoading={loadingProvider === 'kakao'}
+      />
+    </>
   );
 });
 
