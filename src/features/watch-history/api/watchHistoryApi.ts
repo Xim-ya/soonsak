@@ -321,10 +321,7 @@ export const watchHistoryApi = {
   clearAllWatchHistory: async (): Promise<void> => {
     const user = await requireAuth();
 
-    const { error } = await supabaseClient
-      .from(TABLE_NAME)
-      .delete()
-      .eq('user_id', user.id);
+    const { error } = await supabaseClient.from(TABLE_NAME).delete().eq('user_id', user.id);
 
     if (error) {
       console.error('전체 시청 기록 삭제 실패:', error);
