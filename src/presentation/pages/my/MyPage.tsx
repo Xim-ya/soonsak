@@ -21,11 +21,14 @@ import { useAuth } from '@/shared/providers/AuthProvider';
 import {
   useWatchHistoryCalendar,
   useUniqueWatchHistory,
-  type WatchHistoryWithContentDto,
+  useFullyWatchedCount,
+  type WatchHistoryModelType,
 } from '@/features/watch-history';
+import { useFavoritesCount } from '@/features/favorites';
 import { useCalendarNavigation } from './_hooks';
 import {
   UserProfileSection,
+  UserStatsSection,
   WatchCalendar,
   WatchHistoryList,
   MonthYearPickerBottomSheet,
@@ -59,9 +62,13 @@ export default function MyPage() {
   // 고유 콘텐츠 시청 기록 조회 (하단 목록용)
   const { data: watchHistoryData, isLoading: isHistoryLoading } = useUniqueWatchHistory(10, 0);
 
+  // 통계 데이터 조회
+  const { data: favoritesCount = 0 } = useFavoritesCount();
+  const { data: watchedCount = 0 } = useFullyWatchedCount();
+
   // 시청 기록 아이템 클릭 핸들러 (이어보기: 플레이어로 직접 이동)
   const handleWatchHistoryItemPress = useCallback(
-    (item: WatchHistoryWithContentDto) => {
+    (item: WatchHistoryModelType) => {
       const playerParams = {
         videoId: item.videoId,
         title: item.contentTitle,
@@ -83,6 +90,12 @@ export default function MyPage() {
           nestedScrollEnabled
         >
           <UserProfileSection displayName={displayName} avatarUrl={avatarUrl} />
+
+          <UserStatsSection
+            favoritesCount={favoritesCount}
+            ratingsCount={0}
+            watchedCount={watchedCount}
+          />
 
           {watchHistoryData && (
             <WatchHistoryList

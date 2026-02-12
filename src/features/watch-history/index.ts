@@ -12,6 +12,7 @@ export { watchHistoryApi } from './api/watchHistoryApi';
 
 // Hooks
 export {
+  useFullyWatchedCount,
   useWatchHistoryCalendar,
   useWatchHistoryList,
   useUniqueWatchHistory,
@@ -23,7 +24,7 @@ export {
 
 export { useWatchProgressSync } from './hooks/useWatchProgressSync';
 
-// Types
+// Types (DTO)
 export type {
   WatchHistoryDto,
   WatchHistoryWithContentDto,
@@ -32,3 +33,10 @@ export type {
   CreateWatchHistoryParams,
   UpdateWatchProgressParams,
 } from './types';
+
+// Types (Model)
+export { WatchHistoryModel, WatchHistoryCalendarModel } from './types/watchHistoryModel';
+export type {
+  WatchHistoryModel as WatchHistoryModelType,
+  WatchHistoryCalendarModel as WatchHistoryCalendarModelType,
+} from './types/watchHistoryModel';
