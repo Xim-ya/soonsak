@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from '@emotion/native';
 import { Animated } from 'react-native';
 import colors from '@/shared/styles/colors';
@@ -12,7 +12,7 @@ interface RoundedAvatorViewProps {
 function RoundedAvatorView({ source, size }: RoundedAvatorViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [fadeAnim] = useState(new Animated.Value(0));
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // source가 유효한 URL인지 확인
   const hasValidSource = source && source.trim() !== '';

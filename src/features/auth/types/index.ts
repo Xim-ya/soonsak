@@ -40,15 +40,37 @@ export interface AuthState {
   status: AuthStatus;
   user: User | null;
   session: Session | null;
+  /** DB에서 가져온 프로필 데이터 */
+  profile: ProfileDto | null;
+  /** 프로필 설정 플로우 필요 여부 (신규 사용자) */
+  needsProfileSetup: boolean;
 }
 
-/** 유저 프로필 Model (User DTO에서 UI용으로 파생) */
+/** 유저 프로필 Model (profiles 테이블에서 파생, 없으면 OAuth 데이터 사용) */
 export interface UserProfileModel {
   displayName: string;
   avatarUrl: string | undefined;
 }
 
-/** AuthContext 값 타입 */
-export interface AuthContextValue extends AuthState, UserProfileModel {
+/**
+ * AuthContext 값 타입
+ *
+ * presentation 레이어에서 사용하는 타입입니다.
+ * ProfileDto를 직접 노출하지 않고, 필요한 데이터만 Model로 제공합니다.
+ */
+export interface AuthContextValue extends UserProfileModel {
+  /** 인증 상태 */
+  status: AuthStatus;
+  /** Supabase User 객체 (user.id로 사용자 식별) */
+  user: User | null;
+  /** Supabase Session 객체 */
+  session: Session | null;
+  /** 프로필 설정 플로우 필요 여부 (신규 사용자) */
+  needsProfileSetup: boolean;
+  /** 로그아웃 */
   signOut: () => Promise<void>;
+  /** 프로필 설정 완료 처리 */
+  completeProfileSetup: () => void;
+  /** 프로필 새로고침 (프로필 수정 후 호출) */
+  refreshProfile: () => Promise<void>;
 }

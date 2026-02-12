@@ -1,41 +1,55 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { authApi } from '@/features/auth/api/authApi';
-import type { AuthState, AuthContextValue, UserProfileModel } from '@/features/auth/types';
+import { userApi } from '@/features/user/api/userApi';
+import type {
+  AuthState,
+  AuthContextValue,
+  UserProfileModel,
+  ProfileDto,
+} from '@/features/auth/types';
 
 /** 초기 인증 상태 */
 const initialState: AuthState = {
   status: 'idle',
   user: null,
   session: null,
+  profile: null,
+  needsProfileSetup: false,
 };
 
 const DEFAULT_DISPLAY_NAME = '사용자';
 
 /**
  * 유저 프로필 Model 파생
- * - User DTO(SDK)에서 UI용 Model로 변환
- * - 저렴한 계산이므로 useMemo 불필요 (Kent C. Dodds 가이드라인)
+ * - profiles 테이블 데이터 우선, 없으면 OAuth 메타데이터 사용
  */
-function deriveUserProfile(user: User | null): UserProfileModel {
-  if (!user) {
-    return { displayName: DEFAULT_DISPLAY_NAME, avatarUrl: undefined };
+function deriveUserProfile(profile: ProfileDto | null, user: User | null): UserProfileModel {
+  // 1순위: profiles 테이블의 데이터
+  if (profile?.displayName) {
+    return {
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl ?? undefined,
+    };
   }
 
-  const metadata = user.user_metadata;
+  // 2순위: OAuth 메타데이터
+  if (user) {
+    const metadata = user.user_metadata;
+    const name = metadata?.['name'];
+    const displayName =
+      typeof name === 'string' && name.length > 0
+        ? name
+        : (user.email?.split('@')[0] ?? DEFAULT_DISPLAY_NAME);
 
-  // displayName: name > email prefix > 기본값
-  const name = metadata?.['name'];
-  const displayName =
-    typeof name === 'string' && name.length > 0
-      ? name
-      : (user.email?.split('@')[0] ?? DEFAULT_DISPLAY_NAME);
+    const avatarUrl =
+      typeof metadata?.['avatar_url'] === 'string' ? metadata['avatar_url'] : undefined;
 
-  // avatarUrl: 있으면 사용, 없으면 undefined
-  const avatarUrl =
-    typeof metadata?.['avatar_url'] === 'string' ? metadata['avatar_url'] : undefined;
+    return { displayName, avatarUrl };
+  }
 
-  return { displayName, avatarUrl };
+  // 기본값
+  return { displayName: DEFAULT_DISPLAY_NAME, avatarUrl: undefined };
 }
 
 /** AuthContext 생성 */
@@ -71,6 +85,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // 상태는 onAuthStateChange에서 자동 업데이트됨
   }, []);
 
+  // 프로필 설정 완료 처리
+  const completeProfileSetup = useCallback(() => {
+    setState((prev) => ({ ...prev, needsProfileSetup: false }));
+  }, []);
+
+  // 프로필 조회
+  const fetchProfile = useCallback(async (userId: string): Promise<ProfileDto | null> => {
+    try {
+      return await userApi.getProfile(userId);
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // 프로필 새로고침 (프로필 수정 후 호출)
+  const refreshProfile = useCallback(async () => {
+    const userId = state.user?.id;
+    if (!userId) return;
+
+    const profile = await fetchProfile(userId);
+    setState((prev) => ({ ...prev, profile }));
+  }, [state.user?.id, fetchProfile]);
+
+  /**
+   * 프로필 설정 필요 여부 확인
+   *
+   * created_at과 updated_at이 같으면 사용자가 프로필을 수정한 적 없음 (신규 사용자)
+   */
+  const checkNeedsProfileSetup = useCallback((profile: ProfileDto | null): boolean => {
+    if (!profile) return false;
+
+    // 타임스탬프 비교 (5초 이내면 동일하다고 판단)
+    const createdAt = new Date(profile.createdAt).getTime();
+    const updatedAt = new Date(profile.updatedAt).getTime();
+    const timeDiff = Math.abs(updatedAt - createdAt);
+
+    return timeDiff < 5000;
+  }, []);
+
   // 초기 세션 복원 및 상태 변경 구독
   useEffect(() => {
     let mounted = true;
@@ -81,16 +134,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (mounted) {
         if (session) {
-          setState({
-            status: 'authenticated',
-            user: session.user,
-            session,
-          });
+          // 프로필 조회 (트리거에 의해 자동 생성됨)
+          const profile = await fetchProfile(session.user.id);
+
+          // created_at == updated_at이면 프로필 설정 안 한 신규 사용자
+          const needsProfileSetup = checkNeedsProfileSetup(profile);
+
+          if (mounted) {
+            setState({
+              status: 'authenticated',
+              user: session.user,
+              session,
+              profile,
+              needsProfileSetup,
+            });
+          }
         } else {
           setState({
             status: 'unauthenticated',
             user: null,
             session: null,
+            profile: null,
+            needsProfileSetup: false,
           });
         }
       }
@@ -99,20 +164,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     restoreSession();
 
     // 인증 상태 변경 구독
-    const { unsubscribe } = authApi.onAuthStateChange((event, session) => {
+    const { unsubscribe } = authApi.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
       if (event === 'SIGNED_IN' && session) {
-        setState({
-          status: 'authenticated',
-          user: session.user,
-          session,
-        });
+        // 프로필 조회 (트리거에 의해 자동 생성됨)
+        const profile = await fetchProfile(session.user.id);
+
+        // created_at == updated_at이면 프로필 설정 안 한 신규 사용자
+        const needsProfileSetup = checkNeedsProfileSetup(profile);
+
+        if (mounted) {
+          setState({
+            status: 'authenticated',
+            user: session.user,
+            session,
+            profile,
+            needsProfileSetup,
+          });
+        }
       } else if (event === 'SIGNED_OUT') {
         setState({
           status: 'unauthenticated',
           user: null,
           session: null,
+          profile: null,
+          needsProfileSetup: false,
         });
       } else if (event === 'TOKEN_REFRESHED' && session) {
         setState((prev) => ({
@@ -126,15 +203,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       mounted = false;
       unsubscribe();
     };
-  }, []);
+  }, [fetchProfile, checkNeedsProfileSetup]);
 
-  // User DTO → UserProfileModel 변환
-  const profile = deriveUserProfile(state.user);
+  // profiles 테이블 데이터 우선, 없으면 OAuth 데이터 사용
+  const userProfile = deriveUserProfile(state.profile, state.user);
 
+  // AuthContextValue: DTO(profile)를 노출하지 않고 필요한 필드만 제공
   const value: AuthContextValue = {
-    ...state,
-    ...profile,
+    status: state.status,
+    user: state.user,
+    session: state.session,
+    needsProfileSetup: state.needsProfileSetup,
+    ...userProfile,
     signOut,
+    completeProfileSetup,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

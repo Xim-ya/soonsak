@@ -13,6 +13,7 @@
 
 import { routePages } from '../constant/routePages';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
+import type { ProfileSetupMode } from '@/features/user/types';
 
 // routePages 객체의 값들을 Union 타입으로 추출
 // 예: "MainTabs" | "ContentDetail"
@@ -65,6 +66,9 @@ export type RootStackParamList = {
     backdropPath: string; // 헤더 이미지 제외용
     initialIndex: number; // 시작 이미지 인덱스
   }; // 이미지 상세 뷰어 - 콘텐츠 정보 + 시작 인덱스 필수
+  [routePages.profileSetup]: {
+    mode: ProfileSetupMode; // 프로필 설정 모드 (initial | edit)
+  }; // 프로필 설정 - 모드 필수
 };
 
 /**
