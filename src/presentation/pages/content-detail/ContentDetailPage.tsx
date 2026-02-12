@@ -12,17 +12,37 @@ import { useCallback } from 'react';
 import { TabBar } from './_components/TabBar';
 import { ContentTabView } from './_components/VideoTabView';
 import { RelatedContentTabView } from './_components/OriginContentTabView';
-import { AnimatedAppBAr } from './_components/AnimatedAppBar';
+import { AnimatedAppBar } from './_components/AnimatedAppBar';
 import { ScreenRouteProp } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { ContentDetailProvider } from './_provider/ContentDetailProvider';
 import { ContentType } from '@/presentation/types/content/contentType.enum';
+import { LoginPromptDialog } from '@/presentation/components/dialog/LoginPromptDialog';
+import { FavoriteActionBottomSheet } from '@/presentation/components/bottom-sheet/FavoriteActionBottomSheet';
+import { useFavoriteAction } from './_hooks/useFavoriteAction';
 
 export default function ContentDetailPage() {
   const route = useRoute<ScreenRouteProp<typeof routePages.contentDetail>>();
   const { id, type, videoId } = route.params;
   const insets = useSafeAreaInsets();
   const appBarOpacity = useSharedValue(0);
+
+  const contentId = Number(id);
+  const contentType = type as ContentType;
+
+  // 찜하기 액션 관련 상태 및 핸들러 (Discussion #42: 다이얼로그 상태 훅 분리)
+  const {
+    isFavorited,
+    isLoginDialogVisible,
+    isActionSheetVisible,
+    isKakaoLoading,
+    handleMorePress,
+    handleToggleFavorite,
+    handleCloseActionSheet,
+    handleCloseDialog,
+    handleKakaoLogin,
+    handleOtherLogin,
+  } = useFavoriteAction({ contentId, contentType });
 
   // 스크롤 오프셋 변화 처리 - 메모이제이션으로 리렌더링 최적화
   const handleScrollChange = useCallback(
@@ -40,11 +60,7 @@ export default function ContentDetailPage() {
   );
 
   return (
-    <ContentDetailProvider
-      contentId={Number(id)}
-      contentType={type as ContentType}
-      videoId={videoId}
-    >
+    <ContentDetailProvider contentId={contentId} contentType={contentType} videoId={videoId}>
       <BasePage
         useSafeArea={false}
         touchableWithoutFeedback={false}
@@ -63,7 +79,7 @@ export default function ContentDetailPage() {
           }, [appBarOpacity])}
           safeAreaHeight={insets.top}
         />
-        <AnimatedAppBAr insets={insets} opacity={appBarOpacity} />
+        <AnimatedAppBar insets={insets} opacity={appBarOpacity} onMorePress={handleMorePress} />
         <TabsContainer paddingTop={insets.top}>
           <Tabs.Container
             renderHeader={() => <Header />}
@@ -82,6 +98,23 @@ export default function ContentDetailPage() {
           </Tabs.Container>
         </TabsContainer>
       </BasePage>
+
+      {/* 찜하기 액션 바텀시트 */}
+      <FavoriteActionBottomSheet
+        visible={isActionSheetVisible}
+        isFavorited={isFavorited}
+        onToggleFavorite={handleToggleFavorite}
+        onClose={handleCloseActionSheet}
+      />
+
+      {/* 로그인 유도 다이얼로그 */}
+      <LoginPromptDialog
+        visible={isLoginDialogVisible}
+        onClose={handleCloseDialog}
+        onKakaoLogin={handleKakaoLogin}
+        onOtherLogin={handleOtherLogin}
+        isKakaoLoading={isKakaoLoading}
+      />
     </ContentDetailProvider>
   );
 }

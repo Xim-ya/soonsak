@@ -3,20 +3,51 @@
  */
 
 import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack/react-query';
+import { useAuth } from '@/shared/providers/AuthProvider';
 import { watchHistoryApi } from '../api/watchHistoryApi';
-import type {
-  WatchHistoryWithContentDto,
-  WatchHistoryCalendarItemDto,
-  CreateWatchHistoryParams,
-} from '../types';
+import type { CreateWatchHistoryParams } from '../types';
+import { WatchHistoryModel, WatchHistoryCalendarModel } from '../types/watchHistoryModel';
 
-/** Query Key 팩토리 */
+/** 캐시 시간 상수 */
+const THIRTY_SECONDS = 30 * 1000;
+const TWO_MINUTES = 2 * 60 * 1000;
+const FIVE_MINUTES = 5 * 60 * 1000;
+const TEN_MINUTES = 10 * 60 * 1000;
+const THIRTY_MINUTES = 30 * 60 * 1000;
+
+/**
+ * Query Key 팩토리
+ * - userId를 포함하여 로그인 상태 변경 시 자동으로 새 캐시 사용
+ */
 export const watchHistoryKeys = {
-  all: ['watchHistory'] as const,
-  calendar: (year: number, month: number) =>
-    [...watchHistoryKeys.all, 'calendar', year, month] as const,
-  list: () => [...watchHistoryKeys.all, 'list'] as const,
-  uniqueList: () => [...watchHistoryKeys.all, 'uniqueList'] as const,
+  all: (userId: string | null) => ['watchHistory', userId] as const,
+  fullyWatchedCount: (userId: string | null) =>
+    [...watchHistoryKeys.all(userId), 'fullyWatchedCount'] as const,
+  calendar: (userId: string | null, year: number, month: number) =>
+    [...watchHistoryKeys.all(userId), 'calendar', year, month] as const,
+  list: (userId: string | null) => [...watchHistoryKeys.all(userId), 'list'] as const,
+  uniqueList: (userId: string | null) => [...watchHistoryKeys.all(userId), 'uniqueList'] as const,
+  progress: (userId: string | null, contentId: number, contentType: string) =>
+    [...watchHistoryKeys.all(userId), 'progress', contentId, contentType] as const,
+};
+
+/**
+ * 완료된 시청 개수 조회 Hook
+ */
+export const useFullyWatchedCount = (options?: {
+  enabled?: boolean;
+}): UseQueryResult<number, Error> => {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
+  return useQuery({
+    queryKey: watchHistoryKeys.fullyWatchedCount(userId),
+    queryFn: () => watchHistoryApi.getFullyWatchedCount(),
+    enabled: (options?.enabled ?? true) && !!userId,
+    placeholderData: 0,
+    staleTime: FIVE_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
 };
 
 /**
@@ -28,13 +59,18 @@ export const useWatchHistoryCalendar = (
   options?: {
     enabled?: boolean;
   },
-): UseQueryResult<WatchHistoryCalendarItemDto[], Error> => {
+): UseQueryResult<WatchHistoryCalendarModel[], Error> => {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
   return useQuery({
-    queryKey: watchHistoryKeys.calendar(year, month),
+    queryKey: watchHistoryKeys.calendar(userId, year, month),
     queryFn: () => watchHistoryApi.getCalendarHistory(year, month),
-    enabled: options?.enabled ?? true,
-    staleTime: 5 * 60 * 1000, // 5분
-    gcTime: 30 * 60 * 1000, // 30분
+    select: WatchHistoryCalendarModel.fromDtoList,
+    enabled: (options?.enabled ?? true) && !!userId,
+    placeholderData: [],
+    staleTime: FIVE_MINUTES,
+    gcTime: THIRTY_MINUTES,
   });
 };
 
@@ -49,18 +85,27 @@ export const useWatchHistoryList = (
   },
 ): UseQueryResult<
   {
-    items: WatchHistoryWithContentDto[];
+    items: WatchHistoryModel[];
     hasMore: boolean;
     totalCount: number;
   },
   Error
 > => {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
   return useQuery({
-    queryKey: [...watchHistoryKeys.list(), limit, offset],
+    queryKey: [...watchHistoryKeys.list(userId), limit, offset],
     queryFn: () => watchHistoryApi.getWatchHistoryList(limit, offset),
-    enabled: options?.enabled ?? true,
-    staleTime: 2 * 60 * 1000, // 2분
-    gcTime: 10 * 60 * 1000, // 10분
+    select: (data) => ({
+      items: WatchHistoryModel.fromDtoList(data.items),
+      hasMore: data.hasMore,
+      totalCount: data.totalCount,
+    }),
+    enabled: (options?.enabled ?? true) && !!userId,
+    placeholderData: { items: [], hasMore: false, totalCount: 0 },
+    staleTime: TWO_MINUTES,
+    gcTime: TEN_MINUTES,
   });
 };
 
@@ -75,17 +120,25 @@ export const useUniqueWatchHistory = (
   },
 ): UseQueryResult<
   {
-    items: WatchHistoryWithContentDto[];
+    items: WatchHistoryModel[];
     hasMore: boolean;
   },
   Error
 > => {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
   return useQuery({
-    queryKey: [...watchHistoryKeys.uniqueList(), limit, offset],
+    queryKey: [...watchHistoryKeys.uniqueList(userId), limit, offset],
     queryFn: () => watchHistoryApi.getUniqueContentHistory(limit, offset),
-    enabled: options?.enabled ?? true,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    select: (data) => ({
+      items: WatchHistoryModel.fromDtoList(data.items),
+      hasMore: data.hasMore,
+    }),
+    enabled: (options?.enabled ?? true) && !!userId,
+    placeholderData: { items: [], hasMore: false },
+    staleTime: TWO_MINUTES,
+    gcTime: TEN_MINUTES,
   });
 };
 
@@ -94,12 +147,14 @@ export const useUniqueWatchHistory = (
  */
 export const useAddWatchHistory = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
 
   return useMutation({
     mutationFn: (params: CreateWatchHistoryParams) => watchHistoryApi.addWatchHistory(params),
     onSuccess: () => {
       // 관련 쿼리 무효화
-      queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all(userId) });
     },
     onError: (error) => {
       console.error('시청 기록 추가 실패:', error);
@@ -112,11 +167,13 @@ export const useAddWatchHistory = () => {
  */
 export const useDeleteWatchHistory = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
 
   return useMutation({
     mutationFn: (historyId: string) => watchHistoryApi.deleteWatchHistory(historyId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all(userId) });
     },
     onError: (error) => {
       console.error('시청 기록 삭제 실패:', error);
@@ -129,11 +186,13 @@ export const useDeleteWatchHistory = () => {
  */
 export const useClearAllWatchHistory = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
 
   return useMutation({
     mutationFn: () => watchHistoryApi.clearAllWatchHistory(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all(userId) });
     },
     onError: (error) => {
       console.error('전체 시청 기록 삭제 실패:', error);
@@ -150,14 +209,18 @@ export const useContentProgress = (
   contentType: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<
-  { progressSeconds: number; durationSeconds: number; videoId: string } | null,
+  { progressSeconds: number; durationSeconds: number; videoId: string | null } | null,
   Error
 > => {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
   return useQuery({
-    queryKey: [...watchHistoryKeys.all, 'progress', contentId, contentType],
+    queryKey: watchHistoryKeys.progress(userId, contentId, contentType),
     queryFn: () => watchHistoryApi.getContentProgress(contentId, contentType),
-    enabled: options?.enabled ?? true,
-    staleTime: 30 * 1000, // 30초
-    gcTime: 5 * 60 * 1000, // 5분
+    enabled: (options?.enabled ?? true) && !!userId,
+    placeholderData: null,
+    staleTime: THIRTY_SECONDS,
+    gcTime: FIVE_MINUTES,
   });
 };

@@ -64,6 +64,29 @@ function calculateIsFullyWatched(progressSeconds: number, durationSeconds: numbe
  */
 export const watchHistoryApi = {
   /**
+   * 완료된 시청 개수 조회 (is_fully_watched가 true인 고유 콘텐츠 수)
+   */
+  getFullyWatchedCount: async (): Promise<number> => {
+    const user = await getAuthUser();
+    if (!user) {
+      return 0;
+    }
+
+    const { count, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('is_fully_watched', true);
+
+    if (error) {
+      console.error('완료된 시청 개수 조회 실패:', error);
+      return 0;
+    }
+
+    return count ?? 0;
+  },
+
+  /**
    * 시청 기록 추가 (upsert)
    * user_id + content_id + content_type가 이미 존재하면 업데이트
    */

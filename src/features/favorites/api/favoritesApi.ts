@@ -1,0 +1,223 @@
+import type { User } from '@supabase/supabase-js';
+import { supabaseClient } from '@/features/utils/clients/superBaseClient';
+import { mapWithField } from '@/features/utils/mapper/fieldMapper';
+import type {
+  FavoriteDto,
+  FavoriteWithContentDto,
+  ToggleFavoriteParams,
+  FavoriteStatusResponse,
+} from '../types';
+
+const TABLE_NAME = 'favorites';
+
+/**
+ * 인증된 사용자 정보 반환
+ * @returns 미인증 시 null
+ */
+async function getAuthUser(): Promise<User | null> {
+  const { data, error } = await supabaseClient.auth.getUser();
+  if (error) {
+    return null;
+  }
+  return data.user ?? null;
+}
+
+/**
+ * 인증된 사용자 정보 반환
+ * @throws 미인증 시 에러
+ */
+async function requireAuth(): Promise<User> {
+  const user = await getAuthUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  return user;
+}
+
+/**
+ * 찜하기 API
+ */
+export const favoritesApi = {
+  /**
+   * 찜 개수 조회
+   */
+  getFavoritesCount: async (): Promise<number> => {
+    const user = await getAuthUser();
+    if (!user) {
+      return 0;
+    }
+
+    const { count, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('찜 개수 조회 실패:', error);
+      return 0;
+    }
+
+    return count ?? 0;
+  },
+
+  /**
+   * 찜 상태 조회
+   * 특정 콘텐츠가 찜 목록에 있는지 확인
+   */
+  getFavoriteStatus: async (
+    contentId: number,
+    contentType: string,
+  ): Promise<FavoriteStatusResponse> => {
+    const user = await getAuthUser();
+    if (!user) {
+      return { isFavorited: false, favoriteId: null };
+    }
+
+    const { data, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('content_id', contentId)
+      .eq('content_type', contentType)
+      .maybeSingle();
+
+    if (error) {
+      console.error('찜 상태 조회 실패:', error);
+      return { isFavorited: false, favoriteId: null };
+    }
+
+    return {
+      isFavorited: !!data,
+      favoriteId: data?.id ?? null,
+    };
+  },
+
+  /**
+   * 찜 추가
+   */
+  addFavorite: async (params: ToggleFavoriteParams): Promise<FavoriteDto> => {
+    const user = await requireAuth();
+
+    const { data, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .insert({
+        user_id: user.id,
+        content_id: params.contentId,
+        content_type: params.contentType,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('찜 추가 실패:', error);
+      throw new Error(`Failed to add favorite: ${error.message}`);
+    }
+
+    return mapWithField<FavoriteDto>(data);
+  },
+
+  /**
+   * 찜 삭제
+   */
+  removeFavorite: async (contentId: number, contentType: string): Promise<void> => {
+    const user = await requireAuth();
+
+    const { error } = await supabaseClient
+      .from(TABLE_NAME)
+      .delete()
+      .eq('user_id', user.id)
+      .eq('content_id', contentId)
+      .eq('content_type', contentType);
+
+    if (error) {
+      console.error('찜 삭제 실패:', error);
+      throw new Error(`Failed to remove favorite: ${error.message}`);
+    }
+  },
+
+  /**
+   * 찜 토글
+   * 이미 찜한 경우 삭제, 아닌 경우 추가
+   * @returns 토글 후 상태
+   */
+  toggleFavorite: async (params: ToggleFavoriteParams): Promise<FavoriteStatusResponse> => {
+    const status = await favoritesApi.getFavoriteStatus(params.contentId, params.contentType);
+
+    if (status.isFavorited) {
+      await favoritesApi.removeFavorite(params.contentId, params.contentType);
+      return { isFavorited: false, favoriteId: null };
+    } else {
+      const favorite = await favoritesApi.addFavorite(params);
+      return { isFavorited: true, favoriteId: favorite.id };
+    }
+  },
+
+  /**
+   * 찜 목록 조회 (최신순)
+   * 콘텐츠 정보 포함
+   */
+  getFavoritesList: async (
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<{
+    items: FavoriteWithContentDto[];
+    hasMore: boolean;
+    totalCount: number;
+  }> => {
+    const user = await requireAuth();
+
+    // 전체 카운트 조회
+    const { count, error: countError } = await supabaseClient
+      .from(TABLE_NAME)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    if (countError) {
+      console.error('찜 목록 수 조회 실패:', countError);
+      throw new Error(`Failed to count favorites: ${countError.message}`);
+    }
+
+    const totalCount = count ?? 0;
+    if (totalCount === 0) {
+      return { items: [], hasMore: false, totalCount: 0 };
+    }
+
+    // 데이터 조회
+    const { data, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select(
+        `
+        *,
+        contents!favorites_content_fkey (
+          title,
+          poster_path,
+          backdrop_path
+        )
+      `,
+      )
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error('찜 목록 조회 실패:', error);
+      throw new Error(`Failed to fetch favorites: ${error.message}`);
+    }
+
+    type ContentJoin = { title?: string; poster_path?: string; backdrop_path?: string } | null;
+
+    const items: FavoriteWithContentDto[] = (data ?? []).map((item) => {
+      const contents = item.contents as ContentJoin;
+      return {
+        ...mapWithField<FavoriteDto>(item),
+        contentTitle: contents?.title ?? '',
+        contentPosterPath: contents?.poster_path ?? '',
+        contentBackdropPath: contents?.backdrop_path ?? '',
+      };
+    });
+
+    const hasMore = offset + limit < totalCount;
+
+    return { items, hasMore, totalCount };
+  },
+};
