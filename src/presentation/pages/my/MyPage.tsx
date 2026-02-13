@@ -27,6 +27,7 @@ import {
 import { useFavoritesCount } from '@/features/favorites';
 import { useCalendarNavigation } from './_hooks';
 import {
+  MyPageHeader,
   UserProfileSection,
   UserStatsSection,
   WatchCalendar,
@@ -66,6 +67,11 @@ export default function MyPage() {
   const { data: favoritesCount = 0 } = useFavoritesCount();
   const { data: watchedCount = 0 } = useFullyWatchedCount();
 
+  // 설정 페이지 이동 핸들러
+  const handleSettingsPress = useCallback(() => {
+    navigation.navigate(routePages.settings);
+  }, [navigation]);
+
   // 시청 기록 아이템 클릭 핸들러 (이어보기: 플레이어로 직접 이동)
   const handleWatchHistoryItemPress = useCallback(
     (item: WatchHistoryModelType) => {
@@ -84,6 +90,7 @@ export default function MyPage() {
   return (
     <BasePage touchableWithoutFeedback={false}>
       <Container>
+        <MyPageHeader onSettingsPress={handleSettingsPress} />
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={SCROLL_CONTENT_STYLE}

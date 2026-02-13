@@ -69,6 +69,7 @@ export type RootStackParamList = {
   [routePages.profileSetup]: {
     mode: ProfileSetupMode; // 프로필 설정 모드 (initial | edit)
   }; // 프로필 설정 - 모드 필수
+  [routePages.settings]: undefined; // 설정 - 파라미터 없음
 };
 
 /**
