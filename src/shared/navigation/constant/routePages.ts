@@ -9,6 +9,7 @@ export const routePages = {
   mediaList: 'MediaList',
   imageDetail: 'ImageDetail',
   profileSetup: 'ProfileSetup',
+  settings: 'Settings',
   userContentList: 'UserContentList',
 } as const;
 

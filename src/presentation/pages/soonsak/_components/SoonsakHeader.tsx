@@ -19,12 +19,10 @@ import textStyles from '@/shared/styles/textStyles';
 import { AppSize } from '@/shared/utils/appSize';
 import { GlassIconButton } from '@/presentation/components/button/GlassIconButton';
 import SearchIcon from '@assets/icons/search_tab.svg';
-import EyeIcon from '@assets/icons/eye.svg';
 
 interface SoonsakHeaderProps {
   onFilterPress?: () => void;
   onSearchPress?: () => void;
-  onNotificationPress?: () => void;
   /** 필터 활성화 여부 (인디케이터 표시) */
   isFilterActive?: boolean;
 }
@@ -36,34 +34,22 @@ const BUTTON_SIZE = 56;
 function SoonsakHeader({
   onFilterPress,
   onSearchPress,
-  onNotificationPress,
   isFilterActive = false,
 }: SoonsakHeaderProps) {
   return (
     <Container>
-      <LeftSection>
-        <GlassIconButton
-          size={BUTTON_SIZE}
-          {...(onNotificationPress && { onPress: onNotificationPress })}
-        >
-          <EyeIcon width={ICON_SIZE} height={ICON_SIZE} fill={colors.white} />
+      {/* 좌측: 필터 버튼 */}
+      <FilterButtonWrapper>
+        <GlassIconButton size={BUTTON_SIZE} {...(onFilterPress && { onPress: onFilterPress })}>
+          <FilterButtonText>필터</FilterButtonText>
         </GlassIconButton>
-      </LeftSection>
+        {isFilterActive && <FilterIndicator />}
+      </FilterButtonWrapper>
 
-      <RightSection>
-        {/* 필터 버튼 */}
-        <FilterButtonWrapper>
-          <GlassIconButton size={BUTTON_SIZE} {...(onFilterPress && { onPress: onFilterPress })}>
-            <FilterButtonText>필터</FilterButtonText>
-          </GlassIconButton>
-          {isFilterActive && <FilterIndicator />}
-        </FilterButtonWrapper>
-
-        {/* 검색 버튼 */}
-        <GlassIconButton size={BUTTON_SIZE} {...(onSearchPress && { onPress: onSearchPress })}>
-          <SearchIcon width={ICON_SIZE} height={ICON_SIZE} fill={colors.white} />
-        </GlassIconButton>
-      </RightSection>
+      {/* 우측: 검색 버튼 */}
+      <GlassIconButton size={BUTTON_SIZE} {...(onSearchPress && { onPress: onSearchPress })}>
+        <SearchIcon width={ICON_SIZE} height={ICON_SIZE} fill={colors.white} />
+      </GlassIconButton>
     </Container>
   );
 }
@@ -71,27 +57,14 @@ function SoonsakHeader({
 /* Styled Components */
 const Container = styled.View({
   position: 'absolute',
-  top: 0,
+  bottom: AppSize.bottomInset + AppSize.ratioHeight(HEADER_PADDING),
   left: 0,
   right: 0,
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
   paddingHorizontal: AppSize.ratioWidth(HEADER_PADDING),
-  paddingTop: AppSize.statusBarHeight + AppSize.ratioHeight(HEADER_PADDING),
   zIndex: 10,
-});
-
-const LeftSection = styled.View({
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
-});
-
-const RightSection = styled.View({
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
 });
 
 const FilterButtonWrapper = styled.View({});

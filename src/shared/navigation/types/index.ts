@@ -33,7 +33,7 @@ export type UserContentListTabIndex = 0 | 1 | 2; // 0: 찜했어요, 1: 평가�
  * - 잘못된 파라미터 전달 시 컴파일 에러 발생
  */
 export type RootStackParamList = {
-  [routePages.login]: undefined; // 로그인 - 파라미터 없음
+  [routePages.login]: { canGoBack?: boolean } | undefined; // 로그인 - canGoBack 선택적 파라미터
   [routePages.mainTabs]: undefined; // 탭 네비게이터 - 파라미터 없음
   [routePages.contentDetail]: {
     id: number; // 콘텐츠 ID
@@ -72,6 +72,7 @@ export type RootStackParamList = {
   [routePages.profileSetup]: {
     mode: ProfileSetupMode; // 프로필 설정 모드 (initial | edit)
   }; // 프로필 설정 - 모드 필수
+  [routePages.settings]: undefined; // 설정 - 파라미터 없음
   [routePages.userContentList]: {
     initialTab?: UserContentListTabIndex; // 초기 활성화 탭 인덱스 (기본값: 0)
   }; // 사용자 콘텐츠 목록 - 탭 인덱스 선택

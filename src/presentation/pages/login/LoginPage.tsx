@@ -1,15 +1,27 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import styled from '@emotion/native';
 import { AppSize } from '@/shared/utils/appSize';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { onboardingStorage } from '@/features/auth/utils/onboardingStorage';
+import { RootStackParamList } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
 import { LoginBackground } from './_components/LoginBackground';
 import { LoginIntroText } from './_components/LoginIntroText';
 import { SocialLoginButtonGroup } from './_components/SocialLoginButtonGroup';
 import { useSocialLogin } from './_hooks/useSocialLogin';
+import BackArrowIcon from '@assets/icons/back_arrow.svg';
+import type { AuthState } from '@/features/auth/types';
+
+type LoginNavigationProp = NativeStackNavigationProp<RootStackParamList, typeof routePages.login>;
+type LoginRouteProp = RouteProp<RootStackParamList, typeof routePages.login>;
+
+const HIT_SLOP = { top: 10, bottom: 10, left: 10, right: 10 };
 
 /**
  * LoginPage - 로그인 페이지
@@ -27,18 +39,57 @@ import { useSocialLogin } from './_hooks/useSocialLogin';
  * <Stack.Screen name="Login" component={LoginPage} />
  */
 export default function LoginPage() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<LoginNavigationProp>();
+  const route = useRoute<LoginRouteProp>();
   const { status } = useAuth();
   const { handleLogin, loadingProvider } = useSocialLogin();
 
-  // 로그인 성공 시 자동으로 이전 화면으로 이동
-  useEffect(() => {
-    if (status === 'authenticated') {
-      navigation.goBack();
-    }
-  }, [status, navigation]);
+  // canGoBack 파라미터 확인 (다른 화면에서 로그인 페이지로 이동한 경우 true)
+  const canGoBack = route.params?.canGoBack ?? false;
 
+  // 이전 인증 상태 추적 (로그인 성공 감지용)
+  const prevStatusRef = useRef<AuthState['status']>(status);
+
+  // 메인 화면으로 이동 (온보딩 완료 표시 후)
+  const navigateToMain = useCallback(async () => {
+    await onboardingStorage.markCompleted();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: routePages.mainTabs }],
+    });
+  }, [navigation]);
+
+  // 로그인 성공 시 처리 (상태가 authenticated로 '변경'된 경우에만)
+  useEffect(() => {
+    const prevStatus = prevStatusRef.current;
+    prevStatusRef.current = status;
+
+    // 상태가 authenticated로 '변경'된 경우에만 처리 (로그인 성공)
+    // 이미 authenticated 상태로 페이지에 도착한 경우는 무시 (로그아웃/탈퇴 후 레이스 컨디션)
+    const justAuthenticated = prevStatus !== 'authenticated' && status === 'authenticated';
+
+    if (justAuthenticated) {
+      if (canGoBack) {
+        // 다른 화면에서 로그인 페이지로 왔으면 뒤로가기
+        navigation.goBack();
+      } else {
+        // 최초 설치 또는 회원탈퇴 후면 메인으로 이동
+        navigateToMain();
+      }
+    }
+  }, [status, canGoBack, navigation, navigateToMain]);
+
+  // 비회원 둘러보기 처리
   const handleGuestPress = useCallback(() => {
+    if (canGoBack) {
+      navigation.goBack();
+    } else {
+      navigateToMain();
+    }
+  }, [canGoBack, navigation, navigateToMain]);
+
+  // 뒤로가기 처리
+  const handleGoBack = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
 
@@ -46,6 +97,15 @@ export default function LoginPage() {
     <Container>
       {/* 배경 이미지 + 그래디언트 */}
       <LoginBackground />
+
+      {/* 뒤로가기 버튼 (canGoBack일 때만 표시) */}
+      {canGoBack && (
+        <BackButtonContainer>
+          <TouchableOpacity onPress={handleGoBack} hitSlop={HIT_SLOP}>
+            <BackArrowIcon width={24} height={24} color={colors.white} />
+          </TouchableOpacity>
+        </BackButtonContainer>
+      )}
 
       {/* 콘텐츠 영역 */}
       <ContentContainer>
@@ -70,6 +130,13 @@ export default function LoginPage() {
 
 const Container = styled.View({
   flex: 1,
+});
+
+const BackButtonContainer = styled.View({
+  position: 'absolute',
+  top: AppSize.statusBarHeight + AppSize.ratioHeight(8),
+  left: AppSize.ratioWidth(16),
+  zIndex: 10,
 });
 
 const ContentContainer = styled.View({

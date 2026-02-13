@@ -93,12 +93,6 @@ export default function SoonsakPage() {
     [navigation],
   );
 
-  // 알림 버튼 클릭 핸들러
-  const handleNotificationPress = useCallback(() => {
-    // TODO: 알림 기능 구현
-    if (__DEV__) console.log('Notification pressed');
-  }, []);
-
   // 바텀시트에 전달할 필터 (pendingFilter가 있으면 해당 값 사용)
   const bottomSheetFilter = pendingFilter ?? filter;
 
@@ -112,7 +106,6 @@ export default function SoonsakPage() {
         <SoonsakHeader
           onFilterPress={handleFilterPress}
           onSearchPress={handleSearchPress}
-          onNotificationPress={handleNotificationPress}
           isFilterActive={isFilterApplied}
         />
 

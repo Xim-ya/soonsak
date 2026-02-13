@@ -11,6 +11,7 @@ import { MediaListPage } from '../../../presentation/pages/media/MediaListPage';
 import { ImageDetailPage } from '../../../presentation/pages/media/ImageDetailPage';
 import LoginPage from '../../../presentation/pages/login/LoginPage';
 import ProfileSetupPage from '../../../presentation/pages/profile-setup/ProfileSetupPage';
+import SettingsPage from '../../../presentation/pages/settings/SettingsPage';
 import UserContentListPage from '../../../presentation/pages/user-content-list/UserContentListPage';
 import { RootStackParamList } from '../types';
 import { routePages } from '../constant/routePages';
@@ -39,14 +40,9 @@ function ProfileSetupNavigator(): null {
     const isOnProfileSetup = currentRouteName === routePages.profileSetup;
 
     // 인증됨 + 프로필 설정 필요 + ProfileSetupPage가 아닐 때만 이동
+    // 스택을 리셋하지 않고 ProfileSetup을 push하여 이전 화면 정보 유지
     if (status === 'authenticated' && needsProfileSetup && !isOnProfileSetup) {
-      navigation.reset({
-        index: 0,
-        routes: [
-          { name: routePages.mainTabs },
-          { name: routePages.profileSetup, params: { mode: 'initial' } },
-        ],
-      });
+      navigation.navigate(routePages.profileSetup, { mode: 'initial' });
     }
   }, [needsProfileSetup, status, currentRouteName, navigation]);
 
@@ -132,6 +128,11 @@ export default function StackNavigator() {
           // 초기 설정 모드에서만 뒤로가기 제스처 비활성화
           gestureEnabled: route.params?.mode !== 'initial',
         })}
+      />
+      <Stack.Screen
+        name={routePages.settings}
+        component={SettingsPage}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name={routePages.userContentList}

@@ -12,6 +12,7 @@ export interface WatchHistoryModel {
   readonly videoId: string;
   readonly contentTitle: string;
   readonly contentPosterPath: string;
+  readonly contentBackdropPath: string;
   readonly progressSeconds: number;
   readonly durationSeconds: number;
   readonly isFullyWatched: boolean;
@@ -27,6 +28,7 @@ export namespace WatchHistoryModel {
       videoId: dto.videoId,
       contentTitle: dto.contentTitle,
       contentPosterPath: dto.contentPosterPath,
+      contentBackdropPath: dto.contentBackdropPath,
       progressSeconds: dto.progressSeconds,
       durationSeconds: dto.durationSeconds,
       isFullyWatched: dto.isFullyWatched,

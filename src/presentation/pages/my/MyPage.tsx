@@ -7,12 +7,14 @@
  * - 시청 기록 목록
  */
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 import styled from '@emotion/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BasePage } from '@/presentation/components/page/BasePage';
+import { LoginPromptDialog } from '@/presentation/components/dialog/LoginPromptDialog';
+import Gap from '@/presentation/components/view/Gap';
 import colors from '@/shared/styles/colors';
 import { AppSize } from '@/shared/utils/appSize';
 import type { RootStackParamList } from '@/shared/navigation/types';
@@ -25,8 +27,10 @@ import {
   type WatchHistoryModelType,
 } from '@/features/watch-history';
 import { useFavoritesCount } from '@/features/favorites';
+import { useSocialLogin } from '@/presentation/pages/login/_hooks/useSocialLogin';
 import { useCalendarNavigation, useRatingsCount } from './_hooks';
 import {
+  MyPageHeader,
   UserProfileSection,
   UserStatsSection,
   WatchCalendar,
@@ -41,8 +45,15 @@ const SCROLL_BOTTOM_PADDING = AppSize.ratioHeight(40);
 export default function MyPage() {
   const navigation = useNavigation<NavigationProp>();
 
-  // 유저 프로필
-  const { displayName, avatarUrl } = useAuth();
+  // 유저 프로필 및 인증 상태
+  const { status, displayName, avatarUrl } = useAuth();
+  const isGuest = status === 'unauthenticated';
+
+  // 소셜 로그인
+  const { handleLogin, loadingProvider } = useSocialLogin();
+
+  // 프로필 클릭 시 로그인 다이얼로그 상태
+  const [isLoginDialogVisible, setLoginDialogVisible] = useState(false);
 
   // 캘린더 네비게이션
   const {
@@ -66,6 +77,35 @@ export default function MyPage() {
   const { data: favoritesCount = 0 } = useFavoritesCount();
   const { data: ratingsCount = 0 } = useRatingsCount();
   const { data: watchedCount = 0 } = useFullyWatchedCount();
+
+  // 설정 페이지 이동 핸들러
+  const handleSettingsPress = useCallback(() => {
+    navigation.navigate(routePages.settings);
+  }, [navigation]);
+
+  // 프로필 클릭 핸들러
+  const handleProfilePress = useCallback(() => {
+    if (isGuest) {
+      setLoginDialogVisible(true);
+    } else {
+      navigation.navigate(routePages.profileSetup, { mode: 'edit' });
+    }
+  }, [isGuest, navigation]);
+
+  // 로그인 다이얼로그 핸들러
+  const handleCloseLoginDialog = useCallback(() => {
+    setLoginDialogVisible(false);
+  }, []);
+
+  const handleKakaoLogin = useCallback(() => {
+    handleLogin('kakao');
+    setLoginDialogVisible(false);
+  }, [handleLogin]);
+
+  const handleOtherLogin = useCallback(() => {
+    navigation.navigate(routePages.login, { canGoBack: true });
+    setLoginDialogVisible(false);
+  }, [navigation]);
 
   // 시청 기록 아이템 클릭 핸들러 (이어보기: 플레이어로 직접 이동)
   const handleWatchHistoryItemPress = useCallback(
@@ -98,12 +138,17 @@ export default function MyPage() {
   return (
     <BasePage touchableWithoutFeedback={false}>
       <Container>
+        <MyPageHeader onSettingsPress={handleSettingsPress} />
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={SCROLL_CONTENT_STYLE}
           nestedScrollEnabled
         >
-          <UserProfileSection displayName={displayName} avatarUrl={avatarUrl} />
+          <UserProfileSection
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            onPress={handleProfilePress}
+          />
 
           <UserStatsSection
             favoritesCount={favoritesCount}
@@ -113,6 +158,8 @@ export default function MyPage() {
             onRatingsPress={handleRatingsPress}
             onWatchedPress={handleWatchedPress}
           />
+
+          <Gap size={20} />
 
           {watchHistoryData && (
             <WatchHistoryList
@@ -139,6 +186,14 @@ export default function MyPage() {
         selectedMonth={selectedMonth}
         onApply={handleApplyMonthYear}
         onClose={handleCloseMonthPicker}
+      />
+
+      <LoginPromptDialog
+        visible={isLoginDialogVisible}
+        onClose={handleCloseLoginDialog}
+        onKakaoLogin={handleKakaoLogin}
+        onOtherLogin={handleOtherLogin}
+        isKakaoLoading={loadingProvider === 'kakao'}
       />
     </BasePage>
   );

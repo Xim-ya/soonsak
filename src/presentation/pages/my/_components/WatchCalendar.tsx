@@ -98,9 +98,6 @@ function WatchCalendarComponent({
 
   return (
     <Container>
-      {/* 섹션 타이틀 */}
-      <SectionTitle>시청 작품 캘린더</SectionTitle>
-
       {/* 월 네비게이션 */}
       <MonthNavigation>
         <NavButton onPress={onPrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -206,12 +203,6 @@ type CalendarDay =
 const Container = styled.View({
   paddingHorizontal: CALENDAR_PADDING,
   paddingVertical: AppSize.ratioHeight(16),
-});
-
-const SectionTitle = styled.Text({
-  ...textStyles.title1,
-  color: colors.white,
-  marginBottom: AppSize.ratioHeight(16),
 });
 
 const MonthNavigation = styled.View({
