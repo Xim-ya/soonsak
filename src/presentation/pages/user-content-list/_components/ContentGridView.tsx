@@ -12,6 +12,12 @@ import {
   GRID_COLUMN_GAP,
 } from './ContentGridItem';
 
+/* 상수 정의 */
+const NUM_COLUMNS = 3;
+const HORIZONTAL_PADDING = 16;
+const SKELETON_ROW_COUNT = 3;
+const ITEM_MARGIN_BOTTOM = 12;
+
 interface ContentGridViewProps {
   readonly items: UserContentItem[];
   readonly isLoading: boolean;
@@ -22,141 +28,149 @@ interface ContentGridViewProps {
   readonly onEndReached?: () => void;
 }
 
+/* keyExtractor 함수 (컴포넌트 외부에 선언하여 재생성 방지) */
+const keyExtractor = (item: UserContentItem) => item.id;
+
+/* 스켈레톤 행 컴포넌트 */
+const SkeletonRow = () => (
+  <SkeletonRowContainer>
+    {Array.from({ length: NUM_COLUMNS }).map((_, idx) => (
+      <SkeletonItemContainer key={idx}>
+        <SkeletonView width={GRID_ITEM_WIDTH} height={GRID_POSTER_HEIGHT} borderRadius={4} />
+      </SkeletonItemContainer>
+    ))}
+  </SkeletonRowContainer>
+);
+
+/* 스켈레톤 그리드 컴포넌트 */
+const SkeletonGrid = () => (
+  <Tabs.ScrollView style={scrollViewStyle}>
+    <GridContainer>
+      {Array.from({ length: SKELETON_ROW_COUNT }).map((_, rowIndex) => (
+        <SkeletonRow key={rowIndex} />
+      ))}
+    </GridContainer>
+  </Tabs.ScrollView>
+);
+
+/* 빈 상태 컴포넌트 */
+interface EmptyStateProps {
+  message: string;
+  subMessage: string;
+}
+
+const EmptyState = ({ message, subMessage }: EmptyStateProps) => (
+  <Tabs.ScrollView style={scrollViewStyle}>
+    <EmptyContainer>
+      <EmptyText>{message}</EmptyText>
+      <EmptySubText>{subMessage}</EmptySubText>
+    </EmptyContainer>
+  </Tabs.ScrollView>
+);
+
+/* 추가 로딩 인디케이터 컴포넌트 */
+const LoadingMoreIndicator = () => (
+  <LoadingMoreContainer>
+    <SkeletonRow />
+  </LoadingMoreContainer>
+);
+
+/* 스타일 상수 (인라인 객체 재생성 방지) */
+const scrollViewStyle = { flex: 1 };
+
+const columnWrapperStyle = {
+  gap: GRID_COLUMN_GAP,
+  paddingHorizontal: HORIZONTAL_PADDING,
+};
+
+const contentContainerStyle = {
+  paddingTop: 20,
+  paddingBottom: 40,
+};
+
 /**
  * ContentGridView - 콘텐츠 그리드 뷰
  *
- * 3열 그리드로 콘텐츠 목록을 표시합니다.
- * 로딩, 빈 상태, 무한 스크롤을 처리합니다.
+ * Tabs.FlatList를 사용하여 3열 그리드로 콘텐츠 목록을 표시합니다.
+ * - 가상화로 메모리 효율성 향상
+ * - 자동 무한 스크롤 처리
+ * - 로딩, 빈 상태 UI 포함
  */
 function ContentGridView({
   items,
   isLoading,
-  hasMore,
   emptyMessage,
   emptySubMessage,
   showRating = false,
   onEndReached,
 }: ContentGridViewProps) {
+  const isInitialLoading = isLoading && items.length === 0;
   const isEmpty = !isLoading && items.length === 0;
 
-  // 3열 그리드로 아이템 그룹화
-  const rows = useMemo(() => {
-    const result: UserContentItem[][] = [];
-    for (let i = 0; i < items.length; i += 3) {
-      result.push(items.slice(i, i + 3));
-    }
-    return result;
-  }, [items]);
-
-  const handleScroll = useCallback(
-    (event: {
-      nativeEvent: {
-        contentOffset: { y: number };
-        layoutMeasurement: { height: number };
-        contentSize: { height: number };
-      };
-    }) => {
-      const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
-      const isNearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 200;
-
-      if (isNearBottom && hasMore && !isLoading && onEndReached) {
-        onEndReached();
-      }
-    },
-    [hasMore, isLoading, onEndReached],
+  // renderItem 메모이제이션 - showRating이 변경될 때만 재생성
+  const renderItem = useCallback(
+    ({ item }: { item: UserContentItem }) => (
+      <MemoizedContentGridItem item={item} showRating={showRating} />
+    ),
+    [showRating],
   );
 
-  // 스켈레톤 로딩 UI (3x3 그리드)
-  if (isLoading && items.length === 0) {
-    return (
-      <Tabs.ScrollView style={{ flex: 1 }}>
-        <GridContainer>
-          {Array.from({ length: 3 }).map((_, rowIndex) => (
-            <Row key={rowIndex}>
-              {Array.from({ length: 3 }).map((_, colIndex) => (
-                <SkeletonItemContainer key={colIndex}>
-                  <SkeletonView
-                    width={GRID_ITEM_WIDTH}
-                    height={GRID_POSTER_HEIGHT}
-                    borderRadius={4}
-                  />
-                </SkeletonItemContainer>
-              ))}
-            </Row>
-          ))}
-        </GridContainer>
-      </Tabs.ScrollView>
-    );
+  // ListFooterComponent 메모이제이션
+  const ListFooterComponent = useMemo(() => {
+    if (isLoading && items.length > 0) {
+      return <LoadingMoreIndicator />;
+    }
+    return null;
+  }, [isLoading, items.length]);
+
+  // 초기 로딩 상태
+  if (isInitialLoading) {
+    return <SkeletonGrid />;
   }
 
-  // 빈 상태 UI
+  // 빈 상태
   if (isEmpty) {
-    return (
-      <Tabs.ScrollView style={{ flex: 1 }}>
-        <EmptyContainer>
-          <EmptyText>{emptyMessage}</EmptyText>
-          <EmptySubText>{emptySubMessage}</EmptySubText>
-        </EmptyContainer>
-      </Tabs.ScrollView>
-    );
+    return <EmptyState message={emptyMessage} subMessage={emptySubMessage} />;
   }
 
   return (
-    <Tabs.ScrollView style={{ flex: 1 }} onScroll={handleScroll} scrollEventThrottle={16}>
-      <GridContainer>
-        {rows.map((row, rowIndex) => (
-          <Row key={rowIndex}>
-            {row.map((item) => (
-              <MemoizedContentGridItem key={item.id} item={item} showRating={showRating} />
-            ))}
-            {/* 마지막 행이 3개 미만일 때 빈 공간 채우기 */}
-            {row.length < 3 &&
-              Array.from({ length: 3 - row.length }).map((_, idx) => (
-                <EmptyGridItem key={`empty-${idx}`} />
-              ))}
-          </Row>
-        ))}
-        {/* 추가 로딩 인디케이터 */}
-        {isLoading && items.length > 0 && (
-          <LoadingMoreContainer>
-            <Row>
-              {Array.from({ length: 3 }).map((_, idx) => (
-                <SkeletonItemContainer key={idx}>
-                  <SkeletonView
-                    width={GRID_ITEM_WIDTH}
-                    height={GRID_POSTER_HEIGHT}
-                    borderRadius={4}
-                  />
-                </SkeletonItemContainer>
-              ))}
-            </Row>
-          </LoadingMoreContainer>
-        )}
-      </GridContainer>
-    </Tabs.ScrollView>
+    <Tabs.FlatList
+      data={items}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      numColumns={NUM_COLUMNS}
+      columnWrapperStyle={columnWrapperStyle}
+      contentContainerStyle={contentContainerStyle}
+      // 성능 최적화 옵션
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={9}
+      windowSize={5}
+      initialNumToRender={12}
+      // 무한 스크롤
+      onEndReached={onEndReached}
+      onEndReachedThreshold={0.5}
+      // 로딩 인디케이터
+      ListFooterComponent={ListFooterComponent}
+    />
   );
 }
 
 /* Styled Components */
 const GridContainer = styled.View({
-  paddingHorizontal: 16,
+  paddingHorizontal: HORIZONTAL_PADDING,
   paddingTop: 20,
   paddingBottom: 40,
 });
 
-const Row = styled.View({
+const SkeletonRowContainer = styled.View({
   flexDirection: 'row',
-  justifyContent: 'space-between',
   gap: GRID_COLUMN_GAP,
+  paddingHorizontal: HORIZONTAL_PADDING,
 });
 
 const SkeletonItemContainer = styled.View({
   width: GRID_ITEM_WIDTH,
-  marginBottom: 12,
-});
-
-const EmptyGridItem = styled.View({
-  width: GRID_ITEM_WIDTH,
+  marginBottom: ITEM_MARGIN_BOTTOM,
 });
 
 const EmptyContainer = styled.View({

@@ -12,8 +12,16 @@ import { MemoizedFavoritesTabView } from './_components/FavoritesTabView';
 import { MemoizedRatingsTabView } from './_components/RatingsTabView';
 import { MemoizedWatchedTabView } from './_components/WatchedTabView';
 import { USER_CONTENT_TAB_NAMES, type UserContentTabName } from './_types';
+import type { TabBarProps } from 'react-native-collapsible-tab-view';
 
 type UserContentListRouteParams = ScreenRouteProp<typeof routePages.userContentList>;
+
+/* 상수 정의 (인라인 객체/함수 재생성 방지) */
+const TAB_BAR_HEIGHT = 48;
+
+const headerContainerStyle = { backgroundColor: colors.black };
+
+const renderTabBar = (props: TabBarProps<string>) => <UserContentTabBar {...props} />;
 
 /**
  * UserContentListPage - 사용자 콘텐츠 목록 페이지
@@ -35,12 +43,12 @@ export default function UserContentListPage() {
         <BackButtonAppBar title="내 콘텐츠" />
       </AppBarContainer>
 
-      <TabsContainer paddingTop={insets.top + 48}>
+      <TabsContainer paddingTop={insets.top + TAB_BAR_HEIGHT}>
         <Tabs.Container
           initialTabName={initialTabName}
-          renderTabBar={(props) => <UserContentTabBar {...props} />}
-          headerContainerStyle={{ backgroundColor: colors.black }}
-          tabBarHeight={48}
+          renderTabBar={renderTabBar}
+          headerContainerStyle={headerContainerStyle}
+          tabBarHeight={TAB_BAR_HEIGHT}
         >
           <Tabs.Tab name="찜했어요">
             <MemoizedFavoritesTabView />

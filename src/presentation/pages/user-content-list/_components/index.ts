@@ -1,4 +1,3 @@
-export { ContentGridCard } from './ContentGridCard';
 export { RatingOverlay } from './RatingOverlay';
 export {
   MemoizedContentGridItem,
