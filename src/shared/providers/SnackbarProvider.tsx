@@ -29,7 +29,7 @@ interface SnackbarState {
   type: SnackbarType;
 }
 
-const SNACKBAR_DURATION = 3000; // 3초
+const SNACKBAR_DURATION = 720;
 const ANIMATION_DURATION = 300;
 
 export function SnackbarProvider({ children }: { children: React.ReactNode }) {
@@ -110,7 +110,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
 
 const SnackbarContainer = styled(Animated.View)({
   position: 'absolute',
-  bottom: AppSize.bottomInset + 16,
+  bottom: AppSize.bottomInset + 12,
   left: AppSize.ratioWidth(16),
   right: AppSize.ratioWidth(16),
   zIndex: 9999,

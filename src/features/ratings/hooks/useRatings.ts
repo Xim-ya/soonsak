@@ -80,9 +80,9 @@ export const useSetRating = () => {
     onSuccess: (_data, params) => {
       // 스낵바 표시
       if (params.rating === 0) {
-        showGlobalInfo('평점을 삭제했습니다');
+        showGlobalInfo('평점을 취소했어요');
       } else {
-        showGlobalInfo(`★ ${params.rating.toFixed(1)}점으로 평가했습니다`);
+        showGlobalInfo('평점을 매겼어요');
       }
     },
 

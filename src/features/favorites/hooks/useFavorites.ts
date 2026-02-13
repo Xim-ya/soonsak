@@ -102,7 +102,7 @@ export const useToggleFavorite = () => {
     onSuccess: (_data, _params, context) => {
       // 스낵바 표시
       const wasAdded = !context?.previousStatus?.isFavorited;
-      showGlobalInfo(wasAdded ? '찜 목록에 추가했습니다' : '찜 목록에서 삭제했습니다');
+      showGlobalInfo(wasAdded ? '찜 목록에 추가했어요!' : '찜 목록에서 제거했어요');
     },
 
     onError: (_error, _params, context) => {
