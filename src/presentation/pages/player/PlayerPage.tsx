@@ -55,8 +55,8 @@ export const PlayerPage = () => {
     player,
   });
 
-  // 시청 진행률 동기화
-  const { updateProgress, handleStateChange, syncNow } = useWatchProgressSync({
+  // 시청 진행률 동기화 (cleanup 시 자동 동기화 포함)
+  const { updateProgress, handleStateChange } = useWatchProgressSync({
     contentId,
     contentType,
     videoId,
@@ -101,12 +101,7 @@ export const PlayerPage = () => {
     }
   }, [progress, updateProgress]);
 
-  // 페이지 이탈 시 시청 진행률 저장
-  useEffect(() => {
-    return () => {
-      syncNow();
-    };
-  }, [syncNow]);
+  // 페이지 이탈 시 시청 진행률 저장은 useWatchProgressSync 훅 내부에서 처리됨
 
   // 자동 재생 차단 감지
   useYouTubeEvent(player, 'autoplayBlocked', () => {

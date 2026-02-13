@@ -2,6 +2,7 @@
  * useWatchProgressSync - 시청 진행률 동기화 훅
  *
  * 동기화 전략:
+ * - 첫 재생 5초 후 초기 동기화 (짧은 재생 세션 지원)
  * - 20초 간격 자동 동기화
  * - 일시정지 시 즉시 동기화
  * - 페이지 이탈 시 즉시 동기화
@@ -10,8 +11,9 @@
 
 import { useRef, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { AppState, type AppStateStatus } from 'react-native';
+import { useAuth } from '@/shared/providers/AuthProvider';
 import { watchHistoryApi } from '../api/watchHistoryApi';
-import { watchHistoryKeys } from './useWatchHistory';
 import type { ContentType } from '@/presentation/types/content/contentType.enum';
 
 /** YouTube 플레이어 상태 상수 */
@@ -27,11 +29,17 @@ const PLAYER_STATE = {
 /** 동기화 간격 (밀리초) */
 const SYNC_INTERVAL_MS = 20_000;
 
+/** 초기 동기화 딜레이 (밀리초) - 짧은 재생 세션 지원 */
+const INITIAL_SYNC_DELAY_MS = 5_000;
+
 /** Seek 감지 임계값 (초) - 이 값 이상 시간 점프 시 seek로 간주 */
 const SEEK_THRESHOLD_SECONDS = 3;
 
 /** Seek 동기화 debounce 딜레이 (밀리초) */
 const SEEK_DEBOUNCE_MS = 300;
+
+/** 쿼리 무효화용 watchHistory 기본 키 */
+const WATCH_HISTORY_QUERY_KEY = ['watchHistory'] as const;
 
 interface UseWatchProgressSyncParams {
   readonly contentId: number;
@@ -53,16 +61,23 @@ export function useWatchProgressSync({
   contentType,
   videoId,
 }: UseWatchProgressSyncParams): WatchProgressSyncResult {
+  const { user } = useAuth();
+  const isLoggedIn = user !== null;
   const queryClient = useQueryClient();
   const progressRef = useRef({ currentTime: 0, duration: 0 });
   const lastSyncTimeRef = useRef(0);
   const lastProgressTimeRef = useRef(0); // seek 감지용 이전 재생 시간
   const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const seekDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null); // seek debounce 타이머
+  const initialSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null); // 초기 동기화 타이머
   const isSyncingRef = useRef(false);
+  const hasInitialSyncRef = useRef(false); // 초기 동기화 완료 여부
 
   /** 서버에 진행률 동기화 */
   const syncToServer = useCallback(async () => {
+    // 비로그인 상태면 동기화 스킵
+    if (!isLoggedIn) return;
+
     const { currentTime, duration } = progressRef.current;
 
     const hasValidProgress = currentTime > 0 && duration > 0;
@@ -82,18 +97,22 @@ export function useWatchProgressSync({
         durationSeconds: Math.floor(duration),
       });
       lastSyncTimeRef.current = Date.now();
+      hasInitialSyncRef.current = true;
 
-      // 동기화 성공 후 관련 쿼리 무효화
-      queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all });
+      // 동기화 성공 후 관련 쿼리 무효화 (watchHistory로 시작하는 모든 쿼리)
+      queryClient.invalidateQueries({ queryKey: WATCH_HISTORY_QUERY_KEY });
     } catch (error) {
       console.error('시청 진행률 동기화 실패:', error);
     } finally {
       isSyncingRef.current = false;
     }
-  }, [contentId, contentType, videoId, queryClient]);
+  }, [isLoggedIn, contentId, contentType, videoId, queryClient]);
 
   /** 영상 완료 처리 (끝까지 재생 시) */
   const markComplete = useCallback(async () => {
+    // 비로그인 상태면 스킵
+    if (!isLoggedIn) return;
+
     const { duration } = progressRef.current;
     if (duration <= 0) return;
 
@@ -101,11 +120,27 @@ export function useWatchProgressSync({
       await watchHistoryApi.markAsFullyWatched(contentId, contentType, Math.floor(duration));
 
       // 완료 처리 후 관련 쿼리 무효화
-      queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all });
+      queryClient.invalidateQueries({ queryKey: WATCH_HISTORY_QUERY_KEY });
     } catch (error) {
       console.error('영상 완료 처리 실패:', error);
     }
-  }, [contentId, contentType, queryClient]);
+  }, [isLoggedIn, contentId, contentType, queryClient]);
+
+  /** 초기 동기화 스케줄 (첫 5초 후) */
+  const scheduleInitialSync = useCallback(() => {
+    // 비로그인 상태면 스킵
+    if (!isLoggedIn) return;
+
+    // 이미 초기 동기화 완료했거나 타이머가 있으면 스킵
+    if (hasInitialSyncRef.current || initialSyncTimerRef.current) {
+      return;
+    }
+
+    initialSyncTimerRef.current = setTimeout(() => {
+      syncToServer();
+      initialSyncTimerRef.current = null;
+    }, INITIAL_SYNC_DELAY_MS);
+  }, [isLoggedIn, syncToServer]);
 
   /** 진행률 업데이트 (1초마다 플레이어에서 호출) */
   const updateProgress = useCallback(
@@ -118,6 +153,11 @@ export function useWatchProgressSync({
       progressRef.current = { currentTime, duration };
       lastProgressTimeRef.current = currentTime;
 
+      // 유효한 duration이 있으면 초기 동기화 스케줄
+      if (duration > 0 && !hasInitialSyncRef.current) {
+        scheduleInitialSync();
+      }
+
       if (hasTimeJump) {
         if (seekDebounceRef.current) {
           clearTimeout(seekDebounceRef.current);
@@ -128,11 +168,14 @@ export function useWatchProgressSync({
         }, SEEK_DEBOUNCE_MS);
       }
     },
-    [syncToServer],
+    [syncToServer, scheduleInitialSync],
   );
 
   /** 주기적 동기화 시작 */
   const startPeriodicSync = useCallback(() => {
+    // 비로그인 상태면 주기적 동기화 시작하지 않음
+    if (!isLoggedIn) return;
+
     if (syncIntervalRef.current) {
       return;
     }
@@ -143,7 +186,7 @@ export function useWatchProgressSync({
         syncToServer();
       }
     }, SYNC_INTERVAL_MS);
-  }, [syncToServer]);
+  }, [isLoggedIn, syncToServer]);
 
   /** 주기적 동기화 중지 */
   const stopPeriodicSync = useCallback(() => {
@@ -176,15 +219,58 @@ export function useWatchProgressSync({
     await syncToServer();
   }, [stopPeriodicSync, syncToServer]);
 
-  // cleanup on unmount
+  // AppState 변경 시 백그라운드로 전환되면 동기화 (로그인 상태에서만)
+  useEffect(() => {
+    // 비로그인 상태면 리스너 등록하지 않음
+    if (!isLoggedIn) return;
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // 앱이 백그라운드로 가면 즉시 동기화 시도
+        syncToServer();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, [isLoggedIn, syncToServer]);
+
+  // cleanup on unmount (로그인 상태에서만 동기화 시도)
   useEffect(() => {
     return () => {
       stopPeriodicSync();
+
       if (seekDebounceRef.current) {
         clearTimeout(seekDebounceRef.current);
       }
+
+      if (initialSyncTimerRef.current) {
+        clearTimeout(initialSyncTimerRef.current);
+      }
+
+      // 비로그인 상태면 동기화 스킵
+      if (!isLoggedIn) return;
+
+      // 컴포넌트 언마운트 시 마지막 동기화 시도 (fire-and-forget)
+      // 유효한 진행률이 있고 아직 동기화하지 않은 경우에만
+      const { currentTime, duration } = progressRef.current;
+      if (currentTime > 0 && duration > 0) {
+        watchHistoryApi
+          .updateWatchProgress({
+            contentId,
+            contentType,
+            videoId,
+            progressSeconds: Math.floor(currentTime),
+            durationSeconds: Math.floor(duration),
+          })
+          .catch(() => {
+            // 에러 무시 - cleanup 중이므로 로깅만 하지 않음
+          });
+      }
     };
-  }, [stopPeriodicSync]);
+  }, [isLoggedIn, stopPeriodicSync, contentId, contentType, videoId]);
 
   return {
     updateProgress,
