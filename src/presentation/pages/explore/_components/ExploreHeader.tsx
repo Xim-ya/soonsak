@@ -10,26 +10,19 @@
 
 import React, { useCallback, useState } from 'react';
 import { ImageBackground, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import styled from '@emotion/native';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { AppSize } from '@/shared/utils/appSize';
-import { RootStackParamList } from '@/shared/navigation/types';
-import { routePages } from '@/shared/navigation/constant/routePages';
 import {
   DarkedLinearShadow,
   LinearAlign,
 } from '@/presentation/components/shadow/DarkedLinearShadow';
 import { LoginPromptDialog } from '@/presentation/components/dialog/LoginPromptDialog';
 import { useAuth } from '@/shared/providers/AuthProvider';
-import { useSocialLogin } from '@/presentation/pages/login/_hooks/useSocialLogin';
 import { CurationCarousel } from './CurationCarousel';
 import { CurationPromptCard } from './CurationPromptCard';
 import { useRandomBackdrop } from '../_hooks/useRandomBackdrop';
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // 레이아웃 상수
 const HEADER_HEIGHT = AppSize.ratioHeight(280);
@@ -37,12 +30,10 @@ const TOP_GRADIENT_HEIGHT = AppSize.ratioHeight(80);
 const BOTTOM_GRADIENT_HEIGHT = AppSize.ratioHeight(180);
 
 const ExploreHeader = React.memo(function ExploreHeader(): React.ReactElement {
-  const navigation = useNavigation<NavigationProp>();
   const { status, signOut } = useAuth();
   const isLoggedIn = status === 'authenticated';
 
   const { backdropUrl } = useRandomBackdrop();
-  const { handleLogin, loadingProvider } = useSocialLogin();
 
   // 로그인 다이얼로그 상태
   const [isLoginDialogVisible, setLoginDialogVisible] = useState(false);
@@ -98,13 +89,7 @@ const ExploreHeader = React.memo(function ExploreHeader(): React.ReactElement {
           </TitleRow>
           <CurationPromptCard />
         </FallbackContainer>
-        <LoginPromptDialog
-          visible={isLoginDialogVisible}
-          onClose={handleCloseDialog}
-          onKakaoLogin={handleKakaoLogin}
-          onOtherLogin={handleOtherLogin}
-          isKakaoLoading={loadingProvider === 'kakao'}
-        />
+        <LoginPromptDialog visible={isLoginDialogVisible} onClose={handleCloseDialog} />
       </>
     );
   }
@@ -134,13 +119,7 @@ const ExploreHeader = React.memo(function ExploreHeader(): React.ReactElement {
           <DarkedLinearShadow height={BOTTOM_GRADIENT_HEIGHT} align={LinearAlign.bottomTop} />
         </BackdropImage>
       </Container>
-      <LoginPromptDialog
-        visible={isLoginDialogVisible}
-        onClose={handleCloseDialog}
-        onKakaoLogin={handleKakaoLogin}
-        onOtherLogin={handleOtherLogin}
-        isKakaoLoading={loadingProvider === 'kakao'}
-      />
+      <LoginPromptDialog visible={isLoginDialogVisible} onClose={handleCloseDialog} />
     </>
   );
 });

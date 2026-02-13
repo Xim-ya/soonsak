@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from '@emotion/native';
+import { TouchableOpacity } from 'react-native';
 import ContentTypeChip from '@/presentation/components/chip/ContentTypeChip';
 import DarkChip from '@/presentation/components/chip/DarkChip';
 import { videoTagConfigs } from '@/presentation/types/content/videoTag.enum';
@@ -12,6 +13,15 @@ import { useContentVideos } from '../../_provider/ContentDetailProvider';
 import { SkeletonView } from '@/presentation/components/loading/SkeletonView';
 import { formatter } from '@/shared/utils/formatter';
 import { useContentDetailRoute } from '../../_hooks/useContentDetailRoute';
+import { useContentInfoActions } from '../../_hooks/useContentInfoActions';
+import { LoginPromptDialog } from '@/presentation/components/dialog/LoginPromptDialog';
+import { RatingBottomSheet } from '@/presentation/components/bottom-sheet/RatingBottomSheet';
+import HeartBlankSvg from '@assets/icons/heart_blank.svg';
+import HeartFilledSvg from '@assets/icons/heart_filled.svg';
+import StarBlankSvg from '@assets/icons/star_blank.svg';
+import StarFilledSvg from '@assets/icons/star_filled.svg';
+
+const ICON_SIZE = 14;
 
 /**
  * 콘텐츠 기본 정보 표시 컴포넌트
@@ -19,18 +29,45 @@ import { useContentDetailRoute } from '../../_hooks/useContentDetailRoute';
  * 책임:
  * - 콘텐츠 타입 칩
  * - 콘텐츠 제목, 개봉년도, 장르 리스트
+ * - 찜/평점 액션 버튼
  * - 비디오 타이틀
  * - 별점 표시
+ *
+ * 액션 로직은 useContentInfoActions 훅으로 분리되어 있습니다.
+ * (Toss Frontend Fundamentals - 단일 책임 원칙)
  */
 export const ContentInfo = React.memo(() => {
   const { id, title, type } = useContentDetailRoute();
+  const contentId = Number(id);
+
   const {
     data: contentInfo,
     isLoading: isContentInfoLoading,
     error: contentInfoError,
-  } = useContentDetail(Number(id), type);
+  } = useContentDetail(contentId, type);
 
   const { primaryVideo, isLoading: isVideosLoading } = useContentVideos();
+
+  // 찜/평점 액션 관리 (훅으로 분리)
+  const {
+    isFavorited,
+    hasRating,
+    currentRating,
+    isLoginDialogVisible,
+    isRatingSheetVisible,
+    handleFavoritePress,
+    handleRatingPress,
+    handleSubmitRating,
+    handleCloseRatingSheet,
+    handleCloseDialog,
+    executeFavoriteToggle,
+    executeRatingAction,
+    getPendingActionType,
+  } = useContentInfoActions({
+    contentId,
+    contentType: type,
+    contentTitle: title ?? '',
+  });
 
   // 연도 추출
   const releaseYear = contentInfo?.releaseDate ? formatter.dateToYear(contentInfo.releaseDate) : '';
@@ -43,6 +80,11 @@ export const ContentInfo = React.memo(() => {
 
   // 결말 포함 칩 표시 여부
   const showEndingChip = primaryVideo?.includesEnding;
+
+  // 로그인 성공 콜백 결정
+  const pendingActionType = getPendingActionType();
+  const loginSuccessCallback =
+    pendingActionType === 'favorite' ? executeFavoriteToggle : executeRatingAction;
 
   return (
     <Container>
@@ -99,6 +141,44 @@ export const ContentInfo = React.memo(() => {
       <RatingWrapper>
         <StartRateView rating={rating} />
       </RatingWrapper>
+      <Gap size={12} />
+
+      {/* 찜/평점 액션 버튼 */}
+      <ActionButtonRow>
+        <ActionButton onPress={handleFavoritePress} activeOpacity={0.7}>
+          {isFavorited ? (
+            <HeartFilledSvg width={ICON_SIZE} height={ICON_SIZE} />
+          ) : (
+            <HeartBlankSvg width={ICON_SIZE} height={ICON_SIZE} />
+          )}
+          <ActionButtonText>찜</ActionButtonText>
+        </ActionButton>
+        <Gap size={8} />
+        <ActionButton onPress={handleRatingPress} activeOpacity={0.7}>
+          {hasRating ? (
+            <StarFilledSvg width={ICON_SIZE} height={ICON_SIZE} />
+          ) : (
+            <StarBlankSvg width={ICON_SIZE} height={ICON_SIZE} />
+          )}
+          <ActionButtonText>평점</ActionButtonText>
+        </ActionButton>
+      </ActionButtonRow>
+
+      {/* 로그인 유도 다이얼로그 */}
+      <LoginPromptDialog
+        visible={isLoginDialogVisible}
+        onClose={handleCloseDialog}
+        onLoginSuccess={loginSuccessCallback}
+      />
+
+      {/* 평점 등록 바텀시트 */}
+      <RatingBottomSheet
+        visible={isRatingSheetVisible}
+        contentTitle={title ?? ''}
+        currentRating={currentRating}
+        onSubmitRating={handleSubmitRating}
+        onClose={handleCloseRatingSheet}
+      />
     </Container>
   );
 });
@@ -144,4 +224,25 @@ const DotText = styled.Text({
 
 const RatingWrapper = styled.View({
   alignItems: 'center',
+});
+
+const ActionButtonRow = styled.View({
+  flexDirection: 'row',
+  alignItems: 'center',
+});
+
+const ActionButton = styled(TouchableOpacity)({
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: 'rgba(40, 40, 49, 0.6)',
+  borderRadius: 16,
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  gap: 4,
+});
+
+const ActionButtonText = styled.Text({
+  ...textStyles.alert1,
+  color: colors.white,
+  marginRight: 2,
 });

@@ -10,6 +10,7 @@ export const routePages = {
   imageDetail: 'ImageDetail',
   profileSetup: 'ProfileSetup',
   settings: 'Settings',
+  userContentList: 'UserContentList',
 } as const;
 
 export type RoutePages = typeof routePages;

@@ -12,6 +12,7 @@ import { ImageDetailPage } from '../../../presentation/pages/media/ImageDetailPa
 import LoginPage from '../../../presentation/pages/login/LoginPage';
 import ProfileSetupPage from '../../../presentation/pages/profile-setup/ProfileSetupPage';
 import SettingsPage from '../../../presentation/pages/settings/SettingsPage';
+import UserContentListPage from '../../../presentation/pages/user-content-list/UserContentListPage';
 import { RootStackParamList } from '../types';
 import { routePages } from '../constant/routePages';
 import colors from '@/shared/styles/colors';
@@ -131,6 +132,11 @@ export default function StackNavigator() {
       <Stack.Screen
         name={routePages.settings}
         component={SettingsPage}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={routePages.userContentList}
+        component={UserContentListPage}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

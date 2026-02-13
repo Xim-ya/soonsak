@@ -28,7 +28,7 @@ import {
 } from '@/features/watch-history';
 import { useFavoritesCount } from '@/features/favorites';
 import { useSocialLogin } from '@/presentation/pages/login/_hooks/useSocialLogin';
-import { useCalendarNavigation } from './_hooks';
+import { useCalendarNavigation, useRatingsCount } from './_hooks';
 import {
   MyPageHeader,
   UserProfileSection,
@@ -75,6 +75,7 @@ export default function MyPage() {
 
   // 통계 데이터 조회
   const { data: favoritesCount = 0 } = useFavoritesCount();
+  const { data: ratingsCount = 0 } = useRatingsCount();
   const { data: watchedCount = 0 } = useFullyWatchedCount();
 
   // 설정 페이지 이동 핸들러
@@ -121,6 +122,19 @@ export default function MyPage() {
     [navigation],
   );
 
+  // 통계 섹션 클릭 핸들러 (initialTab: 0=찜했어요, 1=평가했어요, 2=봤어요)
+  const handleFavoritesPress = useCallback(() => {
+    navigation.navigate(routePages.userContentList, { initialTab: 0 });
+  }, [navigation]);
+
+  const handleRatingsPress = useCallback(() => {
+    navigation.navigate(routePages.userContentList, { initialTab: 1 });
+  }, [navigation]);
+
+  const handleWatchedPress = useCallback(() => {
+    navigation.navigate(routePages.userContentList, { initialTab: 2 });
+  }, [navigation]);
+
   return (
     <BasePage touchableWithoutFeedback={false}>
       <Container>
@@ -138,8 +152,11 @@ export default function MyPage() {
 
           <UserStatsSection
             favoritesCount={favoritesCount}
-            ratingsCount={0} // TODO: 평점 기능 구현 시 실제 데이터로 교체
+            ratingsCount={ratingsCount}
             watchedCount={watchedCount}
+            onFavoritesPress={handleFavoritesPress}
+            onRatingsPress={handleRatingsPress}
+            onWatchedPress={handleWatchedPress}
           />
 
           <Gap size={20} />

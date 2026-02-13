@@ -12,13 +12,12 @@
  * />
  */
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import styled from '@emotion/native';
-import StarBlankSvg from '@assets/icons/star_blank.svg';
-import StarFilledSvg from '@assets/icons/star_filled.svg';
+import { InteractiveStarRating } from '@/presentation/components/rating';
 
-const TOTAL_STARS = 5;
 const STAR_SIZE = 32;
+const STAR_GAP = 8;
 
 interface StarRatingSelectorProps {
   /** 현재 선택된 최소 별점 (1~5, null = 미선택) */
@@ -31,40 +30,16 @@ function StarRatingSelector({
   selectedRating,
   onSelect,
 }: StarRatingSelectorProps): React.ReactElement {
-  const handleStarPress = useCallback(
-    (star: number) => {
-      // 같은 별 다시 누르면 해제
-      if (selectedRating === star) {
-        onSelect(null);
-      } else {
-        onSelect(star);
-      }
-    },
-    [selectedRating, onSelect],
-  );
-
   return (
     <Container>
-      <StarRow>
-        {Array.from({ length: TOTAL_STARS }, (_, index) => {
-          const starValue = index + 1;
-          const isFilled = selectedRating !== null && starValue <= selectedRating;
-
-          return (
-            <StarButton
-              key={starValue}
-              onPress={() => handleStarPress(starValue)}
-              activeOpacity={0.7}
-            >
-              {isFilled ? (
-                <StarFilledSvg width={STAR_SIZE} height={STAR_SIZE} />
-              ) : (
-                <StarBlankSvg width={STAR_SIZE} height={STAR_SIZE} />
-              )}
-            </StarButton>
-          );
-        })}
-      </StarRow>
+      <InteractiveStarRating
+        value={selectedRating}
+        onChange={onSelect}
+        mode="drag"
+        step={0.5}
+        size={STAR_SIZE}
+        gap={STAR_GAP}
+      />
     </Container>
   );
 }
@@ -73,17 +48,6 @@ function StarRatingSelector({
 
 const Container = styled.View({
   paddingHorizontal: 20,
-});
-
-const StarRow = styled.View({
-  flexDirection: 'row',
-  justifyContent: 'flex-start',
-  alignItems: 'center',
-  gap: 8,
-});
-
-const StarButton = styled.TouchableOpacity({
-  padding: 4,
 });
 
 export { StarRatingSelector };
