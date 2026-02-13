@@ -13,6 +13,7 @@ export { watchHistoryApi } from './api/watchHistoryApi';
 // Hooks
 export {
   useFullyWatchedCount,
+  useFullyWatchedList,
   useWatchHistoryCalendar,
   useWatchHistoryList,
   useUniqueWatchHistory,

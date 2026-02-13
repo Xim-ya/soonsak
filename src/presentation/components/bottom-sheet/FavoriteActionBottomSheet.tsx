@@ -49,6 +49,8 @@ interface FavoriteActionBottomSheetProps {
   readonly visible: boolean;
   /** 현재 찜 상태 */
   readonly isFavorited: boolean;
+  /** 버튼 비활성화 여부 (중복 클릭 방지) */
+  readonly disabled?: boolean;
   /** 찜 토글 시 호출 */
   readonly onToggleFavorite: () => void;
   /** 닫기 콜백 */
@@ -58,6 +60,7 @@ interface FavoriteActionBottomSheetProps {
 function FavoriteActionBottomSheet({
   visible,
   isFavorited,
+  disabled = false,
   onToggleFavorite,
   onClose,
 }: FavoriteActionBottomSheetProps) {
@@ -99,9 +102,10 @@ function FavoriteActionBottomSheet({
 
   // 찜 토글 핸들러
   const handleToggleFavorite = useCallback(() => {
+    if (disabled) return;
     onToggleFavorite();
     handleClose();
-  }, [onToggleFavorite, handleClose]);
+  }, [onToggleFavorite, handleClose, disabled]);
 
   // 드래그 제스처
   const panGesture = Gesture.Pan()
@@ -159,7 +163,12 @@ function FavoriteActionBottomSheet({
             </GestureDetector>
 
             {/* 옵션 버튼 */}
-            <OptionButton onPress={handleToggleFavorite} activeOpacity={0.7}>
+            <OptionButton
+              onPress={handleToggleFavorite}
+              activeOpacity={0.7}
+              disabled={disabled}
+              style={{ opacity: disabled ? 0.5 : 1 }}
+            >
               <SvgXml xml={actionIcon} width={20} height={20} />
               <OptionText>{actionText}</OptionText>
             </OptionButton>

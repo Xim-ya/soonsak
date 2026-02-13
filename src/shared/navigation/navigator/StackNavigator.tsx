@@ -11,6 +11,7 @@ import { MediaListPage } from '../../../presentation/pages/media/MediaListPage';
 import { ImageDetailPage } from '../../../presentation/pages/media/ImageDetailPage';
 import LoginPage from '../../../presentation/pages/login/LoginPage';
 import ProfileSetupPage from '../../../presentation/pages/profile-setup/ProfileSetupPage';
+import UserContentListPage from '../../../presentation/pages/user-content-list/UserContentListPage';
 import { RootStackParamList } from '../types';
 import { routePages } from '../constant/routePages';
 import colors from '@/shared/styles/colors';
@@ -131,6 +132,11 @@ export default function StackNavigator() {
           // 초기 설정 모드에서만 뒤로가기 제스처 비활성화
           gestureEnabled: route.params?.mode !== 'initial',
         })}
+      />
+      <Stack.Screen
+        name={routePages.userContentList}
+        component={UserContentListPage}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

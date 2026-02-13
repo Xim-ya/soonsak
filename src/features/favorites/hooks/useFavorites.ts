@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { useAuth } from '@/shared/providers/AuthProvider';
+import { showGlobalInfo } from '@/shared/utils/snackbarRef';
 import { favoritesApi } from '../api/favoritesApi';
 import type { ToggleFavoriteParams } from '../types';
 import { FavoriteModel, FavoriteStatusModel } from '../types/favoriteModel';
@@ -96,6 +97,12 @@ export const useToggleFavorite = () => {
       }));
 
       return { previousStatus, queryKey };
+    },
+
+    onSuccess: (_data, _params, context) => {
+      // 스낵바 표시
+      const wasAdded = !context?.previousStatus?.isFavorited;
+      showGlobalInfo(wasAdded ? '찜 목록에 추가했어요!' : '찜 목록에서 제거했어요');
     },
 
     onError: (_error, _params, context) => {

@@ -33,15 +33,13 @@ export default function ContentDetailPage() {
   // 찜하기 액션 관련 상태 및 핸들러 (Discussion #42: 다이얼로그 상태 훅 분리)
   const {
     isFavorited,
+    isToggling,
     isLoginDialogVisible,
     isActionSheetVisible,
-    isKakaoLoading,
     handleMorePress,
     handleToggleFavorite,
     handleCloseActionSheet,
     handleCloseDialog,
-    handleKakaoLogin,
-    handleOtherLogin,
   } = useFavoriteAction({ contentId, contentType });
 
   // 스크롤 오프셋 변화 처리 - 메모이제이션으로 리렌더링 최적화
@@ -103,18 +101,13 @@ export default function ContentDetailPage() {
       <FavoriteActionBottomSheet
         visible={isActionSheetVisible}
         isFavorited={isFavorited}
+        disabled={isToggling}
         onToggleFavorite={handleToggleFavorite}
         onClose={handleCloseActionSheet}
       />
 
       {/* 로그인 유도 다이얼로그 */}
-      <LoginPromptDialog
-        visible={isLoginDialogVisible}
-        onClose={handleCloseDialog}
-        onKakaoLogin={handleKakaoLogin}
-        onOtherLogin={handleOtherLogin}
-        isKakaoLoading={isKakaoLoading}
-      />
+      <LoginPromptDialog visible={isLoginDialogVisible} onClose={handleCloseDialog} />
     </ContentDetailProvider>
   );
 }

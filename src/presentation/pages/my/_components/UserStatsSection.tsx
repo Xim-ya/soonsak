@@ -5,6 +5,7 @@
  */
 
 import React, { memo } from 'react';
+import { Pressable } from 'react-native';
 import styled from '@emotion/native';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
@@ -13,23 +14,32 @@ import { AppSize } from '@/shared/utils/appSize';
 interface UserStatsSectionProps {
   /** 찜한 콘텐츠 개수 */
   readonly favoritesCount: number;
-  /** 평가한 콘텐츠 개수 (추후 구현) */
+  /** 평가한 콘텐츠 개수 */
   readonly ratingsCount: number;
   /** 시청 완료한 콘텐츠 개수 */
   readonly watchedCount: number;
+  /** 찜했어요 클릭 핸들러 */
+  readonly onFavoritesPress?: () => void;
+  /** 평가했어요 클릭 핸들러 */
+  readonly onRatingsPress?: () => void;
+  /** 봤어요 클릭 핸들러 */
+  readonly onWatchedPress?: () => void;
 }
 
 interface StatItemProps {
   readonly count: number;
   readonly label: string;
+  readonly onPress?: () => void;
 }
 
-const StatItem = memo(function StatItem({ count, label }: StatItemProps) {
+const StatItem = memo(function StatItem({ count, label, onPress }: StatItemProps) {
   return (
-    <StatItemContainer>
-      <StatCount>{count}</StatCount>
-      <StatLabel>{label}</StatLabel>
-    </StatItemContainer>
+    <Pressable onPress={onPress} style={{ flex: 1 }}>
+      <StatItemContainer>
+        <StatCount>{count}</StatCount>
+        <StatLabel>{label}</StatLabel>
+      </StatItemContainer>
+    </Pressable>
   );
 });
 
@@ -37,14 +47,17 @@ function UserStatsSectionComponent({
   favoritesCount,
   ratingsCount,
   watchedCount,
+  onFavoritesPress,
+  onRatingsPress,
+  onWatchedPress,
 }: UserStatsSectionProps) {
   return (
     <Container>
-      <StatItem count={favoritesCount} label="찜했어요" />
+      <StatItem count={favoritesCount} label="찜했어요" onPress={onFavoritesPress} />
       <Divider />
-      <StatItem count={ratingsCount} label="평가했어요" />
+      <StatItem count={ratingsCount} label="평가했어요" onPress={onRatingsPress} />
       <Divider />
-      <StatItem count={watchedCount} label="봤어요" />
+      <StatItem count={watchedCount} label="봤어요" onPress={onWatchedPress} />
     </Container>
   );
 }
