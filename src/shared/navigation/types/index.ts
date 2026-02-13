@@ -19,6 +19,9 @@ import type { ProfileSetupMode } from '@/features/user/types';
 // 예: "MainTabs" | "ContentDetail"
 export type RouteNames = (typeof routePages)[keyof typeof routePages];
 
+// 사용자 콘텐츠 목록 초기 탭 인덱스
+export type UserContentListTabIndex = 0 | 1 | 2; // 0: 찜했어요, 1: 평가했어요, 2: 봤어요
+
 /**
  * 스택 네비게이션의 파라미터 타입 정의
  *
@@ -69,6 +72,9 @@ export type RootStackParamList = {
   [routePages.profileSetup]: {
     mode: ProfileSetupMode; // 프로필 설정 모드 (initial | edit)
   }; // 프로필 설정 - 모드 필수
+  [routePages.userContentList]: {
+    initialTab?: UserContentListTabIndex; // 초기 활성화 탭 인덱스 (기본값: 0)
+  }; // 사용자 콘텐츠 목록 - 탭 인덱스 선택
 };
 
 /**

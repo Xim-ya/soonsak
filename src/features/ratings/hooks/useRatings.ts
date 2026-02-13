@@ -7,10 +7,12 @@ import { useAuth } from '@/shared/providers/AuthProvider';
 import { showGlobalInfo } from '@/shared/utils/snackbarRef';
 import { ratingsApi } from '../api/ratingsApi';
 import type { SetRatingParams } from '../types';
-import { RatingStatusModel } from '../types/ratingModel';
+import { RatingModel, RatingStatusModel } from '../types/ratingModel';
 
 /** 캐시 시간 상수 */
+const TWO_MINUTES = 2 * 60 * 1000;
 const FIVE_MINUTES = 5 * 60 * 1000;
+const TEN_MINUTES = 10 * 60 * 1000;
 const THIRTY_MINUTES = 30 * 60 * 1000;
 
 /**
@@ -21,6 +23,7 @@ export const ratingKeys = {
   count: (userId: string | null) => [...ratingKeys.all(userId), 'count'] as const,
   status: (userId: string | null, contentId: number, contentType: string) =>
     [...ratingKeys.all(userId), 'status', contentId, contentType] as const,
+  list: (userId: string | null) => [...ratingKeys.all(userId), 'list'] as const,
 };
 
 /**
@@ -100,6 +103,44 @@ export const useSetRating = () => {
       queryClient.invalidateQueries({
         queryKey: ratingKeys.status(userId, params.contentId, params.contentType),
       });
+      // 목록 및 개수도 무효화
+      queryClient.invalidateQueries({ queryKey: ratingKeys.list(userId) });
+      queryClient.invalidateQueries({ queryKey: ratingKeys.count(userId) });
     },
+  });
+};
+
+/**
+ * 평점 목록 조회 Hook (페이지네이션)
+ */
+export const useRatingsList = (
+  limit: number = 20,
+  offset: number = 0,
+  options?: {
+    enabled?: boolean;
+  },
+): UseQueryResult<
+  {
+    items: RatingModel[];
+    hasMore: boolean;
+    totalCount: number;
+  },
+  Error
+> => {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
+  return useQuery({
+    queryKey: [...ratingKeys.list(userId), limit, offset],
+    queryFn: () => ratingsApi.getRatingsList(limit, offset),
+    select: (data) => ({
+      items: RatingModel.fromDtoList(data.items),
+      hasMore: data.hasMore,
+      totalCount: data.totalCount,
+    }),
+    enabled: (options?.enabled ?? true) && !!userId,
+    placeholderData: { items: [], hasMore: false, totalCount: 0 },
+    staleTime: TWO_MINUTES,
+    gcTime: TEN_MINUTES,
   });
 };

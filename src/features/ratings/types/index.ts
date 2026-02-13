@@ -24,3 +24,10 @@ export interface RatingStatusResponse {
   rating: number | null;
   ratingId: string | null;
 }
+
+/** 평점 + 콘텐츠 정보 조인 DTO */
+export interface RatingWithContentDto extends RatingDto {
+  contentTitle: string;
+  contentPosterPath: string;
+  contentBackdropPath: string;
+}

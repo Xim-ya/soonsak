@@ -82,6 +82,19 @@ export default function MyPage() {
     [navigation],
   );
 
+  // 통계 섹션 클릭 핸들러 (initialTab: 0=찜했어요, 1=평가했어요, 2=봤어요)
+  const handleFavoritesPress = useCallback(() => {
+    navigation.navigate(routePages.userContentList, { initialTab: 0 });
+  }, [navigation]);
+
+  const handleRatingsPress = useCallback(() => {
+    navigation.navigate(routePages.userContentList, { initialTab: 1 });
+  }, [navigation]);
+
+  const handleWatchedPress = useCallback(() => {
+    navigation.navigate(routePages.userContentList, { initialTab: 2 });
+  }, [navigation]);
+
   return (
     <BasePage touchableWithoutFeedback={false}>
       <Container>
@@ -96,6 +109,9 @@ export default function MyPage() {
             favoritesCount={favoritesCount}
             ratingsCount={ratingsCount}
             watchedCount={watchedCount}
+            onFavoritesPress={handleFavoritesPress}
+            onRatingsPress={handleRatingsPress}
+            onWatchedPress={handleWatchedPress}
           />
 
           {watchHistoryData && (

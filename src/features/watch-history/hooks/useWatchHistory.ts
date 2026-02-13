@@ -23,6 +23,8 @@ export const watchHistoryKeys = {
   all: (userId: string | null) => ['watchHistory', userId] as const,
   fullyWatchedCount: (userId: string | null) =>
     [...watchHistoryKeys.all(userId), 'fullyWatchedCount'] as const,
+  fullyWatchedList: (userId: string | null) =>
+    [...watchHistoryKeys.all(userId), 'fullyWatchedList'] as const,
   calendar: (userId: string | null, year: number, month: number) =>
     [...watchHistoryKeys.all(userId), 'calendar', year, month] as const,
   list: (userId: string | null) => [...watchHistoryKeys.all(userId), 'list'] as const,
@@ -47,6 +49,41 @@ export const useFullyWatchedCount = (options?: {
     placeholderData: 0,
     staleTime: FIVE_MINUTES,
     gcTime: THIRTY_MINUTES,
+  });
+};
+
+/**
+ * 완료된 시청 목록 조회 Hook (페이지네이션)
+ */
+export const useFullyWatchedList = (
+  limit: number = 20,
+  offset: number = 0,
+  options?: {
+    enabled?: boolean;
+  },
+): UseQueryResult<
+  {
+    items: WatchHistoryModel[];
+    hasMore: boolean;
+    totalCount: number;
+  },
+  Error
+> => {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
+  return useQuery({
+    queryKey: [...watchHistoryKeys.fullyWatchedList(userId), limit, offset],
+    queryFn: () => watchHistoryApi.getFullyWatchedList(limit, offset),
+    select: (data) => ({
+      items: WatchHistoryModel.fromDtoList(data.items),
+      hasMore: data.hasMore,
+      totalCount: data.totalCount,
+    }),
+    enabled: (options?.enabled ?? true) && !!userId,
+    placeholderData: { items: [], hasMore: false, totalCount: 0 },
+    staleTime: TWO_MINUTES,
+    gcTime: TEN_MINUTES,
   });
 };
 
