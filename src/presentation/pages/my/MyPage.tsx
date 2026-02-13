@@ -25,7 +25,7 @@ import {
   type WatchHistoryModelType,
 } from '@/features/watch-history';
 import { useFavoritesCount } from '@/features/favorites';
-import { useCalendarNavigation } from './_hooks';
+import { useCalendarNavigation, useRatingsCount } from './_hooks';
 import {
   UserProfileSection,
   UserStatsSection,
@@ -64,6 +64,7 @@ export default function MyPage() {
 
   // 통계 데이터 조회
   const { data: favoritesCount = 0 } = useFavoritesCount();
+  const { data: ratingsCount = 0 } = useRatingsCount();
   const { data: watchedCount = 0 } = useFullyWatchedCount();
 
   // 시청 기록 아이템 클릭 핸들러 (이어보기: 플레이어로 직접 이동)
@@ -93,7 +94,7 @@ export default function MyPage() {
 
           <UserStatsSection
             favoritesCount={favoritesCount}
-            ratingsCount={0} // TODO: 평점 기능 구현 시 실제 데이터로 교체
+            ratingsCount={ratingsCount}
             watchedCount={watchedCount}
           />
 

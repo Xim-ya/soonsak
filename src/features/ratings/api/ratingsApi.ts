@@ -138,4 +138,27 @@ export const ratingsApi = {
       throw new Error(`Failed to remove rating: ${error.message}`);
     }
   },
+
+  /**
+   * 내 평점 개수 조회
+   */
+  getRatingsCount: async (): Promise<number> => {
+    const user = await getAuthUser();
+    if (!user) {
+      return 0;
+    }
+
+    const { count, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gt('rating', 0);
+
+    if (error) {
+      console.error('평점 개수 조회 실패:', error);
+      return 0;
+    }
+
+    return count ?? 0;
+  },
 };

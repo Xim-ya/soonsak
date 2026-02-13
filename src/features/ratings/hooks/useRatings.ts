@@ -18,6 +18,7 @@ const THIRTY_MINUTES = 30 * 60 * 1000;
  */
 export const ratingKeys = {
   all: (userId: string | null) => ['ratings', userId] as const,
+  count: (userId: string | null) => [...ratingKeys.all(userId), 'count'] as const,
   status: (userId: string | null, contentId: number, contentType: string) =>
     [...ratingKeys.all(userId), 'status', contentId, contentType] as const,
 };
