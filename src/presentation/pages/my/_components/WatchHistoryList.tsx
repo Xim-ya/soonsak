@@ -20,6 +20,7 @@ import {
   calculateProgressPercent,
 } from '@/presentation/components/progress';
 import DarkChip from '@/presentation/components/chip/DarkChip';
+import { useAuth } from '@/shared/providers/AuthProvider';
 
 /* Types */
 
@@ -100,6 +101,11 @@ function WatchHistoryListComponent({
   isLoading = false,
   onItemPress,
 }: WatchHistoryListProps) {
+  const { status } = useAuth();
+
+  const isGuest = status === 'unauthenticated';
+  const hasNoHistory = items.length === 0 && !isLoading;
+
   const renderItem: ListRenderItem<WatchHistoryWithContentDto> = useCallback(
     ({ item }) => <WatchHistoryItemComponent item={item} onItemPress={onItemPress} />,
     [onItemPress],
@@ -110,8 +116,28 @@ function WatchHistoryListComponent({
     [],
   );
 
-  if (items.length === 0 && !isLoading) {
-    return null;
+  // 비로그인 유저: 빈 상태 메시지
+  if (isGuest) {
+    return (
+      <Container>
+        <SectionTitle>시청기록</SectionTitle>
+        <EmptyStateContainer>
+          <EmptyStateText>로그인하면 시청기록이 저장돼요</EmptyStateText>
+        </EmptyStateContainer>
+      </Container>
+    );
+  }
+
+  // 로그인 유저 + 기록 없음
+  if (hasNoHistory) {
+    return (
+      <Container>
+        <SectionTitle>시청기록</SectionTitle>
+        <EmptyStateContainer>
+          <EmptyStateText>아직 시청한 작품이 없어요</EmptyStateText>
+        </EmptyStateContainer>
+      </Container>
+    );
   }
 
   return (
@@ -141,6 +167,18 @@ const SectionTitle = styled.Text({
   color: colors.white,
   marginBottom: AppSize.ratioHeight(12),
   paddingHorizontal: HORIZONTAL_PADDING,
+});
+
+const EmptyStateContainer = styled.View({
+  height: ITEM_HEIGHT,
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: HORIZONTAL_PADDING,
+});
+
+const EmptyStateText = styled.Text({
+  ...textStyles.body2,
+  color: colors.gray02,
 });
 
 const ItemSeparator = () => <SeparatorView />;
