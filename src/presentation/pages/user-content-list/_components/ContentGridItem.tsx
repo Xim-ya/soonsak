@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Pressable } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import styled from '@emotion/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,7 +45,7 @@ function ContentGridItem({ item, showRating = false }: ContentGridItemProps) {
 
   return (
     <Container>
-      <Pressable onPress={handlePress}>
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
         <PosterWrapper>
           <LoadableImageView
             source={posterUrl}
@@ -55,7 +55,7 @@ function ContentGridItem({ item, showRating = false }: ContentGridItemProps) {
           />
           {showRating && item.rating != null && <RatingOverlay rating={item.rating} />}
         </PosterWrapper>
-      </Pressable>
+      </TouchableOpacity>
     </Container>
   );
 }
