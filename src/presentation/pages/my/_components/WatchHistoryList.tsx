@@ -14,7 +14,7 @@ import textStyles from '@/shared/styles/textStyles';
 import { AppSize } from '@/shared/utils/appSize';
 import { LoadableImageView } from '@/presentation/components/image/LoadableImageView';
 import { formatter, TmdbImageSize } from '@/shared/utils/formatter';
-import type { WatchHistoryWithContentDto } from '@/features/watch-history';
+import type { WatchHistoryModelType } from '@/features/watch-history';
 import {
   shouldShowProgressBar,
   calculateProgressPercent,
@@ -25,14 +25,14 @@ import { useAuth } from '@/shared/providers/AuthProvider';
 /* Types */
 
 interface WatchHistoryListProps {
-  readonly items: WatchHistoryWithContentDto[];
+  readonly items: WatchHistoryModelType[];
   readonly isLoading?: boolean;
-  readonly onItemPress?: (item: WatchHistoryWithContentDto) => void;
+  readonly onItemPress?: (item: WatchHistoryModelType) => void;
 }
 
 interface WatchHistoryItemProps {
-  readonly item: WatchHistoryWithContentDto;
-  readonly onItemPress: ((item: WatchHistoryWithContentDto) => void) | undefined;
+  readonly item: WatchHistoryModelType;
+  readonly onItemPress: ((item: WatchHistoryModelType) => void) | undefined;
 }
 
 /* Constants */
@@ -106,13 +106,13 @@ function WatchHistoryListComponent({
   const isGuest = status === 'unauthenticated';
   const hasNoHistory = items.length === 0 && !isLoading;
 
-  const renderItem: ListRenderItem<WatchHistoryWithContentDto> = useCallback(
+  const renderItem: ListRenderItem<WatchHistoryModelType> = useCallback(
     ({ item }) => <WatchHistoryItemComponent item={item} onItemPress={onItemPress} />,
     [onItemPress],
   );
 
   const keyExtractor = useCallback(
-    (item: WatchHistoryWithContentDto) => `${item.id}-${item.contentId}`,
+    (item: WatchHistoryModelType) => `${item.id}-${item.contentId}`,
     [],
   );
 
