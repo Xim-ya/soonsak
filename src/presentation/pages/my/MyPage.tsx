@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BasePage } from '@/presentation/components/page/BasePage';
 import { LoginPromptDialog } from '@/presentation/components/dialog/LoginPromptDialog';
+import Gap from '@/presentation/components/view/Gap';
 import colors from '@/shared/styles/colors';
 import { AppSize } from '@/shared/utils/appSize';
 import type { RootStackParamList } from '@/shared/navigation/types';
@@ -140,6 +141,8 @@ export default function MyPage() {
             ratingsCount={0} // TODO: 평점 기능 구현 시 실제 데이터로 교체
             watchedCount={watchedCount}
           />
+
+          <Gap size={20} />
 
           {watchHistoryData && (
             <WatchHistoryList

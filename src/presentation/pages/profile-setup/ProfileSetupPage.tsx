@@ -13,8 +13,8 @@
  * navigation.navigate('ProfileSetup', { mode: 'edit' });
  */
 
-import React from 'react';
-import { TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useMemo } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import styled from '@emotion/native';
 import colors from '@/shared/styles/colors';
@@ -22,6 +22,7 @@ import textStyles from '@/shared/styles/textStyles';
 import { AppSize } from '@/shared/utils/appSize';
 import { BasePage } from '@/presentation/components/page/BasePage';
 import { BackButtonAppBar } from '@/presentation/components/app-bar/BackButtonAppBar';
+import { PrimaryButton, type ButtonState } from '@/presentation/components/button';
 import type { RootStackParamList } from '@/shared/navigation/types';
 import { routePages } from '@/shared/navigation/constant/routePages';
 import { useProfileSetup } from './_hooks/useProfileSetup';
@@ -56,6 +57,13 @@ export default function ProfileSetupPage(): React.ReactElement {
 
   // 버튼 활성화 조건
   const isButtonEnabled = mode === 'initial' ? isValid : isValid && isChanged;
+
+  // 버튼 상태 계산
+  const buttonState: ButtonState = useMemo(() => {
+    if (isLoading) return 'loading';
+    if (isButtonEnabled) return 'enabled';
+    return 'disabled';
+  }, [isLoading, isButtonEnabled]);
 
   return (
     <BasePage automaticallyAdjustKeyboardInsets={false}>
@@ -93,18 +101,7 @@ export default function ProfileSetupPage(): React.ReactElement {
 
             {/* 하단 버튼 */}
             <ButtonContainer>
-              <SubmitButton
-                onPress={handleSubmit}
-                disabled={!isButtonEnabled || isLoading}
-                isEnabled={isButtonEnabled && !isLoading}
-                activeOpacity={0.8}
-              >
-                {isLoading ? (
-                  <ButtonText>저장 중...</ButtonText>
-                ) : (
-                  <ButtonText>{buttonText}</ButtonText>
-                )}
-              </SubmitButton>
+              <PrimaryButton title={buttonText} onPress={handleSubmit} state={buttonState} />
             </ButtonContainer>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -145,17 +142,4 @@ const ButtonContainer = styled.View({
   paddingHorizontal: 24,
   paddingBottom: AppSize.bottomInset + 12,
   paddingTop: 12,
-});
-
-const SubmitButton = styled(TouchableOpacity)<{ isEnabled: boolean }>(({ isEnabled }) => ({
-  height: 52,
-  borderRadius: 12,
-  backgroundColor: isEnabled ? colors.primary : colors.gray04,
-  justifyContent: 'center',
-  alignItems: 'center',
-}));
-
-const ButtonText = styled.Text({
-  ...textStyles.body1,
-  color: colors.white,
 });
