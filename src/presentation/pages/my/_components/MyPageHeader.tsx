@@ -54,7 +54,7 @@ function MyPageHeader({ onSettingsPress }: MyPageHeaderProps) {
   }, [handleLogin]);
 
   const handleOtherLogin = useCallback(() => {
-    navigation.navigate(routePages.login);
+    navigation.navigate(routePages.login, { canGoBack: true });
     setLoginDialogVisible(false);
   }, [navigation]);
 

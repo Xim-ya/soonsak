@@ -26,7 +26,6 @@ import { useNicknameValidation } from '@/features/user/hooks/useNicknameValidati
 import { userApi } from '@/features/user/api/userApi';
 import type { ProfileSetupMode } from '@/features/user/types';
 import type { RootStackParamList } from '@/shared/navigation/types';
-import { routePages } from '@/shared/navigation/constant/routePages';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -174,21 +173,15 @@ export function useProfileSetup({ mode }: UseProfileSetupParams): UseProfileSetu
       // AuthProvider의 프로필 데이터 새로고침
       await refreshProfile();
 
-      // 모드에 따른 네비게이션
+      // 프로필 설정 완료 표시 (ProfileSetupNavigator에서 다시 리다이렉트 방지)
       if (mode === 'initial') {
-        // 프로필 설정 완료 표시 (ProfileSetupNavigator에서 다시 리다이렉트 방지)
         completeProfileSetup();
-
-        // 초기 설정: 취향 선택 화면으로 이동 (또는 메인으로)
-        // TODO: contentPreferences 페이지 구현 후 연동
-        navigation.reset({
-          index: 0,
-          routes: [{ name: routePages.mainTabs }],
-        });
-      } else {
-        // 수정 모드: 이전 화면으로
-        navigation.goBack();
       }
+
+      // 이전 화면으로 복귀 (initial/edit 모두 동일)
+      // initial 모드: 로그인 전 화면으로 복귀 (콘텐츠 상세 등)
+      // edit 모드: 설정 화면으로 복귀
+      navigation.goBack();
     } catch (e) {
       console.error('프로필 저장 실패:', e);
       setError('저장에 실패했습니다. 다시 시도해주세요.');

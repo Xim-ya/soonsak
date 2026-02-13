@@ -61,7 +61,7 @@ const ExploreHeader = React.memo(function ExploreHeader(): React.ReactElement {
   }, [handleLogin]);
 
   const handleOtherLogin = useCallback(() => {
-    navigation.navigate(routePages.login);
+    navigation.navigate(routePages.login, { canGoBack: true });
     setLoginDialogVisible(false);
   }, [navigation]);
 

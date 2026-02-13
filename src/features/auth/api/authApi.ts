@@ -368,4 +368,44 @@ export const authApi = {
 
     return data.session;
   },
+
+  /**
+   * 회원탈퇴
+   *
+   * Edge Function을 통해 사용자 데이터 및 계정을 삭제합니다.
+   * - 사용자 관련 데이터 삭제 (평점, 즐겨찾기, 시청기록, 프로필)
+   * - Supabase Auth에서 사용자 삭제
+   */
+  withdrawUser: async (): Promise<void> => {
+    const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+
+    if (sessionError || !sessionData.session) {
+      throw createAuthError(AUTH_ERROR_CODES.SUPABASE_ERROR, undefined, '로그인이 필요합니다.');
+    }
+
+    const accessToken = sessionData.session.access_token;
+
+    const { data, error } = await supabaseClient.functions.invoke('delete-user', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (error) {
+      logError('회원탈퇴 실패', error);
+      throw createAuthError(AUTH_ERROR_CODES.SUPABASE_ERROR, undefined, error);
+    }
+
+    if (!data?.success) {
+      throw createAuthError(
+        AUTH_ERROR_CODES.SUPABASE_ERROR,
+        undefined,
+        data?.error ?? '회원탈퇴 처리 중 오류가 발생했습니다.',
+      );
+    }
+
+    // 로컬 세션 클리어 (AsyncStorage의 세션 토큰 삭제)
+    await supabaseClient.auth.signOut();
+  },
 };

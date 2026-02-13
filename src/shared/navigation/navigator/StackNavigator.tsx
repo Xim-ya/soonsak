@@ -39,14 +39,9 @@ function ProfileSetupNavigator(): null {
     const isOnProfileSetup = currentRouteName === routePages.profileSetup;
 
     // 인증됨 + 프로필 설정 필요 + ProfileSetupPage가 아닐 때만 이동
+    // 스택을 리셋하지 않고 ProfileSetup을 push하여 이전 화면 정보 유지
     if (status === 'authenticated' && needsProfileSetup && !isOnProfileSetup) {
-      navigation.reset({
-        index: 0,
-        routes: [
-          { name: routePages.mainTabs },
-          { name: routePages.profileSetup, params: { mode: 'initial' } },
-        ],
-      });
+      navigation.navigate(routePages.profileSetup, { mode: 'initial' });
     }
   }, [needsProfileSetup, status, currentRouteName, navigation]);
 

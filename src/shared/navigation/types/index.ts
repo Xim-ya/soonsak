@@ -30,7 +30,7 @@ export type RouteNames = (typeof routePages)[keyof typeof routePages];
  * - 잘못된 파라미터 전달 시 컴파일 에러 발생
  */
 export type RootStackParamList = {
-  [routePages.login]: undefined; // 로그인 - 파라미터 없음
+  [routePages.login]: { canGoBack?: boolean } | undefined; // 로그인 - canGoBack 선택적 파라미터
   [routePages.mainTabs]: undefined; // 탭 네비게이터 - 파라미터 없음
   [routePages.contentDetail]: {
     id: number; // 콘텐츠 ID
