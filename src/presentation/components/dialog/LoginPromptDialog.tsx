@@ -4,18 +4,26 @@
  * 비로그인 사용자에게 로그인을 유도하는 모달 다이얼로그입니다.
  * 카카오 빠른 로그인과 다른 방법 로그인 옵션을 제공합니다.
  *
+ * 로그인 관련 로직이 내장되어 있어 visible과 onClose만 전달하면 됩니다.
+ * onLoginSuccess 콜백으로 로그인 성공 후 추가 액션을 실행할 수 있습니다.
+ * (Toss Frontend Fundamentals - 응집도 원칙 적용)
+ *
  * @example
  * <LoginPromptDialog
  *   visible={isDialogVisible}
  *   onClose={() => setDialogVisible(false)}
- *   onKakaoLogin={handleKakaoLogin}
- *   onOtherLogin={handleOtherLogin}
+ *   onLoginSuccess={() => toggleFavorite()}
  * />
  */
 
 import React, { useCallback } from 'react';
 import { Modal, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
 import styled from '@emotion/native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/shared/navigation/types';
+import { routePages } from '@/shared/navigation/constant/routePages';
+import { useSocialLogin } from '@/presentation/pages/login/_hooks/useSocialLogin';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import KakaoLogo from '@assets/icons/kakao_logo.svg';
@@ -31,26 +39,27 @@ const ILLUSTRATION_SIZE = 72;
 const KAKAO_YELLOW = '#FEE500';
 const KAKAO_BLACK = '#191919';
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 interface LoginPromptDialogProps {
   /** 다이얼로그 표시 여부 */
   readonly visible: boolean;
   /** 닫기 버튼 또는 배경 터치 시 호출 */
   readonly onClose: () => void;
-  /** 카카오 로그인 버튼 터치 시 호출 */
-  readonly onKakaoLogin: () => void;
-  /** 다른 방법으로 시작하기 버튼 터치 시 호출 */
-  readonly onOtherLogin: () => void;
-  /** 카카오 로그인 로딩 상태 */
-  readonly isKakaoLoading?: boolean;
+  /** 로그인 성공 시 호출 (찜 토글 등 후속 액션 실행용) */
+  readonly onLoginSuccess?: () => void;
 }
 
 function LoginPromptDialog({
   visible,
   onClose,
-  onKakaoLogin,
-  onOtherLogin,
-  isKakaoLoading = false,
+  onLoginSuccess,
 }: LoginPromptDialogProps): React.ReactElement {
+  const navigation = useNavigation<NavigationProp>();
+  const { handleLogin, loadingProvider } = useSocialLogin();
+
+  const isKakaoLoading = loadingProvider === 'kakao';
+
   const handleBackdropPress = useCallback(() => {
     onClose();
   }, [onClose]);
@@ -58,6 +67,20 @@ function LoginPromptDialog({
   const handleDialogPress = useCallback(() => {
     // 다이얼로그 내부 터치 시 이벤트 전파 방지
   }, []);
+
+  // 카카오 로그인 핸들러
+  const handleKakaoLogin = useCallback(() => {
+    handleLogin('kakao', onLoginSuccess);
+    onClose();
+  }, [handleLogin, onClose, onLoginSuccess]);
+
+  // 다른 방법으로 로그인 핸들러
+  const handleOtherLogin = useCallback(() => {
+    navigation.navigate(routePages.login);
+    onClose();
+    // 다른 방법 로그인은 화면 이동 후 로그인하므로 콜백 실행 불가
+    // 이 경우는 useEffect로 로그인 상태 변화 감지 필요
+  }, [navigation, onClose]);
 
   return (
     <Modal
@@ -82,7 +105,11 @@ function LoginPromptDialog({
               {/* 버튼 그룹 */}
               <ButtonGroup>
                 {/* 카카오 로그인 버튼 */}
-                <KakaoButton onPress={onKakaoLogin} activeOpacity={0.8} disabled={isKakaoLoading}>
+                <KakaoButton
+                  onPress={handleKakaoLogin}
+                  activeOpacity={0.8}
+                  disabled={isKakaoLoading}
+                >
                   <KakaoLogoWrapper>
                     <KakaoLogo width={LOGO_SIZE} height={LOGO_SIZE} />
                   </KakaoLogoWrapper>
@@ -90,7 +117,7 @@ function LoginPromptDialog({
                 </KakaoButton>
 
                 {/* 다른 방법으로 시작하기 버튼 */}
-                <OtherLoginButton onPress={onOtherLogin} activeOpacity={0.8}>
+                <OtherLoginButton onPress={handleOtherLogin} activeOpacity={0.8}>
                   <OtherLoginButtonText>다른 방법으로 시작하기</OtherLoginButtonText>
                 </OtherLoginButton>
               </ButtonGroup>

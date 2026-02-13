@@ -21,7 +21,7 @@ import { setSnackbarRef } from '@/shared/utils/snackbarRef';
  * </QueryClientProvider>
  */
 
-type SnackbarType = 'error' | 'success';
+type SnackbarType = 'error' | 'success' | 'info';
 
 interface SnackbarState {
   visible: boolean;
@@ -81,6 +81,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
     setSnackbarRef({
       showError: (message: string) => showSnackbar(message, 'error'),
       showSuccess: (message: string) => showSnackbar(message, 'success'),
+      showInfo: (message: string) => showSnackbar(message, 'info'),
     });
 
     return () => {
@@ -126,8 +127,21 @@ const SnackbarContainer = styled(Animated.View)({
   }),
 });
 
+const getSnackbarColor = (type: SnackbarType): string => {
+  switch (type) {
+    case 'error':
+      return '#E53E3E';
+    case 'success':
+      return '#38A169';
+    case 'info':
+      return colors.gray04;
+    default:
+      return colors.gray04;
+  }
+};
+
 const SnackbarContent = styled.View<{ type: SnackbarType }>(({ type }) => ({
-  backgroundColor: type === 'error' ? '#E53E3E' : '#38A169',
+  backgroundColor: getSnackbarColor(type),
   paddingVertical: 16,
   paddingHorizontal: 20,
   borderRadius: 12,

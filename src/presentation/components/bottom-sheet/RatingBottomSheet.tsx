@@ -1,11 +1,13 @@
 /**
- * FavoriteActionBottomSheet - 찜하기 액션 바텀시트
+ * RatingBottomSheet - 평점 등록 바텀시트
  *
- * 콘텐츠 상세 페이지에서 찜하기/찜해제 액션을 선택하는 바텀시트입니다.
- * Flutter Plotz 프로젝트의 EpisodeBottomSheet 디자인 참고
+ * 콘텐츠에 별점을 매기는 바텀시트입니다.
+ * - 0.5 단위로 평점 선택 가능
+ * - 터치 및 드래그로 별점 선택
+ * - 기존 평점이 있으면 표시
  */
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-native';
 import styled from '@emotion/native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -18,75 +20,66 @@ import Animated, {
   interpolate,
   Extrapolation,
 } from 'react-native-reanimated';
-import { SvgXml } from 'react-native-svg';
 import colors from '@/shared/styles/colors';
 import textStyles from '@/shared/styles/textStyles';
 import { AppSize } from '@/shared/utils/appSize';
+import { InteractiveStarRating } from '@/presentation/components/rating';
 
 // 상수 정의
-const OPTION_HEIGHT = 56;
+const CONTENT_HEIGHT = 95;
 const CLOSE_BUTTON_HEIGHT = 56;
 const SPACING = 8;
 const BORDER_RADIUS = 12;
 
-// 북마크 아이콘 (outline)
-const bookmarkOutlineSvg = `
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M17 3H7C5.9 3 5 3.9 5 5V21L12 18L19 21V5C19 3.9 18.1 3 17 3Z" stroke="${colors.white}" stroke-width="1.5" fill="none"/>
-</svg>
-`;
+const STAR_SIZE = 28;
+const STAR_GAP = 6;
 
-// 북마크 아이콘 (filled with x)
-const bookmarkRemoveSvg = `
-<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M17 3H7C5.9 3 5 3.9 5 5V21L12 18L19 21V5C19 3.9 18.1 3 17 3Z" stroke="${colors.white}" stroke-width="1.5" fill="none"/>
-<path d="M9 8L15 14M15 8L9 14" stroke="${colors.white}" stroke-width="1.5" stroke-linecap="round"/>
-</svg>
-`;
-
-interface FavoriteActionBottomSheetProps {
+interface RatingBottomSheetProps {
   /** 바텀시트 표시 여부 */
   readonly visible: boolean;
-  /** 현재 찜 상태 */
-  readonly isFavorited: boolean;
-  /** 버튼 비활성화 여부 (중복 클릭 방지) */
-  readonly disabled?: boolean;
-  /** 찜 토글 시 호출 */
-  readonly onToggleFavorite: () => void;
+  /** 콘텐츠 제목 */
+  readonly contentTitle: string;
+  /** 현재 평점 (null이면 없음) */
+  readonly currentRating: number | null;
+  /** 평점 등록 콜백 */
+  readonly onSubmitRating: (rating: number) => void;
   /** 닫기 콜백 */
   readonly onClose: () => void;
 }
 
-function FavoriteActionBottomSheet({
+function RatingBottomSheet({
   visible,
-  isFavorited,
-  disabled = false,
-  onToggleFavorite,
+  contentTitle,
+  currentRating,
+  onSubmitRating,
   onClose,
-}: FavoriteActionBottomSheetProps) {
+}: RatingBottomSheetProps) {
   // 시트 높이 계산
   const sheetHeight =
-    OPTION_HEIGHT + SPACING + CLOSE_BUTTON_HEIGHT + AppSize.responsiveBottomInset + 12;
+    CONTENT_HEIGHT + SPACING + CLOSE_BUTTON_HEIGHT + AppSize.responsiveBottomInset + 12;
   const closeThreshold = sheetHeight * 0.25;
+
+  // 선택된 평점 상태
+  const [selectedRating, setSelectedRating] = useState<number>(currentRating ?? 0);
 
   // 애니메이션 값
   const overlayOpacity = useSharedValue(0);
   const sheetTranslateY = useSharedValue(sheetHeight);
 
-  // visible 상태에 따른 애니메이션
+  // visible 상태 변경 시 초기화
   useEffect(() => {
     if (visible) {
+      setSelectedRating(currentRating ?? 0);
       overlayOpacity.value = withTiming(1, { duration: 200 });
       sheetTranslateY.value = withTiming(0, {
         duration: 300,
         easing: Easing.out(Easing.ease),
       });
     } else {
-      // visible이 외부에서 false로 변경될 때 애니메이션 값 초기화
       overlayOpacity.value = 0;
       sheetTranslateY.value = sheetHeight;
     }
-  }, [visible, overlayOpacity, sheetTranslateY, sheetHeight]);
+  }, [visible, currentRating, overlayOpacity, sheetTranslateY, sheetHeight]);
 
   // 닫기 애니메이션
   const handleClose = useCallback(() => {
@@ -100,14 +93,21 @@ function FavoriteActionBottomSheet({
     );
   }, [onClose, overlayOpacity, sheetTranslateY, sheetHeight]);
 
-  // 찜 토글 핸들러
-  const handleToggleFavorite = useCallback(() => {
-    if (disabled) return;
-    onToggleFavorite();
-    handleClose();
-  }, [onToggleFavorite, handleClose, disabled]);
+  // 평점 제출 핸들러
+  const handleSubmitRating = useCallback(
+    (rating: number) => {
+      onSubmitRating(rating);
+      handleClose();
+    },
+    [onSubmitRating, handleClose],
+  );
 
-  // 드래그 제스처
+  // 별점 변경 핸들러 (null 처리)
+  const handleRatingChange = useCallback((rating: number | null) => {
+    setSelectedRating(rating ?? 0);
+  }, []);
+
+  // 드래그 제스처 (바텀시트 닫기용)
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
       if (event.translationY > 0) {
@@ -141,9 +141,6 @@ function FavoriteActionBottomSheet({
     transform: [{ translateY: sheetTranslateY.value }],
   }));
 
-  const actionText = isFavorited ? '찜 해제하기' : '찜하기';
-  const actionIcon = isFavorited ? bookmarkRemoveSvg : bookmarkOutlineSvg;
-
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
       <ModalContainer>
@@ -162,23 +159,29 @@ function FavoriteActionBottomSheet({
               </DragArea>
             </GestureDetector>
 
-            {/* 옵션 버튼 */}
-            <OptionButton
-              onPress={handleToggleFavorite}
-              activeOpacity={0.7}
-              disabled={disabled}
-              style={{ opacity: disabled ? 0.5 : 1 }}
-            >
-              <SvgXml xml={actionIcon} width={20} height={20} />
-              <OptionText>{actionText}</OptionText>
-            </OptionButton>
+            {/* 콘텐츠 영역 */}
+            <ContentArea>
+              {/* 제목 */}
+              <TitleText numberOfLines={2}>{contentTitle}</TitleText>
+
+              {/* 별점 선택 영역 */}
+              <InteractiveStarRating
+                value={selectedRating}
+                onChange={handleRatingChange}
+                onDragEnd={handleSubmitRating}
+                mode="drag"
+                step={0.5}
+                size={STAR_SIZE}
+                gap={STAR_GAP}
+              />
+            </ContentArea>
 
             {/* 스페이서 */}
             <Spacer />
 
-            {/* 닫기 버튼 */}
+            {/* 취소 버튼 */}
             <CloseButton onPress={handleClose} activeOpacity={0.7}>
-              <CloseButtonText>닫기</CloseButtonText>
+              <CloseButtonText>취소</CloseButtonText>
             </CloseButton>
           </ContentWrapper>
         </SheetContainer>
@@ -230,19 +233,19 @@ const Handle = styled.View({
   backgroundColor: colors.gray03,
 });
 
-const OptionButton = styled.TouchableOpacity({
-  height: OPTION_HEIGHT,
+const ContentArea = styled.View({
   backgroundColor: colors.gray06,
   borderRadius: BORDER_RADIUS,
-  flexDirection: 'row',
+  paddingVertical: 16,
+  paddingHorizontal: 20,
   alignItems: 'center',
-  justifyContent: 'center',
-  gap: 8,
 });
 
-const OptionText = styled.Text({
-  ...textStyles.title2,
-  color: colors.white,
+const TitleText = styled.Text({
+  ...textStyles.alert1,
+  color: colors.gray01,
+  textAlign: 'center',
+  marginBottom: 10,
 });
 
 const Spacer = styled.View({
@@ -262,4 +265,4 @@ const CloseButtonText = styled.Text({
   color: colors.white,
 });
 
-export { FavoriteActionBottomSheet };
+export { RatingBottomSheet };

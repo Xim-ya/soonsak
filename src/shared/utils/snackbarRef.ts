@@ -12,6 +12,7 @@
 type SnackbarRef = {
   showError: (message: string) => void;
   showSuccess: (message: string) => void;
+  showInfo: (message: string) => void;
 } | null;
 
 let snackbarRef: SnackbarRef = null;
@@ -51,4 +52,17 @@ export const showGlobalSuccess = (message: string) => {
     return;
   }
   snackbarRef.showSuccess(message);
+};
+
+/**
+ * 전역 정보 스낵바 표시 (회색)
+ *
+ * @param message - 표시할 메시지
+ */
+export const showGlobalInfo = (message: string) => {
+  if (!snackbarRef) {
+    console.warn('[Snackbar] Ref가 설정되지 않았습니다:', message);
+    return;
+  }
+  snackbarRef.showInfo(message);
 };

@@ -94,6 +94,7 @@ export const favoritesApi = {
 
   /**
    * 찜 추가
+   * Duplicate key 에러(23505) 시 기존 데이터 반환 (race condition 대응)
    */
   addFavorite: async (params: ToggleFavoriteParams): Promise<FavoriteDto> => {
     const user = await requireAuth();
@@ -109,6 +110,20 @@ export const favoritesApi = {
       .single();
 
     if (error) {
+      // Duplicate key 에러 = 이미 존재함 (race condition으로 다른 요청이 먼저 추가)
+      if (error.code === '23505') {
+        const existing = await supabaseClient
+          .from(TABLE_NAME)
+          .select()
+          .eq('user_id', user.id)
+          .eq('content_id', params.contentId)
+          .eq('content_type', params.contentType)
+          .single();
+
+        if (existing.data) {
+          return mapWithField<FavoriteDto>(existing.data);
+        }
+      }
       console.error('찜 추가 실패:', error);
       throw new Error(`Failed to add favorite: ${error.message}`);
     }
@@ -138,6 +153,7 @@ export const favoritesApi = {
   /**
    * 찜 토글
    * 이미 찜한 경우 삭제, 아닌 경우 추가
+   * addFavorite에서 duplicate key를 처리하므로 race condition 안전
    * @returns 토글 후 상태
    */
   toggleFavorite: async (params: ToggleFavoriteParams): Promise<FavoriteStatusResponse> => {

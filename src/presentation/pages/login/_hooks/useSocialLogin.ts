@@ -52,7 +52,7 @@ function handleAuthError(error: unknown): void {
 export function useSocialLogin() {
   const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
 
-  const handleLogin = useCallback(async (provider: SocialProvider) => {
+  const handleLogin = useCallback(async (provider: SocialProvider, onSuccess?: () => void) => {
     setLoadingProvider(provider);
 
     try {
@@ -69,6 +69,7 @@ export function useSocialLogin() {
       }
       // 로그인 성공 시 AuthProvider에서 상태 자동 업데이트
       // 네비게이션 변경도 자동 처리됨
+      onSuccess?.();
     } catch (error) {
       handleAuthError(error);
     } finally {
